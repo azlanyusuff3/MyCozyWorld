@@ -100,7 +100,7 @@ const decrease = (g, id) => {
 const outcome = (game, ok, message, effect = "") => ({ game, ok, message, effect });
 
 export function act(original, type, payload = {}) {
-  if(["work","claim-goal"].includes(type))return phase3Action(sanitize(original),type,payload);
+  if(["work","claim-goal","claim-daily"].includes(type))return phase3Action(sanitize(original),type,payload);
   if(["buy-furniture","move-furniture"].includes(type))return phase2Action(sanitize(original),type,payload);
   const game = sanitize(original);
   if(type==="talk"){
