@@ -72,3 +72,5 @@ test("career and keepsake screens render real reward actions",()=>{
  assert.match(career,/data-action="album"/);
  assert.match(albumMarkup(game),/album-sticker-grid/);
 });
+
+test("themed SVG visuals differ by building and room",()=>{assert.notEqual(cozySceneSvg("hospital","main"),cozySceneSvg("hospital","room1"));assert.notEqual(cozySceneSvg("school","room1"),cozySceneSvg("school","room2"));assert.match(cozySceneSvg("hospital","room1"),/Treatment Room/);assert.match(cozySceneSvg("mall","room2"),/Cozy Arcade/);assert.match(cozySceneSvg("cafe"),/COZY CAFÉ/);});
