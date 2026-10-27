@@ -1,9 +1,9 @@
-import { JOBS, GOALS } from "./phase3.js";
+import { JOBS, GOALS, TASKS, DAILY } from "./phase3.js";
 import { FURNITURE, FRIENDS } from "./phase2.js";
 import { PLACES, ITEMS, MARKET, CLOTHES, LOOKS, MISSIONS } from "./data.js";
 import { loadGame, persist, act, itemCount, nextMission, missionStep, timeLabel } from "./state.js";
 import { avatarSvg, sceneSvg } from "./art.js";
-let game=loadGame(), modal="", toastTimer;
+let game=loadGame(), modal="", toastTimer, activeJob="", jobAnswers=[];
 const app=document.getElementById("app");
 const escape=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 function button(label,action,value="",cls="action-btn"){return '<button class="'+cls+'" data-action="'+action+'" data-value="'+escape(value)+'">'+label+"</button>";}
@@ -25,7 +25,8 @@ function render(){
 }
 function renderModal(){
  const head=(title,body)=>'<div class="overlay"><section class="panel" role="dialog" aria-modal="true" aria-label="'+escape(title)+'"><div class="panel-top"><h2>'+title+'</h2>'+button("×","close","","close")+'</div>'+body+'</section></div>';
- if(modal==="career")return head("🏆 My Cozy Career",'<p>Work one shift each day to earn coins. Rest when tired!</p><div class="grid">'+Object.entries(JOBS).map(([id,j])=>'<div class="tile"><div style="font-size:32px">'+j.icon+'</div><strong>'+j.name+'</strong><small>'+j.pay+' coins · '+j.place+'</small></div>').join("")+'</div><p>Shifts: '+game.career.shifts+' · Conversations: '+game.career.social+'</p><h3>Achievements</h3><div class="grid">'+Object.entries(GOALS).map(([id,g])=>'<div class="tile"><strong>'+g.name+'</strong><small>'+Math.min(g.target,id==="social"?game.career.social:game.career.shifts)+'/'+g.target+' · Reward '+g.reward+' coins</small>'+ (game.career.claimed.includes(id)?"✓ Claimed":button("Claim reward","claim-goal",id))+'</div>').join("")+'</div>');
+ if(modal==="job"){const qs=TASKS[activeJob]||[];const index=jobAnswers.length;const q=qs[index];return head("💼 "+JOBS[activeJob].name,q?'<div class="job-play"><div class="job-icon">'+JOBS[activeJob].icon+'</div><p>Task '+(index+1)+'/'+qs.length+'</p><h3>'+q.prompt+'</h3><div class="grid">'+q.options.map((opt,i)=>button(opt,"answer-job",String(i),"tile")).join("")+'</div></div>':'<p>Ready to finish your shift?</p>'+button("Finish shift","finish-job","","primary"));}
+ if(modal==="career")return head("🏆 My Cozy Career",'<p>Work one shift each day to earn coins. Rest when tired!</p><div class="grid">'+Object.entries(JOBS).map(([id,j])=>'<div class="tile"><div style="font-size:32px">'+j.icon+'</div><strong>'+j.name+'</strong><small>'+j.pay+' coins · '+j.place+'</small></div>').join("")+'</div><p>Shifts: '+game.career.shifts+' · Conversations: '+game.career.social+'</p><h3>Achievements</h3><div class="grid">'+Object.entries(GOALS).map(([id,g])=>'<div class="tile"><strong>'+g.name+'</strong><small>'+Math.min(g.target,id==="social"?game.career.social:game.career.shifts)+'/'+g.target+' · Reward '+g.reward+' coins</small>'+ (game.career.claimed.includes(id)?"✓ Claimed":button("Claim reward","claim-goal",id))+'</div>').join("")+'</div><h3>Daily tasks</h3><div class="grid">'+DAILY.map(t=>'<div class="tile"><strong>'+t.name+'</strong><small>+'+t.reward+' coins</small>'+button("Claim","claim-daily",t.key)+'</div>').join("")+'</div>');
  if(modal==="decorate")return head("🪑 Decorate home",'<p>Buy furniture with coins. Tap placed furniture to move it.</p><div class="grid">'+Object.entries(FURNITURE).map(([id,f])=>'<button class="tile" data-action="buy-furniture" data-value="'+id+'"><div style="font-size:38px">'+f.icon+'</div><strong>'+f.name+'</strong><small>'+f.cost+' coins</small></button>').join("")+'</div><p>Placed: '+(game.decor||[]).length+'/12</p>');
  if(modal==="friends")return head("💗 My friends",'<div class="grid">'+Object.entries(FRIENDS).map(([id,f])=>'<div class="tile"><div style="font-size:38px">'+f.icon+'</div><strong>'+f.name+'</strong><small>Friendship '+(game.friends?.[id]||0)+'/100 · '+f.place+'</small></div>').join("")+'</div>');
  if(modal==="map")return head("🗺️ Where shall we go?",'<div class="grid">'+Object.entries(PLACES).map(([id,p])=>'<button class="tile" data-action="travel" data-value="'+id+'"><div style="font-size:36px">'+p.icon+'</div><strong>'+escape(p.name)+'</strong><small>'+escape(p.caption)+'</small></button>').join("")+'</div>');
@@ -53,8 +54,11 @@ function bind(){
   if(type==="close"){if(!game.characterReady)return;modal="";return render();}
   if(type==="confirm-reset"){if(window.confirm("Erase this saved world and start over?")){dispatch("reset");modal="creator";render();}return;}
   if(type==="save-avatar"){const a={...game.avatar,name:document.getElementById("avatar-name").value,hair:document.getElementById("avatar-hair").value,outfit:document.getElementById("avatar-outfit").value};return dispatch("customize",{avatar:a});}
+  if(type==="work"){activeJob=id;jobAnswers=[];modal="job";return render();}
+  if(type==="answer-job"){const q=TASKS[activeJob]?.[jobAnswers.length];if(!q)return;if(Number(id)!==q.answer)return notify("Try again!");jobAnswers.push(Number(id));return render();}
+  if(type==="finish-job"){const job=activeJob,answers=[...jobAnswers];modal="";activeJob="";jobAnswers=[];return dispatch("work",{id:job,answers});}
   if(type==="shift-decor")return;
-  if(type==="talk"||type==="buy-furniture"||type==="work"||type==="claim-goal")return dispatch(type,{id});
+  if(type==="talk"||type==="buy-furniture"||type==="work"||type==="claim-goal"||type==="claim-daily")return dispatch(type,{id});
   if(type==="travel")return dispatch(type,{place:id});
   if(type==="buy"||type==="eat"||type==="buy-outfit"||type==="equip")return dispatch(type,{id});
   dispatch(type);
