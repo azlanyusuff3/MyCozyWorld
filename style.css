@@ -3,3 +3,6 @@
 
 /* Phase 2 scene interactions */
 .decor-object{touch-action:none;user-select:none;cursor:grab}.decor-object:active{cursor:grabbing;z-index:5}.npc-character{position:absolute;left:70%;bottom:12%;display:flex;flex-direction:column;align-items:center;gap:2px;border:0;background:transparent;cursor:pointer;z-index:2;animation:npc-idle 2.8s ease-in-out infinite}.npc-face{font-size:clamp(36px,6vw,80px);filter:drop-shadow(0 7px 3px #54765c44)}.npc-name{background:#fff9ef;padding:4px 12px;border-radius:20px;font-size:13px;font-weight:900;box-shadow:0 3px 7px #574c5a22}@keyframes npc-idle{50%{transform:translateY(-7px)}}
+
+/* Phase 3 activity feedback */
+.job-play{text-align:center;padding:10px}.job-icon{font-size:clamp(60px,12vw,110px);animation:job-bob 1.2s ease-in-out infinite}.job-play .tile{min-height:64px;font-size:1rem;cursor:pointer}.job-play h3{font-size:clamp(1rem,2vw,1.5rem)}@keyframes job-bob{0%,100%{transform:translateY(0) rotate(-5deg)}50%{transform:translateY(-12px) rotate(5deg)}}@media(prefers-reduced-motion:reduce){.job-icon{animation:none}}
