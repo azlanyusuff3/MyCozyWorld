@@ -64,7 +64,7 @@ function bind(){
   if(type==="home-menu"){screen="welcome";modal="";return render();}
   if(type==="district"){activeDistrict=id;return render();}
   if(["map","inventory","wardrobe","settings","creator","decorate","friends","career","album"].includes(type))return openModal(type);
-  if(type==="close"){if(!game.characterReady)return;modal="";return render();}
+  if(type==="close"){if(!game.characterReady)screen="welcome";modal="";return render();}
   if(type==="confirm-reset"){if(window.confirm("Erase this saved world and start over?")){dispatch("reset");modal="creator";render();}return;}
   if(type==="save-avatar"){const a={...game.avatar,name:document.getElementById("avatar-name").value,hair:document.getElementById("avatar-hair").value,outfit:document.getElementById("avatar-outfit").value};return dispatch("customize",{avatar:a});}
   if(type==="work"){activeJob=id;jobAnswers=[];modal="job";return render();}
@@ -94,6 +94,6 @@ function bind(){
 }
 function moveTo(x,y){const r=act(game,"move",{x,y});game=r.game;persist(game);const el=document.getElementById("player");if(el){el.style.left=game.position.x/12+"%";el.style.bottom=(650-game.position.y)/6.5+"%";}}
 function move(direction){const d={left:[-45,0],right:[45,0],up:[0,-24],down:[0,24]}[direction];if(d)moveTo(game.position.x+d[0],game.position.y+d[1]);}
-document.addEventListener("keydown",e=>{if(modal||screen==="welcome")return;const key={ArrowLeft:"left",a:"left",ArrowRight:"right",d:"right",ArrowUp:"up",w:"up",ArrowDown:"down",s:"down"}[e.key];if(key){e.preventDefault();move(key);}});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&modal){if(!game.characterReady)screen="welcome";modal="";render();return;}if(modal||screen==="welcome")return;const key={ArrowLeft:"left",a:"left",ArrowRight:"right",d:"right",ArrowUp:"up",w:"up",ArrowDown:"down",s:"down"}[e.key];if(key){e.preventDefault();move(key);}});
 render();
 if("serviceWorker" in navigator&&location.protocol!=="file:")window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));
