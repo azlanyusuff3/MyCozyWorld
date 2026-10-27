@@ -1,6 +1,6 @@
 import { BUILDING_BY_ID, BUILDINGS_IN, DISTRICTS } from "./world4.js";
 
-const esc=v=>String(v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&#39;",'"':"&quot;"}[c]));
+const esc=v=>String(v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/\x27/g,"&#39;");
 const flower=(x,y,s=1)=>'<g transform="translate('+x+' '+y+') scale('+s+')"><path d="M0 8v25" stroke="#71a87a" stroke-width="4"/><g fill="#fff8e5" stroke="#f3c8c0" stroke-width="1.2"><ellipse cy="-9" ry="13" rx="9"/><ellipse cx="9" cy="0" ry="9" rx="13"/><ellipse cy="9" ry="13" rx="9"/><ellipse cx="-9" cy="0" ry="9" rx="13"/></g><circle r="8" fill="#f8c768"/></g>';
 const cloud=(x,y,s=1)=>'<g transform="translate('+x+' '+y+') scale('+s+')" opacity=".9" fill="#fffdf5"><ellipse rx="75" ry="23"/><circle cx="-35" cy="-15" r="32"/><circle cx="7" cy="-25" r="43"/><circle cx="45" cy="-8" r="28"/></g>';
 const tree=(x,y,s=1)=>'<g transform="translate('+x+' '+y+') scale('+s+')"><ellipse cy="66" rx="62" ry="14" fill="#567e6844"/><path d="M-9 14v62" stroke="#9d7358" stroke-width="19" stroke-linecap="round"/><circle cx="-18" cy="-22" r="51" fill="#6cad8b"/><circle cx="28" cy="-32" r="45" fill="#8acba1"/><circle cx="0" cy="-56" r="45" fill="#a5d8ad"/><circle cx="-35" cy="-39" r="14" fill="#bddfbd"/><circle cx="26" cy="-59" r="12" fill="#bfe7bb"/></g>';
