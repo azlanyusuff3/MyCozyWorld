@@ -15,10 +15,11 @@ function sceneActions(){switch(game.location){
  case "park":return button("💬 Milo","talk","milo")+button("🛝 Play","play")+button("🌼 Pick daisy","daisy");
  default:return button("🏡 Home","travel","home")+button("📚 School","travel","school")+button("🛒 Market","travel","market")+button("👗 Boutique","travel","boutique")+button("🌷 Park","travel","park");
 }}
+function npcMarkup(){const match=Object.entries(FRIENDS).find(([,friend])=>friend.place===game.location);if(!match)return "";const [id,friend]=match;return '<button class="npc-character" data-action="talk" data-value="'+id+'"><span class="npc-face">'+friend.icon+'</span><span class="npc-name">'+friend.name+'</span></button>';}
 function decorMarkup(){return game.location==="home"?'<div class="decor-items">'+(game.decor||[]).map((d,i)=>'<button class="decor-object" style="left:'+(d.x/12)+'%;top:'+(d.y/6.5)+'%" data-action="shift-decor" data-value="'+i+'" title="Tap to move">'+FURNITURE[d.id].icon+'</button>').join("")+'</div>':"";}
 function render(){
  const mission=nextMission(game);
- app.innerHTML='<div class="game"><header><div class="brand">🌼 My Cozy World</div><div class="pill">🪙 '+game.coins+'</div><div class="pill">☀️ Day '+game.day+' · '+timeLabel(game)+'</div><div class="stats">'+stat("🍎 Food",game.stats.hunger,"#f1a47e")+stat("⚡ Energy",game.stats.energy,"#b1c68d")+stat("💗 Joy",game.stats.joy,"#e6a1ba")+stat("📖 Learning",Math.min(100,game.stats.knowledge),"#a7a1db")+'</div><div class="top-buttons">'+button("💗","friends","","icon-btn")+button("🎒","inventory","","icon-btn")+button("🗺️","map","","icon-btn")+button("⚙️","settings","","icon-btn")+'</div></header><main><div class="scene" id="scene">'+sceneSvg(game.location)+decorMarkup()+'<div class="avatar-layer" id="player" style="left:'+game.position.x/12+'%;bottom:'+((650-game.position.y)/6.5)+'%">'+avatarSvg(game.avatar,120)+'</div><div class="hint">'+PLACES[game.location].icon+' '+PLACES[game.location].name+'</div><div class="walk-pad"><button class="up" data-move="up" aria-label="Move up">↑</button><button class="left" data-move="left" aria-label="Move left">←</button><button class="down" data-move="down" aria-label="Move down">↓</button><button class="right" data-move="right" aria-label="Move right">→</button></div></div><div class="dock">'+button("🗺️ Town map","travel","town","nav-btn")+'<div class="dock-actions">'+sceneActions()+'</div><div class="mission"><strong>⭐ '+(mission?"Quest "+(missionStep(game)+1)+"/"+MISSIONS.length+": "+escape(mission.title):"All quests done! 🎉")+'</strong>'+(mission?escape(mission.hint):"Keep exploring!")+'</div></div></main><div class="toast hidden" id="toast" role="status"></div></div>'+ (modal?renderModal():"");
+ app.innerHTML='<div class="game"><header><div class="brand">🌼 My Cozy World</div><div class="pill">🪙 '+game.coins+'</div><div class="pill">☀️ Day '+game.day+' · '+timeLabel(game)+'</div><div class="stats">'+stat("🍎 Food",game.stats.hunger,"#f1a47e")+stat("⚡ Energy",game.stats.energy,"#b1c68d")+stat("💗 Joy",game.stats.joy,"#e6a1ba")+stat("📖 Learning",Math.min(100,game.stats.knowledge),"#a7a1db")+'</div><div class="top-buttons">'+button("💗","friends","","icon-btn")+button("🎒","inventory","","icon-btn")+button("🗺️","map","","icon-btn")+button("⚙️","settings","","icon-btn")+'</div></header><main><div class="scene" id="scene">'+sceneSvg(game.location)+decorMarkup()+npcMarkup()+'<div class="avatar-layer" id="player" style="left:'+game.position.x/12+'%;bottom:'+((650-game.position.y)/6.5)+'%">'+avatarSvg(game.avatar,120)+'</div><div class="hint">'+PLACES[game.location].icon+' '+PLACES[game.location].name+'</div><div class="walk-pad"><button class="up" data-move="up" aria-label="Move up">↑</button><button class="left" data-move="left" aria-label="Move left">←</button><button class="down" data-move="down" aria-label="Move down">↓</button><button class="right" data-move="right" aria-label="Move right">→</button></div></div><div class="dock">'+button("🗺️ Town map","travel","town","nav-btn")+'<div class="dock-actions">'+sceneActions()+'</div><div class="mission"><strong>⭐ '+(mission?"Quest "+(missionStep(game)+1)+"/"+MISSIONS.length+": "+escape(mission.title):"All quests done! 🎉")+'</strong>'+(mission?escape(mission.hint):"Keep exploring!")+'</div></div></main><div class="toast hidden" id="toast" role="status"></div></div>'+ (modal?renderModal():"");
  bind();
 }
 function renderModal(){
@@ -50,7 +51,7 @@ function bind(){
   if(type==="close"){if(!game.characterReady)return;modal="";return render();}
   if(type==="confirm-reset"){if(window.confirm("Erase this saved world and start over?")){dispatch("reset");modal="creator";render();}return;}
   if(type==="save-avatar"){const a={...game.avatar,name:document.getElementById("avatar-name").value,hair:document.getElementById("avatar-hair").value,outfit:document.getElementById("avatar-outfit").value};return dispatch("customize",{avatar:a});}
-  if(type==="shift-decor"){const d=game.decor?.[Number(id)];if(d)dispatch("move-furniture",{index:Number(id),x:d.x+90>1080?120:d.x+90,y:d.y});return;}
+  if(type==="shift-decor")return;
   if(type==="talk"||type==="buy-furniture")return dispatch(type,{id});
   if(type==="travel")return dispatch(type,{place:id});
   if(type==="buy"||type==="eat"||type==="buy-outfit"||type==="equip")return dispatch(type,{id});
@@ -60,6 +61,13 @@ function bind(){
   game.avatar[el.dataset.pick]=el.dataset.color;render();
  }));
  const scene=document.getElementById("scene");
+ app.querySelectorAll(".decor-object").forEach(el=>{
+   let pointer=null, moved=false;
+   el.addEventListener("pointerdown",e=>{e.stopPropagation();pointer=e.pointerId;moved=false;el.setPointerCapture(pointer);});
+   el.addEventListener("pointermove",e=>{if(pointer!==e.pointerId)return;const rect=scene.getBoundingClientRect();const x=Math.max(100,Math.min(1080,(e.clientX-rect.left)/rect.width*1200));const y=Math.max(290,Math.min(450,(e.clientY-rect.top)/rect.height*650));el.style.left=x/12+"%";el.style.top=y/6.5+"%";moved=true;});
+   el.addEventListener("pointerup",e=>{if(pointer!==e.pointerId)return;pointer=null;const rect=scene.getBoundingClientRect();if(moved)dispatch("move-furniture",{index:Number(el.dataset.value),x:(e.clientX-rect.left)/rect.width*1200,y:(e.clientY-rect.top)/rect.height*650});});
+   el.addEventListener("pointercancel",()=>{pointer=null;render();});
+ });
  scene?.querySelectorAll("[data-place],[data-action]").forEach(el=>{const trigger=()=>{if(el.dataset.place)dispatch("travel",{place:el.dataset.place});else dispatch(el.dataset.action);};el.addEventListener("click",trigger);el.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();trigger();}});});
  scene?.addEventListener("pointerdown",e=>{if(e.target.closest("[data-place],[data-action],[data-move]"))return;const rect=scene.getBoundingClientRect();const x=Math.round((e.clientX-rect.left)/rect.width*1200);const y=Math.round((e.clientY-rect.top)/rect.height*650);moveTo(x,y);});
  app.querySelectorAll("[data-move]").forEach(el=>el.addEventListener("click",()=>move(el.dataset.move)));
