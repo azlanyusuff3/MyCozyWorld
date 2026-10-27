@@ -1,3 +1,4 @@
+import { BUILDING_BY_ID,DISTRICTS } from "./world4.js";
 import { PLACES } from "./data.js";
 const escape = s => String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 export function avatarSvg(a, size=170) {
@@ -10,7 +11,16 @@ function house(x,y,w,h,wall,roof,label,icon,place) {
 }
 function tree(x,y,s=1){return '<g transform="translate('+x+' '+y+') scale('+s+')"><rect x="-10" y="-8" width="20" height="75" rx="8" fill="#a77859"/><circle cx="0" cy="-31" r="47" fill="#76b999"/><circle cx="-27" cy="-13" r="30" fill="#8ccca7"/><circle cx="28" cy="-17" r="31" fill="#a0d6a8"/><circle cx="-13" cy="-50" r="25" fill="#b1dfa8"/></g>';}
 const flower=(x,y)=>'<g transform="translate('+x+' '+y+')"><path d="M0 0v15" stroke="#75a884" stroke-width="3"/><circle r="8" fill="#f8d37b"/><circle cx="-8" r="5" fill="#fff5f3"/><circle cx="8" r="5" fill="#fff5f3"/><circle cy="-8" r="5" fill="#fff5f3"/><circle cy="8" r="5" fill="#fff5f3"/></g>';
-export function sceneSvg(place) {
+function districtInterior(place,room){
+ const b=BUILDING_BY_ID[place];if(!b)return "";
+ const district=DISTRICTS.find(d=>d.id===b.district);
+ const shade=district?.color||"#eed4c9";
+ const placeName=escape(b.name),roomName=escape(b.rooms.find(r=>r.id===room)?.name||b.rooms[0].name);
+ const badges=b.actions.filter(a=>a.room===room).map((a,i)=>'<g transform="translate('+(245+i*285)+' 335)"><rect x="-95" y="-82" width="190" height="124" rx="27" fill="#fff9eb" stroke="#e9cfc4" stroke-width="5"/><text x="0" y="2" text-anchor="middle" font-size="75">'+a.icon+'</text><text x="0" y="77" text-anchor="middle" font-size="19">'+escape(a.name)+'</text></g>').join("");
+ return '<svg viewBox="0 0 1200 650" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="'+placeName+' '+roomName+'"><rect width="1200" height="650" fill="#f9eddb"/><rect width="1200" height="460" fill="'+shade+'"/><rect x="40" y="66" width="1120" height="390" rx="38" fill="#fff8ee" stroke="#d8b6aa" stroke-width="11"/><rect x="95" y="108" width="1010" height="103" rx="22" fill="'+shade+'"/><text x="600" y="174" text-anchor="middle" font-size="51" font-weight="900">'+b.icon+' '+placeName+'</text><text x="600" y="266" text-anchor="middle" font-size="29" font-weight="800">'+roomName+'</text>'+badges+'<path d="M0 475H1200V650H0Z" fill="#e5cca9"/><path d="M0 480H1200" stroke="#c9ab95" stroke-width="9"/><path d="M150 550h900" stroke="#eedfc4" stroke-width="8" stroke-dasharray="24 25"/></svg>';
+}
+export function sceneSvg(place,room="main") {
+ if(BUILDING_BY_ID[place]&&(room!=="main"||!["home","school","market","boutique","park"].includes(place)))return districtInterior(place,room);
  let content="";
  if(place==="town"){
   content='<path d="M0 475Q320 425 600 478T1200 467V650H0Z" fill="#a9d6a3"/><path d="M0 537Q300 495 600 535T1200 525" fill="none" stroke="#f5e8cc" stroke-width="78"/>';
