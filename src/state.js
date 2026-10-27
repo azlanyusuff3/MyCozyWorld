@@ -1,3 +1,4 @@
+import { phase3Action, normalizeCareer } from "./phase3.js";
 import { phase2Action, FURNITURE, FRIENDS } from "./phase2.js";
 import { PLACES, ITEMS, MARKET, CLOTHES, LOOKS, MISSIONS } from "./data.js";
 
@@ -22,7 +23,7 @@ export function newGame() {
     position: { x: 610, y: 568 }, coins: 64,
     stats: { hunger: 73, energy: 84, joy: 82, knowledge: 0 },
     inventory: {}, progress: { book: false, study: false, outfit: false, shop: false, eat: false, rest: false, daisy: false },
-    day: 1, minute: 8 * 60 + 30, steps: 0, sound: true, decor: [], friends: {}
+    day: 1, minute: 8 * 60 + 30, steps: 0, sound: true, decor: [], friends: {}, career: normalizeCareer()
   };
 }
 export function sanitize(raw) {
@@ -54,6 +55,7 @@ export function sanitize(raw) {
   s.decor = Array.isArray(raw.decor) ? raw.decor.slice(0,12).filter(d=>d&&Object.hasOwn(FURNITURE,d.id)).map(d=>({id:d.id,x:numeric(d.x,100,1080),y:numeric(d.y,290,450)})) : [];
   s.friends = {};
   for(const id of Object.keys(FRIENDS)) s.friends[id]=numeric(raw.friends?.[id],0,100);
+  s.career = normalizeCareer(raw.career);
   s.sound = raw.sound !== false;
   s.createdAt = Number.isFinite(raw.createdAt) ? raw.createdAt : s.createdAt;
   s.savedAt = Number.isFinite(raw.savedAt) ? raw.savedAt : null;
@@ -98,8 +100,14 @@ const decrease = (g, id) => {
 const outcome = (game, ok, message, effect = "") => ({ game, ok, message, effect });
 
 export function act(original, type, payload = {}) {
-  if(["buy-furniture","move-furniture","talk"].includes(type))return phase2Action(sanitize(original),type,payload);
+  if(["work","claim-goal"].includes(type))return phase3Action(sanitize(original),type,payload);
+  if(["buy-furniture","move-furniture"].includes(type))return phase2Action(sanitize(original),type,payload);
   const game = sanitize(original);
+  if(type==="talk"){
+    const result=phase2Action(game,type,payload);
+    if(result.ok){result.game.career.social+=1;}
+    return result;
+  }
   switch (type) {
     case "travel": {
       const place = payload.place;
