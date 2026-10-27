@@ -33,6 +33,17 @@ Node.js 20+: `npm run dev` and open `http://localhost:4173`. No dependency insta
 - Collectible keepsake album, exploration progress and persistent room states
 - Legacy Phase 1–3 save compatibility preserved
 
+
+## Premium illustrated Cozyville UI
+
+- **Play-ready title screen:** illustrated coastal Cozyville, character mascot, Play / Continue, Character Creator, and Settings.
+- **Interactive world map:** visually illustrated district landscapes, five district selector tabs, and six directly tappable buildings per district.
+- **Original layered SVG game art:** colorful town square, warm interiors, props, outdoor scenery, themed hospital/mall/school rooms, and game-ready interaction hotspots.
+- **Polished player HUD:** pastel buttons, readable needs bars, scene labels, room selector, and touch-friendly action dock.
+- **Character Creator, Careers and Keepsakes:** illustrated wardrobe backdrop, three-column career/quest board, and sticker album.
+- **Performance:** no third-party graphical libraries or external image downloads required; all graphics are vector-based and included in the PWA offline cache.
+- Main menu and UI are live HTML/SVG controls, not screenshot-based mockups. Visual style is inspired by the design references rather than pixel-identical generated paintings.
+
 ## Checks
 
 `npm run check` validates JavaScript syntax.
@@ -44,4 +55,4 @@ Deploy the repository root as a static site via GitHub Pages (main/root), or any
 
 ## Scope and limitations
 
-This is a 30-building playable world expansion, but not a complete Sims-style simulation. Advanced NPC AI, deeper economic simulation, fully illustrated handcrafted interior art, high-end character animation, and cloud sync are not implemented. Automated logic tests are not a substitute for device-based visual QA. Save data is local to each browser/device and can be cleared with browser storage. SVG icons may render slightly differently across operating systems.
+This is a 30-building playable world expansion, but not a complete Sims-style simulation. Advanced NPC AI, deeper economic simulation, photorealistic or hand-painted high-detail art, high-end character animation, and cloud sync are not implemented. Automated logic tests are not a substitute for device-based visual QA. Save data is local to each browser/device and can be cleared with browser storage. SVG icons may render slightly differently across operating systems.
