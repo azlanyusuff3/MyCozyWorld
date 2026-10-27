@@ -15,7 +15,8 @@ function sceneActions(){switch(game.location){
  case "market":return button("💼 Cafe shift","work","barista")+MARKET.map(id=>button(ITEMS[id].icon+" "+ITEMS[id].name+" · "+ITEMS[id].cost+" 🪙","buy",id)).join("");
  case "boutique":return button("💬 Poppy","talk","poppy")+Object.entries(CLOTHES).map(([id,v])=>button(v.icon+" "+v.name+(game.wardrobe.includes(id)?" · Owned":" · "+v.cost+" 🪙"),game.wardrobe.includes(id)?"equip":"buy-outfit",id)).join("");
  case "park":return button("💼 Garden shift","work","gardener")+button("💬 Milo","talk","milo")+button("🛝 Play","play")+button("🌼 Pick daisy","daisy");
- default:return button("🏡 Home","travel","home")+button("📚 School","travel","school")+button("🛒 Market","travel","market")+button("👗 Boutique","travel","boutique")+button("🌷 Park","travel","park");
+ case "town":return button("🏡 Home","travel","home")+button("📚 School","travel","school")+button("🛒 Market","travel","market")+button("👗 Boutique","travel","boutique")+button("🌷 Park","travel","park");
+ default:return button("🏙️ Town","travel","town")+button("🗺️ World Map","map");
 }}
 function worldActions(){const b=BUILDING_BY_ID[game.location];if(!b)return "";return b.actions.filter(a=>a.room===game.world.room).map(a=>button(a.icon+" "+a.name,"explore",a.id)).join("");}
 function roomTabs(){const b=BUILDING_BY_ID[game.location];if(!b||b.rooms.length<2)return "";return '<div class="room-tabs" role="group" aria-label="Rooms">'+b.rooms.map(r=>'<button class="room-tab '+(game.world.room===r.id?"active":"")+'" data-action="enter-room" data-value="'+r.id+'">'+escape(r.name)+'</button>').join("")+'</div>';}
@@ -79,7 +80,7 @@ function bind(){
    el.addEventListener("pointerup",e=>{if(pointer!==e.pointerId)return;pointer=null;const rect=scene.getBoundingClientRect();if(moved)dispatch("move-furniture",{index:Number(el.dataset.value),x:(e.clientX-rect.left)/rect.width*1200,y:(e.clientY-rect.top)/rect.height*650});});
    el.addEventListener("pointercancel",()=>{pointer=null;render();});
  });
- scene?.querySelectorAll("svg [data-place],svg [data-action]").forEach(el=>{const trigger=()=>{if(el.dataset.place)dispatch("travel",{place:el.dataset.place});else dispatch(el.dataset.action);};el.addEventListener("click",trigger);el.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();trigger();}});});
+ scene?.querySelectorAll("svg [data-place],svg [data-action]").forEach(el=>{const trigger=()=>{if(el.dataset.place)dispatch("travel",{place:el.dataset.place});else if(el.dataset.action==="explore")dispatch("explore",{id:el.dataset.value});else dispatch(el.dataset.action);};el.addEventListener("click",trigger);el.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();trigger();}});});
  scene?.addEventListener("pointerdown",e=>{if(e.target.closest("[data-place],[data-action],[data-move]"))return;const rect=scene.getBoundingClientRect();const x=Math.round((e.clientX-rect.left)/rect.width*1200);const y=Math.round((e.clientY-rect.top)/rect.height*650);moveTo(x,y);});
  app.querySelectorAll("[data-move]").forEach(el=>el.addEventListener("click",()=>move(el.dataset.move)));
 }
