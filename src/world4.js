@@ -44,3 +44,34 @@ export const BUILDING_BY_ID=Object.freeze(Object.fromEntries(BUILDINGS.map(b=>[b
 const EXISTING=new Set(["home","school","market","boutique","park"]);
 export const WORLD_LOCATIONS=Object.freeze(Object.fromEntries(BUILDINGS.filter(b=>!EXISTING.has(b.id)).map(b=>[b.id,{name:b.name,icon:b.icon,caption:DISTRICTS.find(d=>d.id===b.district).caption}])));
 export const BUILDINGS_IN=district=>BUILDINGS.filter(b=>b.district===district);
+
+export function normalizeWorld(raw){
+ const visited=Array.isArray(raw?.visited)?raw.visited.filter(id=>Object.hasOwn(BUILDING_BY_ID,id)).slice(0,30):[];
+ const stickers=Array.isArray(raw?.stickers)?raw.stickers.filter(id=>typeof id==="string"&&BUILDING_BY_ID[id.split(":")[0]]).slice(0,90):[];
+ return {room:typeof raw?.room==="string"?raw.room:"main",visited:[...new Set(visited)],stickers:[...new Set(stickers)],actions:Math.max(0,Math.min(99999,Math.floor(Number(raw?.actions)||0)))};
+}
+export function world4Action(source,type,payload={}){
+ const g=structuredClone(source);g.world=normalizeWorld(g.world);
+ if(type==="enter-room"){
+  const building=BUILDING_BY_ID[g.location],room=payload.room;
+  if(!building||!building.rooms.some(r=>r.id===room))return {game:source,ok:false,message:"That room isn't available."};
+  g.world.room=room;
+  return {game:g,ok:true,message:building.rooms.find(r=>r.id===room).name};
+ }
+ if(type==="explore"){
+  const building=BUILDING_BY_ID[g.location];
+  const action=building?.actions.find(a=>a.id===payload.id);
+  if(!action||action.room!==g.world.room)return {game:source,ok:false,message:"Visit the right room first."};
+  if(action.stat==="coins")g.coins=Math.min(99999,g.coins+action.value);
+  else if(action.stat==="sticker"){
+   const token=building.id+":"+action.id;
+   if(g.world.stickers.includes(token))return {game:source,ok:false,message:"You already collected this keepsake!"};
+   g.world.stickers.push(token);
+  }else g.stats[action.stat]=Math.min(100,(g.stats[action.stat]||0)+action.value);
+  g.world.actions+=1;
+  const minutes=g.minute+12;g.day=Math.min(9999,g.day+Math.floor(minutes/1440));g.minute=minutes%1440;
+  g.stats.energy=Math.max(0,g.stats.energy-2);
+  return {game:g,ok:true,message:action.description+"!"+(action.stat==="coins"?" +"+action.value+" coins":action.stat==="sticker"?" Keepsake collected!":"")};
+ }
+ return {game:source,ok:false,message:"Unknown world action."};
+}
