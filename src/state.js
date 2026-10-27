@@ -1,3 +1,4 @@
+import { world4Action,normalizeWorld,BUILDING_BY_ID } from "./world4.js";
 import { phase3Action, normalizeCareer } from "./phase3.js";
 import { phase2Action, FURNITURE, FRIENDS } from "./phase2.js";
 import { PLACES, ITEMS, MARKET, CLOTHES, LOOKS, MISSIONS } from "./data.js";
@@ -23,7 +24,7 @@ export function newGame() {
     position: { x: 610, y: 568 }, coins: 64,
     stats: { hunger: 73, energy: 84, joy: 82, knowledge: 0 },
     inventory: {}, progress: { book: false, study: false, outfit: false, shop: false, eat: false, rest: false, daisy: false },
-    day: 1, minute: 8 * 60 + 30, steps: 0, sound: true, decor: [], friends: {}, career: normalizeCareer()
+    day: 1, minute: 8 * 60 + 30, steps: 0, sound: true, decor: [], friends: {}, career: normalizeCareer(), world: normalizeWorld()
   };
 }
 export function sanitize(raw) {
@@ -56,6 +57,8 @@ export function sanitize(raw) {
   s.friends = {};
   for(const id of Object.keys(FRIENDS)) s.friends[id]=numeric(raw.friends?.[id],0,100);
   s.career = normalizeCareer(raw.career);
+  s.world = normalizeWorld(raw.world);
+  if (!BUILDING_BY_ID[s.location]?.rooms.some(room=>room.id===s.world.room))s.world.room="main";
   s.sound = raw.sound !== false;
   s.createdAt = Number.isFinite(raw.createdAt) ? raw.createdAt : s.createdAt;
   s.savedAt = Number.isFinite(raw.savedAt) ? raw.savedAt : null;
@@ -100,6 +103,7 @@ const decrease = (g, id) => {
 const outcome = (game, ok, message, effect = "") => ({ game, ok, message, effect });
 
 export function act(original, type, payload = {}) {
+  if(["enter-room","explore"].includes(type))return world4Action(sanitize(original),type,payload);
   if(["work","claim-goal","claim-daily"].includes(type))return phase3Action(sanitize(original),type,payload);
   if(["buy-furniture","move-furniture"].includes(type))return phase2Action(sanitize(original),type,payload);
   const game = sanitize(original);
@@ -114,6 +118,8 @@ export function act(original, type, payload = {}) {
       if (!Object.hasOwn(PLACES, place)) return outcome(original, false, "That place is not available yet.");
       if (place === game.location) return outcome(original, true, "You're already here!");
       game.location = place;
+      game.world.room="main";
+      if(BUILDING_BY_ID[place]&&!game.world.visited.includes(place))game.world.visited.push(place);
       game.position = { x: 610, y: 568 };
       passTime(game, 12, 2, 2);
       return outcome(game, true, "Welcome to " + PLACES[place].name + "!", "travel");
