@@ -53,7 +53,7 @@ function dispatch(type,payload={}){
 }
 function openModal(id){modal=id;render();}
 function bind(){
- app.querySelectorAll("[data-action]").forEach(el=>el.addEventListener("click",ev=>{
+ app.querySelectorAll("button[data-action]").forEach(el=>el.addEventListener("click",ev=>{
   ev.stopPropagation();const type=el.dataset.action,id=el.dataset.value;
   if(["map","inventory","wardrobe","settings","creator","decorate","friends","career","album"].includes(type))return openModal(type);
   if(type==="close"){if(!game.characterReady)return;modal="";return render();}
