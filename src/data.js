@@ -1,10 +1,12 @@
+import { WORLD_LOCATIONS } from "./world4.js";
 export const PLACES = Object.freeze({
   town: { name: "Cozy Town", icon: "🗺️", caption: "A world of little discoveries." },
   home: { name: "Sunflower Home", icon: "🏡", caption: "Dress up, cook snacks and recharge." },
   school: { name: "Cozy School", icon: "📚", caption: "Read, study and make discoveries." },
   market: { name: "Berry Basket", icon: "🛒", caption: "Shop for groceries and delicious treats." },
   boutique: { name: "Petal Boutique", icon: "👗", caption: "Discover your own fashion style." },
-  park: { name: "Cloudberry Park", icon: "🌷", caption: "Play and enjoy a little fresh air." }
+  park: { name: "Cloudberry Park", icon: "🌷", caption: "Play and enjoy a little fresh air." },
+  ...WORLD_LOCATIONS
 });
 export const ITEMS = Object.freeze({
   book: { name: "Storybook", icon: "📖", kind: "book", description: "A book full of adventures." },
