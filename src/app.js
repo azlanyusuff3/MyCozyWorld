@@ -74,7 +74,7 @@ function bind(){
    el.addEventListener("pointerup",e=>{if(pointer!==e.pointerId)return;pointer=null;const rect=scene.getBoundingClientRect();if(moved)dispatch("move-furniture",{index:Number(el.dataset.value),x:(e.clientX-rect.left)/rect.width*1200,y:(e.clientY-rect.top)/rect.height*650});});
    el.addEventListener("pointercancel",()=>{pointer=null;render();});
  });
- scene?.querySelectorAll("[data-place],[data-action]").forEach(el=>{const trigger=()=>{if(el.dataset.place)dispatch("travel",{place:el.dataset.place});else dispatch(el.dataset.action);};el.addEventListener("click",trigger);el.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();trigger();}});});
+ scene?.querySelectorAll("svg [data-place],svg [data-action]").forEach(el=>{const trigger=()=>{if(el.dataset.place)dispatch("travel",{place:el.dataset.place});else dispatch(el.dataset.action);};el.addEventListener("click",trigger);el.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();trigger();}});});
  scene?.addEventListener("pointerdown",e=>{if(e.target.closest("[data-place],[data-action],[data-move]"))return;const rect=scene.getBoundingClientRect();const x=Math.round((e.clientX-rect.left)/rect.width*1200);const y=Math.round((e.clientY-rect.top)/rect.height*650);moveTo(x,y);});
  app.querySelectorAll("[data-move]").forEach(el=>el.addEventListener("click",()=>move(el.dataset.move)));
 }
