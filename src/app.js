@@ -31,7 +31,7 @@ function render(){
  bind();
 }
 function renderModal(){
- const head=(title,body)=>'<div class="overlay"><section class="panel '+(["map","career","creator","album"].includes(modal)?"panel-wide":"")+'" role="dialog"' aria-modal="true" aria-label="'+escape(title)+'"><div class="panel-top"><h2>'+title+'</h2>'+button("×","close","","close")+'</div>'+body+'</section></div>';
+ const head=(title,body)=>'<div class="overlay"><section class="panel '+(["map","career","creator","album"].includes(modal)?"panel-wide":"")+'" role="dialog" aria-modal="true" aria-label="'+escape(title)+'"><div class="panel-top"><h2>'+title+'</h2>'+button("×","close","","close")+'</div>'+body+'</section></div>';
  if(modal==="album")return head("📒 Cozyville Keepsakes",albumMarkup(game));
  if(modal==="job"){const qs=TASKS[activeJob]||[];const index=jobAnswers.length;const q=qs[index];return head("💼 "+JOBS[activeJob].name,q?'<div class="job-play"><div class="job-icon">'+JOBS[activeJob].icon+'</div><p>Task '+(index+1)+'/'+qs.length+'</p><h3>'+q.prompt+'</h3><div class="grid">'+q.options.map((opt,i)=>button(opt,"answer-job",String(i),"tile")).join("")+'</div></div>':'<p>Ready to finish your shift?</p>'+button("Finish shift","finish-job","","primary"));}
  if(modal==="career")return head("🏆 My Cozy Career & Quests",careerDashboardMarkup(game));
