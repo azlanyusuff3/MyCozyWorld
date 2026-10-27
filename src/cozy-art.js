@@ -1,3 +1,4 @@
+import { sceneProps } from "./cozy-props.js";
 import { BUILDING_BY_ID, BUILDINGS_IN, DISTRICTS } from "./world4.js";
 
 const esc=v=>String(v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/\x27/g,"&#39;");
@@ -51,7 +52,7 @@ export function cozySceneSvg(place,room="main"){
  const isOutside=["park","playground","beach"].includes(place);
  const background=isOutside?outdoorBase(place==="beach")+outdoorDecor():indoorBase(d?.color||"#f4dfd0");
  const title=sign(b,room);
- return svg(background+baseSpecific(place,room)+title+activityHotspots(b,room),b.name+" – "+room);
+ return svg(background+baseSpecific(place,room)+sceneProps(place,room)+title+activityHotspots(b,room),b.name+" – "+room);
 }
 const miniHouse=(x,y,i,label,icon,place)=>'<g class="building" data-place="'+place+'" role="button" tabindex="0" aria-label="Visit '+esc(label)+'" transform="translate('+x+' '+y+')"><ellipse cy="168" rx="126" ry="20" fill="#639c7b55"/><rect x="-111" y="-15" width="223" height="165" rx="19" fill="'+["#f7cfb7","#e4d1f1","#fbe0ae","#f4c6db","#c8e5cb"][i]+'" stroke="#9c786f" stroke-width="7"/><path d="M-135 3L0-103 135 3Z" fill="'+["#d98c91","#a789c7","#e3ad70","#cd8eaf","#85b39c"][i]+'" stroke="#a4776b" stroke-width="8" stroke-linejoin="round"/><rect x="-24" y="58" width="48" height="93" rx="13" fill="#a68ba2"/><rect x="-87" y="39" width="48" height="52" rx="10" fill="#c7e7e8" stroke="#fff9e8" stroke-width="10"/><rect x="39" y="39" width="48" height="52" rx="10" fill="#c7e7e8" stroke="#fff9e8" stroke-width="10"/><text y="8" text-anchor="middle" font-size="54">'+icon+'</text><rect x="-112" y="155" width="224" height="44" rx="20" fill="#fff7e8" stroke="#dec4a1" stroke-width="5"/><text y="184" font-size="23" font-weight="900" text-anchor="middle" fill="#745950">'+esc(label)+'</text></g>';
 export function townSvg(){
