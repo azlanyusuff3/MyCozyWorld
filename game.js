@@ -147,7 +147,7 @@ function toggleMute() {
 }
 
 /* ---------- images ---------- */
-const IMG = {};
+const IMG = {}, ARENA = {};
 const loadImg = src => new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = src; });
 const loadAny = async list => { for (const s of list) { try { return await loadImg(s); } catch (e) {} } return null; };
 function tinted(img, color, mode = 'source-in') {
@@ -165,6 +165,7 @@ async function loadAll() {
       idleD: tinted(idle, 'rgba(60,10,90,.55)', 'source-atop'), attackD: tinted(attack, 'rgba(60,10,90,.55)', 'source-atop') };
   }));
   POOL = Object.keys(HEROES).filter(t => IMG[t]);
+  await Promise.all(['forest', 'desert', 'snow', 'volcano'].map(async d => { const i = await loadAny([`assets/arena/${d}.webp`]); if (i) ARENA[d] = i; }));
 }
 
 /* ---------- helpers ---------- */
@@ -652,7 +653,8 @@ function drawBackground(t) {
   const th = themeOf(S.round || 1), g = ctx.createLinearGradient(0, 0, 0, H);
   g.addColorStop(0, th.sky[0]); g.addColorStop(.5, th.sky[1]); g.addColorStop(1, th.sky[2]);
   ctx.fillStyle = g; ctx.fillRect(-400, -400, W + 800, H + 800);
-  const d = th.decor;
+  const d = th.decor, bgImg = ARENA[d];
+  if (bgImg) { ctx.drawImage(bgImg, 0, 0, W, H); drawAmbient(t, d); return; }
   if (d === 'desert') {
     const sg = ctx.createRadialGradient(560, 140, 10, 560, 140, 180); sg.addColorStop(0, 'rgba(255,214,140,.7)'); sg.addColorStop(1, 'rgba(255,160,80,0)');
     ctx.fillStyle = sg; ctx.fillRect(360, 0, 400, 340); ctx.fillStyle = '#ffd88a'; ctx.beginPath(); ctx.arc(560, 140, 34, 0, 7); ctx.fill();
@@ -678,7 +680,9 @@ function drawBackground(t) {
     const x = ((t * (12 + i * 6) + i * 260) % (W + 600)) - 300;
     ctx.fillStyle = `rgba(255,255,255,${d === 'snow' ? .06 : .04})`; ctx.beginPath(); ctx.ellipse(x, 300 + i * 260, 300, 46, 0, 0, 7); ctx.fill();
   }
-  // partikel suasana
+  drawAmbient(t, d);
+}
+function drawAmbient(t, d) {
   for (let i = 0; i < 26; i++) {
     const h1 = hash(i), h2 = hash(i + 50);
     if (d === 'forest') { const x = (i * 137 + Math.sin(t * .4 + i) * 30) % W, y = (i * 263 % H) + Math.cos(t * .5 + i * 2) * 20; ctx.globalAlpha = .25 + .25 * Math.sin(t * 2 + i); ctx.fillStyle = '#f9e27a'; ctx.beginPath(); ctx.arc(x, y, 2.4, 0, 7); ctx.fill(); }
@@ -693,6 +697,7 @@ function drawBackground(t) {
 }
 function drawBoard(t, dragging) {
   const th = themeOf(S.round || 1);
+  if (ARENA[th.decor]) return drawGridOverlay(t, dragging);
   const L = BX, R = BX + COLS * CELL, T = BY, B = BY + ROWS * CELL;
   const tl = proj(L, T), tr = proj(R, T), bl = proj(L, B), br = proj(R, B);
   ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.beginPath(); ctx.ellipse(PX0, PY1 + THICK + 14, WBOT * .56, 34, 0, 0, 7); ctx.fill();
@@ -735,6 +740,28 @@ function drawBoard(t, dragging) {
   ctx.beginPath(); ctx.moveTo(ml.x, ml.y); ctx.lineTo(mr.x, mr.y); ctx.stroke(); ctx.restore();
   [[ftl.x - 6, ftl.y], [ftr.x + 6, ftr.y]].forEach(([x, y], i) => torch(x, y, t + i * 1.7, .8));
   [[fbl.x - 8, fbl.y], [fbr.x + 8, fbr.y]].forEach(([x, y], i) => torch(x, y, t + i * 2.3, 1));
+}
+function drawGridOverlay(t, dragging) {
+  const L = BX, R = BX + COLS * CELL;
+  for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+    const x0 = BX + c * CELL, y0 = BY + r * CELL, m = 4, mine = r >= 4;
+    const a = proj(x0 + m, y0 + m), b = proj(x0 + CELL - m, y0 + m), cc = proj(x0 + CELL - m, y0 + CELL - m), d = proj(x0 + m, y0 + CELL - m);
+    quad(a, b, cc, d);
+    ctx.fillStyle = mine ? ((r + c) % 2 ? 'rgba(120,255,170,.10)' : 'rgba(120,255,170,.16)') : ((r + c) % 2 ? 'rgba(255,110,90,.06)' : 'rgba(255,110,90,.11)');
+    ctx.fill();
+    ctx.lineWidth = 1.5; ctx.strokeStyle = mine ? 'rgba(220,255,230,.38)' : 'rgba(255,230,220,.22)'; ctx.stroke();
+    if (dragging && mine) {
+      const occ = S.units.some(u => u.where === 'board' && u.c === c && u.r === r && u !== dragging.u);
+      const hov = dragging.hc === c && dragging.hr === r;
+      quad(a, b, cc, d);
+      if (hov) { ctx.fillStyle = occ ? 'rgba(255,214,102,.4)' : 'rgba(255,255,255,.35)'; ctx.fill(); }
+      ctx.strokeStyle = occ ? 'rgba(255,220,120,.8)' : 'rgba(255,255,255,.7)'; ctx.lineWidth = 2; ctx.setLineDash([7, 6]); ctx.stroke(); ctx.setLineDash([]);
+    }
+  }
+  const ml = proj(L, BY + 4 * CELL), mr = proj(R, BY + 4 * CELL);
+  ctx.save(); ctx.shadowColor = '#ffd678'; ctx.shadowBlur = 14;
+  ctx.strokeStyle = `rgba(255,214,120,${.5 + .2 * Math.sin(t * 2)})`; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(ml.x, ml.y); ctx.lineTo(mr.x, mr.y); ctx.stroke(); ctx.restore();
 }
 function torch(x, y, t, s) {
   ctx.fillStyle = '#3a2414'; ctx.fillRect(x - 4 * s, y - 34 * s, 8 * s, 40 * s);
@@ -1086,6 +1113,8 @@ function render(t) {
   drawTexts();
   ctx.restore();
   if (S.slow > 0) { const v = ctx.createRadialGradient(360, 520, 200, 360, 520, 760); v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, `rgba(10,30,60,${Math.min(.55, S.slow)})`); ctx.fillStyle = v; ctx.fillRect(0, 0, W, H); }
+  { const g = ctx.createLinearGradient(0, 860, 0, H); g.addColorStop(0, 'rgba(12,8,6,0)'); g.addColorStop(.25, 'rgba(12,8,6,.7)'); g.addColorStop(1, 'rgba(12,8,6,.92)'); ctx.fillStyle = g; ctx.fillRect(0, 860, W, H - 860);
+    const g2 = ctx.createLinearGradient(0, 0, 0, 170); g2.addColorStop(0, 'rgba(12,8,6,.7)'); g2.addColorStop(1, 'rgba(12,8,6,0)'); ctx.fillStyle = g2; ctx.fillRect(0, 0, W, 170); }
   drawHud();
   drawBenchAndShop(t, drag && drag.moved ? drag : null);
   for (const p of S.fx) if (p.ui) { ctx.globalAlpha = Math.max(0, p.life / p.max); ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, 7); ctx.fill(); ctx.globalAlpha = 1; }
