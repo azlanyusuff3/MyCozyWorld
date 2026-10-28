@@ -1,0 +1,54 @@
+name: Generate Cozy Arena hero frames
+on:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/generate_hero_frames.py"
+      - "assets/heroes/*_idle.png"
+      - "assets/heroes/*_attack.png"
+      - ".github/workflows/generate-hero-frames.yml"
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install image processing library
+        run: python -m pip install Pillow==11.3.0
+      - name: Create matching frames from original hero PNGs
+        run: python scripts/generate_hero_frames.py
+      - name: Confirm transparent size-matched PNG frames
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from PIL import Image
+          data=json.loads(Path('assets/heroes/frames/manifest.json').read_text())
+          n=0
+          for hero,info in data['heroes'].items():
+              for animation,group in info['animations'].items():
+                  for path in group['files']:
+                      im=Image.open(path)
+                      assert im.mode=='RGBA', path
+                      assert im.size==(info['width'], info['height']), path
+                      n+=1
+          assert n==56, n
+          print('Verified',n,'transparent PNG frames')
+          PY
+      - name: Commit generated assets to main
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/heroes/frames/
+          if ! git diff --staged --quiet; then
+            git commit -m "Generate 56 transparent hero animation frames from original sprites"
+            git push origin HEAD:main
+          fi
