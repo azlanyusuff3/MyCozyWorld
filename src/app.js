@@ -4,9 +4,9 @@ import { welcomeMarkup,worldMapMarkup,careerDashboardMarkup,albumMarkup,roomNavi
 import { JOBS, GOALS, TASKS, DAILY } from "./phase3.js";
 import { FURNITURE, FRIENDS } from "./phase2.js";
 import { PLACES, ITEMS, MARKET, CLOTHES, LOOKS, MISSIONS } from "./data.js";
-import { loadGame, persist, act, itemCount, nextMission, missionStep, timeLabel } from "./state.js";
+import { loadGame, newGame, safeName, persist, act, itemCount, nextMission, missionStep, timeLabel } from "./state.js";
 import { avatarSvg, sceneSvg } from "./art.js";
-let game=loadGame(), modal="", toastTimer, activeJob="", jobAnswers=[], screen="welcome", activeDistrict="neighborhood";
+let game=loadGame(), modal="", toastTimer, activeJob="", jobAnswers=[], screen="welcome", activeDistrict="neighborhood", returnToMenu=false;
 const app=document.getElementById("app");
 const escape=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 function button(label,action,value="",cls="action-btn"){return '<button class="'+cls+'" data-action="'+action+'" data-value="'+escape(value)+'">'+label+"</button>";}
@@ -58,13 +58,18 @@ function openModal(id){if(id==="map"&&BUILDING_BY_ID[game.location])activeDistri
 function bind(){
  app.querySelectorAll("button[data-action]").forEach(el=>el.addEventListener("click",ev=>{
   ev.stopPropagation();const type=el.dataset.action,id=el.dataset.value;
-  if(type==="start-game"||type==="resume-game"){screen="game";modal=game.characterReady?"":"creator";return render();}
-  if(type==="edit-avatar"){screen="game";modal="creator";return render();}
-  if(type==="menu-settings"){screen="game";modal="settings";return render();}
-  if(type==="home-menu"){screen="welcome";modal="";return render();}
+  if(type==="start-game"){
+   if(game.characterReady&&!window.confirm("Start a new cozy story? This replaces the saved adventure."))return;
+   if(game.characterReady){game=newGame();persist(game);}
+   returnToMenu=false;screen="game";modal=game.characterReady?"":"creator";return render();
+  }
+  if(type==="resume-game"){returnToMenu=false;screen="game";modal=game.characterReady?"":"creator";return render();}
+  if(type==="edit-avatar"){returnToMenu=false;screen="game";modal="creator";return render();}
+  if(type==="menu-settings"){returnToMenu=true;screen="game";modal="settings";return render();}
+  if(type==="home-menu"){returnToMenu=false;screen="welcome";modal="";return render();}
   if(type==="district"){activeDistrict=id;return render();}
   if(["map","inventory","wardrobe","settings","creator","decorate","friends","career","album"].includes(type))return openModal(type);
-  if(type==="close"){if(!game.characterReady)screen="welcome";modal="";return render();}
+  if(type==="close"){if(returnToMenu||!game.characterReady)screen="welcome";returnToMenu=false;modal="";return render();}
   if(type==="confirm-reset"){if(window.confirm("Erase this saved world and start over?")){dispatch("reset");modal="creator";render();}return;}
   if(type==="save-avatar"){const a={...game.avatar,name:document.getElementById("avatar-name").value,hair:document.getElementById("avatar-hair").value,outfit:document.getElementById("avatar-outfit").value};return dispatch("customize",{avatar:a});}
   if(type==="work"){activeJob=id;jobAnswers=[];modal="job";return render();}
@@ -77,9 +82,20 @@ function bind(){
   if(type==="buy"||type==="eat"||type==="buy-outfit"||type==="equip")return dispatch(type,{id});
   dispatch(type);
  }));
+ function syncCreator(){
+  const name=app.querySelector("#avatar-name"),hair=app.querySelector("#avatar-hair"),outfit=app.querySelector("#avatar-outfit");
+  if(name)game.avatar.name=safeName(name.value);
+  if(hair&&LOOKS.hair.includes(hair.value))game.avatar.hair=hair.value;
+  if(outfit&&game.wardrobe.includes(outfit.value))game.avatar.outfit=outfit.value;
+ }
  app.querySelectorAll("[data-pick]").forEach(el=>el.addEventListener("click",()=>{
-  game.avatar[el.dataset.pick]=el.dataset.color;render();
+  syncCreator();game.avatar[el.dataset.pick]=el.dataset.color;render();
  }));
+ app.querySelectorAll("#avatar-hair,#avatar-outfit").forEach(el=>el.addEventListener("change",()=>{syncCreator();render();}));
+ app.querySelector("#avatar-name")?.addEventListener("input",el=>{
+  game.avatar.name=safeName(el.target.value);
+  const preview=app.querySelector("#avatar-preview");if(preview)preview.innerHTML=avatarSvg(game.avatar,160);
+ });
  const scene=document.getElementById("scene");
  app.querySelectorAll(".decor-object").forEach(el=>{
    let pointer=null, moved=false;
