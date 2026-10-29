@@ -2,7 +2,7 @@
 /* Cozy Arena — auto-battler lawan AI. Canvas 2D, logical 720x1280 (portrait).
    Logik tempur guna grid rata (BX/BY/CELL). Papan dilukis 2.5D melalui proj(). */
 
-const GAME_VERSION = 14, GAME_DATE = '29 Okt 2026';   // samakan dengan VERSION dalam sw.js
+const GAME_VERSION = 15, GAME_DATE = '29 Okt 2026';   // samakan dengan VERSION dalam sw.js
 const TEAM = ['#3fa9ff', '#ff4a3d'];                // biru = kau, merah = musuh
 const W = 720, H = 1280, COLS = 6, ROWS = 8, CELL = 100, BX = 60, BY = 110;
 const BENCH_Y = 940;
@@ -262,7 +262,7 @@ const isBossRound = () => BOSS_ROUNDS.includes(S.round);
 
 function newGame() {
   Object.assign(S, {
-    phase: 'prep', gold: 10, goldShown: 10, goldBump: 0, round: 1, level: 1, xp: 0, info: null, lives: 5, streak: 0, units: [], shop: [], enemy: [],
+    phase: 'prep', shopLocked: false, gold: 10, goldShown: 10, goldBump: 0, round: 1, level: 1, xp: 0, info: null, lives: 5, streak: 0, units: [], shop: [], enemy: [],
     fighters: [], proj: [], fx: [], texts: [], timers: [], coins: [], toast: null, result: null, chips: [],
     battleT: 0, endT: 0, speed: 1, shake: 0, hitstop: 0, slow: 0, camT: null, cam: { z: 1, x: 360, y: 520 }, lastTraits: '',
   });
@@ -447,7 +447,7 @@ function updateFighter(f, dt) {
   if (f.kx || f.ky) { f.x += f.kx * dt; f.y += f.ky * dt; const d = Math.max(0, 1 - dt * 9); f.kx *= d; f.ky *= d; if (Math.abs(f.kx) + Math.abs(f.ky) < 5) f.kx = f.ky = 0; }
   if (f.burn) {
     f.burn.t -= dt; f.burn.tick -= dt;
-    if (f.burn.tick <= 0) { f.burn.tick = .5; dot(f, f.burn.dmg); }
+    if (f.burn.tick <= 0) { f.burn.tick = .5; dot(f, f.burn.dmg, f.burn.src); }
     if (f.burn && f.burn.t <= 0) f.burn = null;
     if (!f.alive) return;
   }
@@ -520,7 +520,7 @@ function attack(f, t, healing) {
   later(.12, () => { if (!f.alive) return; f.atkAnim = .32; strike(f, t, healing); });
 }
 function strike(f, t, healing) {
-  if (healing) { sfx('spark'); return shoot(f, t, 'leaf', () => healUnit(t, f.heal)); }
+  if (healing) { sfx('spark'); return shoot(f, t, 'leaf', () => healUnit(t, f.heal, f)); }
   switch (f.h.proj) {
     case 'arrow': sfx('arrow'); shoot(f, t, 'arrow', () => hit(f, t, f.atk)); break;
     case 'orb': sfx('orb'); shoot(f, t, 'orb', () => { sfx('pop'); splash(f, t, 1.1 * CELL, f.atk); }); break;
@@ -552,19 +552,19 @@ function cast(f, t, healing) {
       break;
     case 'healer':
       sfx('heal');
-      for (const o of S.fighters) if (o.alive && o.team === f.team) { healUnit(o, f.heal * 1.3); ring(o.x, o.y, '#8ef08a'); leaves(o.x, o.y); }
+      for (const o of S.fighters) if (o.alive && o.team === f.team) { healUnit(o, f.heal * 1.3, f); ring(o.x, o.y, '#8ef08a'); leaves(o.x, o.y); }
       break;
     case 'assassin':
       [0, .12, .24].forEach(d => later(d, () => { if (f.alive && t.alive) { sfx('slash'); hit(f, t, f.atk * 1.3, d === .24); slash(t, f.face); } }));
       break;
     case 'bear':
-      sfx('roar'); S.shake = .25; healUnit(f, f.maxhp * .25);
+      sfx('roar'); S.shake = .25; healUnit(f, f.maxhp * .25, f);
       S.fx.push({ type: 'ring', x: f.x, y: f.y, life: .7, max: .7, color: '#ff9a3c', r: 2.2 * CELL });
       for (const o of foes()) if (dist(o, f) < 2.2 * CELL) { o.target = f; o.retarget = 3; addText(o.x, o.y - 120, '!', '#ff9a3c', 34, .8); }
       break;
     case 'pyro':
       foes().sort(() => Math.random() - .5).slice(0, 4)
-        .forEach((o, i) => later(.1 + i * .1, () => { if (!f.alive) return; sfx('fire'); shoot(f, o, 'fire', () => { splash(f, o, .9 * CELL, f.atk * 1.4, false, '#ff7a2e'); burn(o, f.atk * .2); }); }));
+        .forEach((o, i) => later(.1 + i * .1, () => { if (!f.alive) return; sfx('fire'); shoot(f, o, 'fire', () => { splash(f, o, .9 * CELL, f.atk * 1.4, false, '#ff7a2e'); burn(o, f.atk * .2, f); }); }));
       break;
     case 'gunner':
       sfx('cannon'); shoot(f, t, 'cannonBig', () => { sfx('boom'); S.shake = .3; splash(f, t, 1.4 * CELL, f.atk * 2.4, true, '#ffb35c'); });
@@ -581,9 +581,10 @@ function hit(src, t, amt, heavy) {
   const armor = Math.min(.85, t.h.armor + (t.shield > 0 ? .5 : 0));
   const crit = Math.random() < (src.crit || .12);
   const dmg = Math.max(1, Math.round(amt * (1 - armor) * rand(.9, 1.1) * (crit ? 1.6 : 1)));
-  t.hp -= dmg; t.flash = .14; t.squish = 1;
+  src.dmgDone = (src.dmgDone || 0) + Math.min(dmg, t.hp); t.hp -= dmg; t.flash = .14; t.squish = 1;
   if (!t.boss && (crit || heavy || dmg > t.maxhp * .07)) t.hurtT = .3; t.mana = Math.min(100, t.mana + dmg / t.maxhp * (t.boss ? 20 : 50));
-  addText(t.x + rand(-14, 14), t.y - (t.boss ? 170 : 100), crit ? dmg + '!' : '' + dmg, crit ? '#ffd23e' : '#ffffff', crit ? 46 : 32, .9, crit);
+  addText(t.x + rand(-14, 14), t.y - (t.boss ? 170 : 100), crit ? dmg + '!' : '-' + dmg, crit ? '#ffd23e' : heavy ? '#ffb070' : '#ffffff', crit ? 54 : heavy ? 42 : 34, .9, crit);
+  if (crit || heavy) S.fx.push({ type: 'impact', x: t.x, y: t.y, life: .25, max: .25, color: crit ? '#ffd23e' : '#ffffff' });
   sparks(t.x, t.y - 45, src.team === 0 ? '#ffe9a8' : '#ff8a6b', crit ? 16 : 8);
   if (crit) { sfx('crit'); S.hitstop = Math.max(S.hitstop, .07); S.shake = Math.max(S.shake, .14); }
   else sfx('hit');
@@ -597,18 +598,18 @@ function kill(t) {
   t.hp = 0; t.alive = false; shatter(t); sfx('die'); S.hitstop = Math.max(S.hitstop, t.boss ? .2 : .06);
   if (t.boss) { S.shake = .6; S.slow = .9; S.camT = { x: t.x, y: t.y - 40, z: 1.12, t: 1 }; burst(t.x, t.y - 60, '#ff9cf0', 50); }
 }
-function dot(t, amt) {
+function dot(t, amt, src) {
   if (!t.alive) return;
-  const dmg = Math.max(1, Math.round(amt)); t.hp -= dmg;
+  const dmg = Math.max(1, Math.round(amt)); if (src) src.dmgDone = (src.dmgDone || 0) + Math.min(dmg, t.hp); t.hp -= dmg;
   addText(t.x + rand(-18, 18), t.y - (t.boss ? 160 : 90), '' + dmg, '#ff9a3c', 24, .7);
   for (let i = 0; i < 4; i++) S.fx.push({ type: 'p', x: t.x + rand(-20, 20), y: t.y, z: rand(10, 70), vx: 0, vy: 0, vz: rand(60, 140), life: .5, max: .5, color: '#ff8a2e', size: rand(3, 6), glow: true });
   if (t.hp <= 0) kill(t);
 }
-function burn(t, dmg) { if (t.alive) t.burn = { t: 3, tick: .5, dmg }; }
-function healUnit(t, amt) {
+function burn(t, dmg, src) { if (t.alive) t.burn = { t: 3, tick: .5, dmg, src }; }
+function healUnit(t, amt, src) {
   if (!t.alive) return;
-  const a = Math.round(Math.min(amt, t.maxhp - t.hp)); t.hp += a;
-  if (a > 0) { addText(t.x + rand(-10, 10), t.y - 100, '+' + a, '#7dff8a', 30); sfx('heal'); }
+  const a = Math.round(Math.min(amt, t.maxhp - t.hp)); t.hp += a; if (src) src.healDone = (src.healDone || 0) + a;
+  if (a > 0) { addText(t.x + rand(-10, 10), t.y - 100, '+' + a, '#7dff8a', 30); sfx('heal'); S.fx.push({ type: 'healfx', x: t.x, y: t.y, life: .6, max: .6 }); }
   sparks(t.x, t.y - 45, '#8ef08a', 8);
 }
 function splash(src, t, r, amt, heavy, color) {
@@ -665,7 +666,9 @@ function endBattle(win) {
   S.streak = win ? S.streak + 1 : 0;
   const mine = S.fighters.filter(f => f.team === 0), alive = mine.filter(f => f.alive).length / Math.max(1, mine.length);
   const stars = win ? (alive >= .99 ? 3 : alive >= .5 ? 2 : 1) : 0;
-  S.result = { win, income, t: 0, stars, starSfx: 0, boss, aliveFoes: S.fighters.filter(f => f.alive && f.team === 1).length };
+  const stats = mine.map(f => ({ type: f.type, star: f.star, dmg: Math.round(f.dmgDone || 0), heal: Math.round(f.healDone || 0), alive: f.alive }))
+    .sort((a, b) => (b.dmg + b.heal) - (a.dmg + a.heal)).slice(0, 4);
+  S.result = { win, income, t: 0, stars, starSfx: 0, boss, stats, aliveFoes: S.fighters.filter(f => f.alive && f.team === 1).length };
   sfx(win ? 'win' : 'lose');
   if (S.lives <= 0) { S.phase = 'over'; saveBest(S.round - 1); clearSave(); }
   else if (win && S.round >= MAX_ROUND) { S.phase = 'victory'; saveBest(MAX_ROUND); clearSave(); }
@@ -676,7 +679,7 @@ let lastSave = '';
 function saveGame(inBattle = false) {
   if (S.phase !== 'prep' && !inBattle) return;
   const data = JSON.stringify({ v: 1, uid, round: S.round, gold: S.gold, lives: S.lives, streak: S.streak, level: S.level, xp: S.xp,
-    units: S.units, shop: S.shop, enemy: S.enemy, ai: S.ai, inBattle });
+    units: S.units, shop: S.shop, shopLocked: S.shopLocked, enemy: S.enemy, ai: S.ai, inBattle });
   if (data === lastSave) return;
   lastSave = data; try { localStorage.setItem(SAVE_KEY, data); } catch (e) {}
 }
@@ -685,7 +688,7 @@ function clearSave() { lastSave = ''; try { localStorage.removeItem(SAVE_KEY); }
 function resumeGame(d) {
   newGame();
   Object.assign(S, { round: d.round, gold: d.gold, goldShown: d.gold, lives: d.lives, streak: d.streak, level: d.level || 1, xp: d.xp || 0,
-    units: d.units, shop: d.shop, enemy: d.enemy, ai: d.ai });
+    units: d.units, shop: d.shop, shopLocked: !!d.shopLocked, enemy: d.enemy, ai: d.ai });
   uid = Math.max(uid, d.uid || 1); S.lastTraits = ''; S.banner = null; showBanner();
   if (d.inBattle) startBattle();   // left in the middle of a fight: replay that same fight (team can't be changed)
 }
@@ -697,7 +700,8 @@ function nextRound() {
   S.fighters = []; S.proj = []; S.fx = []; S.texts = [];
   const ai = S.ai; ai.gold += 5 + (S.result.win ? 0 : 2) + Math.min(Math.floor(ai.gold / 10), 3);   // same income rules as the player
   addXp(ai, 2); const lvUp = addXp(S, 2);   // free XP every round for both sides
-  rollShop(); aiTurn(); genEnemy(); S.phase = 'prep'; S.result = null;
+  if (!S.shopLocked) rollShop(); else S.shop.forEach(c => { if (c.sold) Object.assign(c, { type: pickWeighted(), sold: false }); });   // locked: keep the cards, refill bought slots
+  aiTurn(); genEnemy(); S.phase = 'prep'; S.result = null;
   showBanner();
   if (lvUp) later(1.6, levelUpFx);
 }
@@ -951,6 +955,19 @@ function drawHero(o) {
     ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(P.x, foot, sz * .5, sz * .17, 0, 0, 7); ctx.fill();
   }
   ctx.fillStyle = 'rgba(0,0,0,.32)'; ctx.beginPath(); ctx.ellipse(P.x, foot, sz * .26, sz * .08, 0, 0, 7); ctx.fill();
+  const tt = o.t ?? performance.now() / 1000;
+  if (o.star >= 3 && !o.boss) {   // 3-star: golden floor glow + rising sparkles
+    const pulse = .75 + .25 * Math.sin(tt * 3);
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    const g = ctx.createRadialGradient(P.x, foot, 2, P.x, foot, sz * .55); g.addColorStop(0, `rgba(255,214,90,${.85 * pulse})`); g.addColorStop(1, 'rgba(255,170,40,0)');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(P.x, foot, sz * .55, sz * .19, 0, 0, 7); ctx.fill();
+    for (let i = 0; i < 6; i++) {
+      const ph = (tt * .6 + i / 6) % 1, ang = i * 1.05 + tt * .8;
+      ctx.globalAlpha = (o.alpha ?? 1) * Math.sin(ph * Math.PI) * .9; ctx.fillStyle = i % 2 ? '#fff3b0' : '#ffc94a';
+      ctx.beginPath(); ctx.arc(P.x + Math.cos(ang) * sz * .3, foot - ph * sz * .95, (2 + 2 * (1 - ph)) * (o.ui ? 1 : P.s), 0, 7); ctx.fill();
+    }
+    ctx.restore(); ctx.globalAlpha = o.alpha ?? 1;
+  }
   if (o.team !== undefined) {
     const tc = o.boss ? '#d478ff' : TEAM[o.team];
     ctx.globalAlpha = (o.alpha ?? 1) * .35; ctx.fillStyle = tc; ctx.beginPath(); ctx.ellipse(P.x, foot, sz * .3, sz * .1, 0, 0, 7); ctx.fill();
@@ -967,6 +984,7 @@ function drawHero(o) {
     for (const [ddx, ddy] of [[d, 0], [-d, 0], [0, d], [0, -d]]) ctx.drawImage(ol, -dw / 2 + ddx, dy + ddy, dw, dw);
     ctx.globalAlpha = o.alpha ?? 1;
   }
+  if (o.star >= 3 && !o.boss) { ctx.save(); ctx.shadowColor = '#ffd04a'; ctx.shadowBlur = 26 + 8 * Math.sin(tt * 3); ctx.drawImage(sp.img, -dw / 2, dy, dw, dw); ctx.drawImage(sp.img, -dw / 2, dy, dw, dw); ctx.restore(); }
   ctx.drawImage(sp.img, -dw / 2, dy, dw, dw);
   if (o.flash > 0) { ctx.globalAlpha = (o.alpha ?? 1) * Math.min(1, o.flash / .14) * .85; ctx.drawImage(spriteImg(o.type, o.pose, 'W', o.dir).img, -dw / 2, dy, dw, dw); }
   ctx.restore();
@@ -1077,9 +1095,30 @@ function drawFx() {
       ctx.globalCompositeOperation = 'source-over';
       ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 4 * a; ctx.beginPath(); ctx.ellipse(P.x, cy + 30 * P.s, rad * 1.2, rad * .4, 0, 0, 7); ctx.stroke();
     } else if (p.type === 'slash') {
-      const P = proj(p.x, p.y), s = P.s; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 8 * a * s; ctx.lineCap = 'round';
-      ctx.shadowColor = '#fff'; ctx.shadowBlur = 10;
-      ctx.beginPath(); ctx.arc(P.x - p.dir * 10 * s, P.y - 15 * s, 38 * s, -1.1 + (1 - a), .9 + (1 - a)); ctx.stroke(); ctx.shadowBlur = 0;
+      // crescent sword arc: thick glowing core with a coloured trail
+      const P = proj(p.x, p.y), s = P.s, k2 = 1 - a, cx = P.x - p.dir * 6 * s, cy = P.y - 40 * s, R = (46 + 18 * k2) * s;
+      const th = -2.2 + k2 * 1.6, a0 = p.dir > 0 ? th : Math.PI - th;   // mirror the arc for left-facing slashes
+      ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.lineCap = 'round';
+      for (let i = 0; i < 3; i++) {
+        ctx.globalAlpha = a * [.35, .6, 1][i]; ctx.strokeStyle = ['#ff9a3c', '#ffd66b', '#ffffff'][i]; ctx.lineWidth = [22, 13, 5][i] * s * (.6 + .4 * a);
+        ctx.shadowColor = '#ffcf6a'; ctx.shadowBlur = i === 2 ? 14 : 0;
+        ctx.beginPath(); if (p.dir > 0) ctx.arc(cx, cy, R, a0, a0 + 1.9); else ctx.arc(cx, cy, R, a0, a0 - 1.9, true); ctx.stroke();
+      }
+      ctx.restore();
+    } else if (p.type === 'impact') {
+      const P = proj(p.x, p.y), s = P.s, k2 = 1 - a, cx = P.x, cy = P.y - 45 * s;
+      ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.strokeStyle = p.color; ctx.lineWidth = 4 * s * a; ctx.lineCap = 'round';
+      for (let i = 0; i < 8; i++) { const an = i * .785 + .3, r1 = (14 + 30 * k2) * s, r2 = (28 + 50 * k2) * s; ctx.beginPath(); ctx.moveTo(cx + Math.cos(an) * r1, cy + Math.sin(an) * r1 * .8); ctx.lineTo(cx + Math.cos(an) * r2, cy + Math.sin(an) * r2 * .8); ctx.stroke(); }
+      ctx.restore();
+    } else if (p.type === 'healfx') {
+      const P = proj(p.x, p.y), s = P.s, k2 = 1 - a;
+      ctx.save(); ctx.globalCompositeOperation = 'lighter';
+      ctx.strokeStyle = `rgba(140,255,150,${a})`; ctx.lineWidth = 4 * s; ctx.beginPath(); ctx.ellipse(P.x, P.y + 30 * s, (30 + 40 * k2) * s, (10 + 14 * k2) * s, 0, 0, 7); ctx.stroke();
+      const g = ctx.createLinearGradient(0, P.y + 30 * s, 0, P.y - 110 * s); g.addColorStop(0, `rgba(120,255,140,${.35 * a})`); g.addColorStop(1, 'rgba(120,255,140,0)');
+      ctx.fillStyle = g; ctx.fillRect(P.x - 30 * s, P.y - 110 * s, 60 * s, 140 * s);
+      ctx.fillStyle = `rgba(220,255,220,${a})`; ctx.font = `${Math.round(22 * s)}px sans-serif`; ctx.textAlign = 'center';
+      for (let i = 0; i < 3; i++) ctx.fillText('+', P.x + (i - 1) * 22 * s, P.y - (20 + k2 * 70 + i * 12) * s);
+      ctx.restore();
     }
   }
   ctx.globalAlpha = 1;
@@ -1121,6 +1160,16 @@ function drawLevel() {
 }
 const cardRect = i => ({ x: 14 + i * 140, y: SHOP_Y + 18, w: 132, h: 172 });
 const REROLL = cardRect(4);
+const LOCK_POS = { x: REROLL.x + REROLL.w - 22, y: REROLL.y + 20 };
+function drawLock(x, y, on, t) {
+  ctx.save();
+  if (on) { ctx.shadowColor = '#ffd84a'; ctx.shadowBlur = 12 + 4 * Math.sin(t * 4); }
+  ctx.fillStyle = on ? '#e8a92a' : 'rgba(20,12,30,.75)'; ctx.beginPath(); ctx.arc(x, y, 19, 0, 7); ctx.fill(); ctx.shadowBlur = 0;
+  ctx.lineWidth = 2.5; ctx.strokeStyle = on ? '#fff3c4' : 'rgba(255,255,255,.6)'; ctx.stroke();
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(x + (on ? 0 : 4), y - 3, 5.5, Math.PI, on ? 0 : -.5); ctx.stroke();
+  ctx.fillStyle = '#fff'; rr(x - 8, y - 2, 16, 12, 3); ctx.fill();
+  ctx.restore();
+}
 // 9-slice: stretch a framed image without distorting its corners
 const NINE = { panel_wood: [21, 53, 470, 153, 40], btn_gold: [8, 18, 303, 103, 32], btn_purple: [18, 22, 164, 216, 28] };
 function nine(name, x, y, w, h, db) {
@@ -1215,6 +1264,7 @@ function drawCard(c, i, t) {
     ctx.save(); ctx.shadowColor = (RARITY[hdef.cost] || RARITY[3])[0]; ctx.shadowBlur = 18; ctx.drawImage(UI.card_frame, x, y, w, h); ctx.restore();
   }
   ctx.drawImage(UI.card_frame, x, y, w, h);
+  if (S.shopLocked && !c.sold) { ctx.strokeStyle = 'rgba(255,216,74,.85)'; ctx.lineWidth = 3; ctx.setLineDash([8, 6]); rr(x + 2, y + 2, w - 4, h - 4, 12); ctx.stroke(); ctx.setLineDash([]); }
   hdef.traits.forEach((tr, j) => { ctx.fillStyle = 'rgba(20,12,8,.75)'; ctx.beginPath(); ctx.arc(wx + 14, wy + 14 + j * 26, 12, 0, 7); ctx.fill(); traitIcon(tr, wx + 14, wy + 14 + j * 26, 8, TRAITS[tr].color); });
   txt(hdef.name, x + w / 2, y + 193 * sc, 19, '#fff');
   if (UI.icon_coin) icon('icon_coin', x + w / 2 - 14, y + 229 * sc, 24); else coin(x + w / 2 - 14, y + 229 * sc, 10);
@@ -1272,10 +1322,11 @@ function drawBenchAndShop(t, drag) {
     ctx.save(); if (S.gold < 2) ctx.globalAlpha = .45;
     ctx.fillStyle = 'rgba(0,0,0,.45)'; rr(b.x + 3, b.y + 6, b.w - 4, b.h - 2, 14); ctx.fill();
     nine('btn_purple', b.x + 4, b.y, b.w - 8, b.h, 26);
-    icon('icon_dice', b.x + b.w / 2, b.y + 58, 74);
+    icon('icon_dice', b.x + b.w / 2, b.y + 64, 64);
     txt('Tukar', b.x + b.w / 2, b.y + 114, 24, '#fff');
     icon('icon_coin', b.x + b.w / 2 - 12, b.y + 146, 24); txt('2', b.x + b.w / 2 + 8, b.y + 147, 23, '#ffe9b0', 'left');
     ctx.restore();
+    drawLock(LOCK_POS.x, LOCK_POS.y, S.shopLocked, t);
     return;
   }
   btn(REROLL.x, REROLL.y, REROLL.w, REROLL.h, '', '#5b6f8a', S.gold >= 2);
@@ -1285,6 +1336,34 @@ function drawBenchAndShop(t, drag) {
   ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.moveTo(REROLL.x + 66, REROLL.y + 42); ctx.lineTo(REROLL.x + 74, REROLL.y + 64); ctx.lineTo(REROLL.x + 52, REROLL.y + 60); ctx.fill();
   txt('Tukar', REROLL.x + 48, REROLL.y + 122, 22, '#fff');
   coin(REROLL.x + 36, REROLL.y + 158, 10); txt('2', REROLL.x + 54, REROLL.y + 159, 22, '#ffd84a', 'left');
+  ctx.restore();
+}
+function drawStats(r, top) {
+  const st = r.stats; if (!st || !st.length) return;
+  const e = Math.min(1, Math.max(0, (r.t - .3) / .3)); if (!e) return;
+  const x = 100, w = 520, rowH = 52, h = 54 + st.length * rowH, y = top;
+  const maxV = Math.max(1, ...st.map(s2 => Math.max(s2.dmg, s2.heal)));
+  ctx.save(); ctx.globalAlpha = e;
+  nine('panel_wood', x, y, w, h, 30);
+  txt('Prestasi Hero', x + w / 2, y + 28, 24, '#ffe9b0');
+  st.forEach((s2, i) => {
+    const ry = y + 52 + i * rowH, cy = ry + rowH / 2;
+    if (!s2.alive) ctx.globalAlpha = e * .55;
+    drawIdle(s2.type, x + 22, ry + 2, 46, 46);
+    if (i === 0) txt('MVP', x + 45, ry + 4, 15, '#ffd84a');
+    txt(HEROES[s2.type].name, x + 78, cy - 10, 19, '#fff', 'left', false, FB);
+    txt('★'.repeat(s2.star), x + 78, cy + 12, 14, '#ffd84a', 'left', false);
+    const bx = x + 190, bw = 220;
+    rr(bx, cy - 14, bw, 11, 5); ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.fill();
+    if (s2.dmg) { rr(bx, cy - 14, Math.max(8, bw * s2.dmg / maxV * Math.min(1, (r.t - .4) * 2)), 11, 5); ctx.fillStyle = '#ff8a3c'; ctx.fill(); }
+    txt(String(s2.dmg), bx + bw + 10, cy - 8, 17, '#ffc89a', 'left', false, FB);
+    if (s2.heal) {
+      rr(bx, cy + 2, bw, 9, 4); ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.fill();
+      rr(bx, cy + 2, Math.max(8, bw * s2.heal / maxV * Math.min(1, (r.t - .4) * 2)), 9, 4); ctx.fillStyle = '#6fe07a'; ctx.fill();
+      txt('+' + s2.heal, bx + bw + 10, cy + 8, 15, '#a8f5ae', 'left', false, FB);
+    }
+    ctx.globalAlpha = e;
+  });
   ctx.restore();
 }
 function panel(title, lines, color, sub, t, stars) {
@@ -1408,6 +1487,7 @@ function render(t) {
     panel(r.win ? (r.boss ? 'BOSS TUMBANG!' : 'MENANG!') : 'KALAH',
       r.win ? [`Gold +${r.income}${r.boss ? ' (bonus boss +5)' : ''}`] : [`Musuh tinggal ${r.aliveFoes} hero`, `Nyawa -1    Gold +${r.income}`],
       r.win ? (r.boss ? '#b14fd6' : '#4f9a3f') : '#c9483a', 'Tekan untuk teruskan', r.t, r.win ? r.stars : undefined);
+    drawStats(r, r.win ? 748 : 718);
   }
   if (S.phase === 'over') panel('TAMAT', [`Kau bertahan sampai pusingan ${S.round}`, `Rekod terbaik: ${best}`], '#7a3a5a', 'Tekan untuk main semula', S.result ? S.result.t : 1);
   if (S.phase === 'victory') panel('JUARA!', [`Kau tewaskan semua ${MAX_ROUND} pusingan`, `Nyawa tinggal: ${S.lives}`], '#d9a224', 'Tekan untuk main semula', S.result ? S.result.t : 1, 3);
@@ -1497,7 +1577,8 @@ cv.addEventListener('pointerdown', e => {
   if (S.phase === 'battle') { if (inR(p, SPEED_BTN)) { sfx('click'); S.speed = S.speed === 1 ? 2 : S.speed === 2 ? 3 : 1; } return; }
   if (S.phase !== 'prep') return;
   if (inR(p, FIGHT_BTN)) return startBattle();
-  if (inR(p, REROLL)) { if (S.gold >= 2) { S.gold -= 2; rollShop(); sfx('click'); } else toast('Gold tak cukup'); return; }
+  if (Math.hypot(p.x - LOCK_POS.x, p.y - LOCK_POS.y) < 26) { S.shopLocked = !S.shopLocked; sfx('click'); toast(S.shopLocked ? 'Kedai dikunci: kad kekal untuk pusingan depan' : 'Kedai dibuka'); return; }
+  if (inR(p, REROLL)) { if (S.gold >= 2) { S.gold -= 2; S.shopLocked = false; rollShop(); sfx('click'); } else toast('Gold tak cukup'); return; }
   if (inR(p, LVL_BTN)) return buyXp();
   for (let i = 0; i < 4; i++) if (inR(p, cardRect(i))) { press.card = i; return; }   // buy on release, so a long press can show info instead
   const u = unitAt(p);
