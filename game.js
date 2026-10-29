@@ -147,7 +147,7 @@ function toggleMute() {
 }
 
 /* ---------- images ---------- */
-const IMG = {}, ARENA = {};
+const IMG = {}, ARENA = {}, UI = {};
 const loadImg = src => new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = src; });
 const loadAny = async list => { for (const s of list) { try { return await loadImg(s); } catch (e) {} } return null; };
 function tinted(img, color, mode = 'source-in') {
@@ -177,6 +177,7 @@ async function loadAll() {
     await Promise.all(POSE_LIST.map(async n => { const i = await loadAny([`assets/heroes/opt/${t}_${n}.webp`]); if (i) IMG[t].p[n] = i; }));
   }));
   POOL = Object.keys(HEROES).filter(t => IMG[t]);
+  UI.logo = await loadAny(['assets/ui/logo.webp']);
   await Promise.all(['forest', 'desert', 'snow', 'volcano'].map(async d => { const i = await loadAny([`assets/arena/${d}.webp`]); if (i) ARENA[d] = i; }));
 }
 
@@ -1090,8 +1091,10 @@ function drawBanner() {
 function drawTitle(t) {
   drawBackground(t);
   ctx.save(); ctx.translate(W / 2, 230); const s = 1 + Math.sin(t * 2) * .02; ctx.scale(s, s);
-  txt('Cozy Arena', 0, 0, 96, '#ffe9b0'); ctx.restore();
-  txt('Auto-battler lawan AI', W / 2, 310, 30, '#bfe7c8', 'center', false, FB);
+  if (UI.logo) { const lw = 620, lh = lw * UI.logo.height / UI.logo.width; ctx.drawImage(UI.logo, -lw / 2, -lh / 2, lw, lh); }
+  else txt('Cozy Arena', 0, 0, 96, '#ffe9b0');
+  ctx.restore();
+  txt('Auto-battler lawan AI', W / 2, UI.logo ? 400 : 310, 30, '#bfe7c8', 'center', false, FB);
   const show = POOL.length ? POOL : ['knight', 'archer', 'mage', 'healer'];
   if (POOL.length) {
     const n = Math.min(show.length, 8), perRow = n > 4 ? Math.ceil(n / 2) : n;
