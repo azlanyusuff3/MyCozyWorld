@@ -2,7 +2,7 @@
 /* Cozy Arena — auto-battler lawan AI. Canvas 2D, logical 720x1280 (portrait).
    Logik tempur guna grid rata (BX/BY/CELL). Papan dilukis 2.5D melalui proj(). */
 
-const GAME_VERSION = 8, GAME_DATE = '29 Okt 2026';   // samakan dengan VERSION dalam sw.js
+const GAME_VERSION = 9, GAME_DATE = '29 Okt 2026';   // samakan dengan VERSION dalam sw.js
 const TEAM = ['#3fa9ff', '#ff4a3d'];                // biru = kau, merah = musuh
 const W = 720, H = 1280, COLS = 6, ROWS = 8, CELL = 100, BX = 60, BY = 110;
 const BENCH_Y = 940;
@@ -14,7 +14,7 @@ const PX0 = 360, PY0 = 178, PY1 = 868, WTOP = 492, WBOT = 690, THICK = 30;
 
 /* ---------- data ---------- */
 const HEROES = {
-  knight:   { name: 'Bulwark', role: 'Knight', cost: 3, hp: 980, atk: 58, range: 1.25, as: 1.0, armor: .32, speed: 150, proj: null, color: '#c9483a', ult: 'Perisai Suria!', traits: ['berani'] },
+  knight:   { name: 'Bulwark', role: 'Knight', cost: 3, hp: 980, atk: 58, range: 1.25, as: 1.0, armor: .32, speed: 150, proj: null, color: '#c9483a', ult: 'Perisai Suria!', traits: ['berani'], dirs: true },
   archer:   { name: 'Bramble', role: 'Archer', cost: 3, hp: 480, atk: 74, range: 4, as: .85, armor: .05, speed: 140, proj: 'arrow', color: '#4f9a3f', ult: 'Hujan Panah!', traits: ['hutan', 'pemburu'] },
   mage:     { name: 'Nimbus', role: 'Mage', cost: 4, hp: 440, atk: 112, range: 3.5, as: 1.6, armor: .05, speed: 130, proj: 'orb', color: '#4f6fd8', ult: 'Meteor!', traits: ['arcane', 'berani'] },
   healer:   { name: 'Willow', role: 'Healer', cost: 3, hp: 520, atk: 34, heal: 92, range: 3.5, as: 1.3, armor: .1, speed: 135, proj: 'spark', color: '#8a9d3a', ult: 'Rahmat Daun!', traits: ['hutan', 'arcane'] },
@@ -172,12 +172,18 @@ function tinted(img, color, mode = 'source-in') {
 const POSE_LIST = ['windup', 'hurt', 'walk1', 'walk2', 'victory', 'cast'];
 const PADR = 576 / 384;                 // pose canvases carry 96px padding around the 384px idle frame
 const POSE_FALLBACK = { windup: 'idle', hurt: 'idle', walk1: 'idle', walk2: 'idle', victory: 'idle', cast: 'attack' };
-function spriteImg(type, pose, v) {
+const DIR_POSES = ['idle', 'walk1', 'walk2', 'windup', 'attack', 'hurt'];   // back/side views (cast & victory always face the camera)
+function spriteImg(type, pose, v, dir) {
   const im = IMG[type];
-  if (pose !== 'idle' && pose !== 'attack' && !im.p[pose]) pose = POSE_FALLBACK[pose] || 'idle';
-  const own = pose === 'idle' || pose === 'attack', big = im.big || !own, base = own ? im[pose] : im.p[pose];
+  const dset = dir && im.d[dir];
+  let base, big, key;
+  if (dset && dset[pose]) { base = dset[pose]; big = true; key = dir + pose + v; }
+  else {
+    if (pose !== 'idle' && pose !== 'attack' && !im.p[pose]) pose = POSE_FALLBACK[pose] || 'idle';
+    const own = pose === 'idle' || pose === 'attack';
+    big = im.big || !own; base = own ? im[pose] : im.p[pose]; key = pose + v;
+  }
   if (!v) return { img: base, big };
-  const key = pose + v;
   if (!im.v[key]) im.v[key] = v === 'W' ? tinted(base, '#fff') : v === 'T0' ? tinted(base, TEAM[0]) : v === 'T1' ? tinted(base, TEAM[1]) : tinted(base, 'rgba(60,10,90,.55)', 'source-atop');
   return { img: im.v[key], big };
 }
@@ -190,8 +196,12 @@ async function loadAll() {
     const src = p => [`assets/heroes/opt/${t}_${p}.webp`, `assets/heroes/${t}_${p}.png`];
     const idle = await loadAny(src('idle')); if (!idle) return;
     const attack = (await loadAny(src('attack'))) || idle;
-    IMG[t] = { idle, attack, p: {}, v: {}, big: idle.width > 400 };
+    IMG[t] = { idle, attack, p: {}, v: {}, d: {}, big: idle.width > 400 };
     await Promise.all(POSE_LIST.map(async n => { const i = await loadAny([`assets/heroes/opt/${t}_${n}.webp`]); if (i) IMG[t].p[n] = i; }));
+    // optional back/side views: assets/heroes/opt/<id>_back_<pose>.webp, <id>_side_<pose>.webp
+    if (HEROES[t].dirs) await Promise.all(['back', 'side'].flatMap(d => DIR_POSES.map(async n => {
+      const i = await loadAny([`assets/heroes/opt/${t}_${d}_${n}.webp`]); if (i) (IMG[t].d[d] ||= {})[n] = i;
+    })));
   }));
   POOL = Object.keys(HEROES).filter(t => IMG[t]);
   UI.logo = await loadAny(['assets/ui/logo.webp']);
@@ -423,6 +433,10 @@ function updateFighter(f, dt) {
   if (!tgt) { f.walk = 0; return; }
   const dx = tgt.x - f.x, dy = tgt.y - f.y, d = Math.hypot(dx, dy);
   if (Math.abs(dx) > 6) f.face = dx > 0 ? 1 : -1;
+  // which way the hero looks: back (away from camera), side, or front (default)
+  const adx = Math.abs(dx), ady = Math.abs(dy);
+  if (ady > adx * 1.15) f.dir = dy < 0 ? 'back' : '';
+  else if (adx > ady * 1.6) f.dir = 'side';
   if (d <= reach(f, tgt)) {
     f.walk = 0;
     if (f.cd <= 0) {
@@ -829,15 +843,15 @@ function drawHero(o) {
   const sq = (o.squash || 0) + (o.squish ? Math.sin(o.squish * Math.PI) * (o.boss ? .05 : .12) : 0);
   ctx.translate(P.x + (o.lunge || 0) * s, foot - (o.lift || 0) * s); ctx.scale(o.face, 1); if (o.rot) ctx.rotate(o.rot);
   if (sq) ctx.scale(1 + sq, 1 - sq);
-  const sp = spriteImg(o.type, o.pose, o.boss ? 'D' : ''), dw = sz * (sp.big ? PADR : 1), dy = -sz * .96 - (dw - sz) / 2;
+  const sp = spriteImg(o.type, o.pose, o.boss ? 'D' : '', o.dir), dw = sz * (sp.big ? PADR : 1), dy = -sz * .96 - (dw - sz) / 2;
   if (o.team !== undefined && !o.boss) {
-    const ol = spriteImg(o.type, o.pose, 'T' + o.team).img, d = 2.6 * (o.ui ? 1 : P.s);
+    const ol = spriteImg(o.type, o.pose, 'T' + o.team, o.dir).img, d = 2.6 * (o.ui ? 1 : P.s);
     ctx.globalAlpha = (o.alpha ?? 1) * .95;
     for (const [ddx, ddy] of [[d, 0], [-d, 0], [0, d], [0, -d]]) ctx.drawImage(ol, -dw / 2 + ddx, dy + ddy, dw, dw);
     ctx.globalAlpha = o.alpha ?? 1;
   }
   ctx.drawImage(sp.img, -dw / 2, dy, dw, dw);
-  if (o.flash > 0) { ctx.globalAlpha = (o.alpha ?? 1) * Math.min(1, o.flash / .14) * .85; ctx.drawImage(spriteImg(o.type, o.pose, 'W').img, -dw / 2, dy, dw, dw); }
+  if (o.flash > 0) { ctx.globalAlpha = (o.alpha ?? 1) * Math.min(1, o.flash / .14) * .85; ctx.drawImage(spriteImg(o.type, o.pose, 'W', o.dir).img, -dw / 2, dy, dw, dw); }
   ctx.restore();
   if (o.shield > 0) {
     ctx.save(); ctx.globalAlpha = .35 + .15 * Math.sin(o.t * 8);
@@ -866,7 +880,7 @@ function fighterView(f, t) {
   else if (f.windT > 0) pose = 'windup';
   else if (won) pose = 'victory';
   else if (f.walk > 0) pose = Math.floor(f.walk * 3.5) % 2 ? 'walk2' : 'walk1';
-  return { type: f.type, star: f.star, x: f.x, y: f.y, face: f.face, team: f.team, pose, boss: f.boss,
+  return { type: f.type, star: f.star, x: f.x, y: f.y, face: f.face, team: f.team, pose, boss: f.boss, dir: f.dir,
     lunge: atk ? Math.sin((1 - f.atkAnim / .32) * Math.PI) * 10 * f.face : 0,
     lift: won ? Math.abs(Math.sin(t * 6 + f.id)) * 16 : f.walk > 0 ? Math.abs(Math.sin(f.walk * 11)) * 8 : Math.sin(t * 3 + f.id) * 1.5,
     squash: f.walk > 0 ? 0 : Math.sin(t * 3 + f.id) * .012, squish: f.squish, burn: f.burn,
