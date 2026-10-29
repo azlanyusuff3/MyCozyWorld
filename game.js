@@ -2,7 +2,7 @@
 /* Cozy Arena — auto-battler lawan AI. Canvas 2D, logical 720x1280 (portrait).
    Logik tempur guna grid rata (BX/BY/CELL). Papan dilukis 2.5D melalui proj(). */
 
-const GAME_VERSION = 12, GAME_DATE = '29 Okt 2026';   // samakan dengan VERSION dalam sw.js
+const GAME_VERSION = 13, GAME_DATE = '29 Okt 2026';   // samakan dengan VERSION dalam sw.js
 const TEAM = ['#3fa9ff', '#ff4a3d'];                // biru = kau, merah = musuh
 const W = 720, H = 1280, COLS = 6, ROWS = 8, CELL = 100, BX = 60, BY = 110;
 const BENCH_Y = 940;
@@ -14,7 +14,7 @@ const PX0 = 368, PY0 = 178, PY1 = 868, WTOP = 470, WBOT = 640, THICK = 30;
 
 /* ---------- data ---------- */
 const HEROES = {
-  knight:   { name: 'Bulwark', role: 'Knight', cost: 3, hp: 980, atk: 58, range: 1.25, as: 1.0, armor: .32, speed: 150, proj: null, color: '#c9483a', ult: 'Perisai Suria!', traits: ['berani'], dirs: true },
+  knight:   { name: 'Bulwark', role: 'Knight', cost: 3, hp: 980, atk: 58, range: 1.25, as: 1.0, armor: .32, speed: 150, proj: null, color: '#c9483a', ult: 'Perisai Suria!', traits: ['berani'] },
   archer:   { name: 'Bramble', role: 'Archer', cost: 3, hp: 480, atk: 74, range: 4, as: .85, armor: .05, speed: 140, proj: 'arrow', color: '#4f9a3f', ult: 'Hujan Panah!', traits: ['hutan', 'pemburu'] },
   mage:     { name: 'Nimbus', role: 'Mage', cost: 4, hp: 440, atk: 112, range: 3.5, as: 1.6, armor: .05, speed: 130, proj: 'orb', color: '#4f6fd8', ult: 'Meteor!', traits: ['arcane', 'berani'] },
   healer:   { name: 'Willow', role: 'Healer', cost: 3, hp: 520, atk: 34, heal: 92, range: 3.5, as: 1.3, armor: .1, speed: 135, proj: 'spark', color: '#8a9d3a', ult: 'Rahmat Daun!', traits: ['hutan', 'arcane'] },
@@ -199,7 +199,7 @@ async function loadAll() {
     IMG[t] = { idle, attack, p: {}, v: {}, d: {}, big: idle.width > 400 };
     await Promise.all(POSE_LIST.map(async n => { const i = await loadAny([`assets/heroes/opt/${t}_${n}.webp`]); if (i) IMG[t].p[n] = i; }));
     // optional back/side views: assets/heroes/opt/<id>_back_<pose>.webp, <id>_side_<pose>.webp
-    if (HEROES[t].dirs) await Promise.all(['back', 'side'].flatMap(d => DIR_POSES.map(async n => {
+    await Promise.all(['back', 'side'].flatMap(d => DIR_POSES.map(async n => {
       const i = await loadAny([`assets/heroes/opt/${t}_${d}_${n}.webp`]); if (i) (IMG[t].d[d] ||= {})[n] = i;
     })));
   }));
