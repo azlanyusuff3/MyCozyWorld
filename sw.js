@@ -1,5 +1,5 @@
 // Tukar VERSION setiap kali update game supaya phone ambil versi baru.
-const VERSION = 'cozy-arena-v9';
+const VERSION = 'cozy-arena-v10';
 const ASSETS = [
   './', 'index.html', 'game.js', 'manifest.json',
   'assets/icons/icon-192.png', 'assets/icons/icon-512.png', 'assets/icons/apple-touch-icon.png',
@@ -9,6 +9,8 @@ const ASSETS = [
   ...['assassin', 'bear', 'pyro', 'gunner'].flatMap(t => ['idle', 'attack', 'windup', 'hurt', 'walk1', 'walk2', 'victory', 'cast'].map(n => `assets/heroes/opt/${t}_${n}.webp`)),
   ...['back', 'side'].flatMap(d => ['idle', 'walk1', 'walk2', 'windup', 'attack', 'hurt'].map(n => `assets/heroes/opt/knight_${d}_${n}.webp`)),
   'assets/ui/logo.webp',
+  ...['bg_forest_night', 'panel_wood', 'card_frame', 'btn_gold', 'btn_purple', 'icon_coin', 'icon_heart', 'icon_dice', 'icon_swords', 'icon_star', 'tile_stone_light', 'tile_stone_dark'].map(n => `assets/ui/${n}.webp`),
+  ...['knight', 'archer', 'mage', 'healer', 'assassin', 'bear', 'pyro', 'gunner'].map(t => `assets/ui/portrait_${t}.webp`),
   ...['forest', 'desert', 'snow', 'volcano'].map(d => `assets/arena/${d}.webp`),
 ];
 self.addEventListener('install', e => {

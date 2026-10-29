@@ -2,7 +2,7 @@
 /* Cozy Arena — auto-battler lawan AI. Canvas 2D, logical 720x1280 (portrait).
    Logik tempur guna grid rata (BX/BY/CELL). Papan dilukis 2.5D melalui proj(). */
 
-const GAME_VERSION = 9, GAME_DATE = '29 Okt 2026';   // samakan dengan VERSION dalam sw.js
+const GAME_VERSION = 10, GAME_DATE = '29 Okt 2026';   // samakan dengan VERSION dalam sw.js
 const TEAM = ['#3fa9ff', '#ff4a3d'];                // biru = kau, merah = musuh
 const W = 720, H = 1280, COLS = 6, ROWS = 8, CELL = 100, BX = 60, BY = 110;
 const BENCH_Y = 940;
@@ -10,7 +10,7 @@ const SHOP_Y = BENCH_Y + CELL + 22;      // 1062
 const MAX_ROUND = 10, BOSS_ROUNDS = [5, 10];
 const FD = "'Lilita One', 'Trebuchet MS', sans-serif";
 const FB = "800 1em 'Nunito', 'Trebuchet MS', sans-serif";
-const PX0 = 360, PY0 = 178, PY1 = 868, WTOP = 492, WBOT = 690, THICK = 30;
+const PX0 = 368, PY0 = 178, PY1 = 868, WTOP = 470, WBOT = 640, THICK = 30;
 
 /* ---------- data ---------- */
 const HEROES = {
@@ -205,6 +205,9 @@ async function loadAll() {
   }));
   POOL = Object.keys(HEROES).filter(t => IMG[t]);
   UI.logo = await loadAny(['assets/ui/logo.webp']);
+  const uiArt = ['bg_forest_night', 'panel_wood', 'card_frame', 'btn_gold', 'btn_purple', 'icon_coin', 'icon_heart', 'icon_dice', 'icon_swords', 'icon_star', 'tile_stone_light', 'tile_stone_dark',
+    ...Object.keys(HEROES).map(t => 'portrait_' + t)];
+  await Promise.all(uiArt.map(async n => { const i = await loadAny([`assets/ui/${n}.webp`, `assets/ui/${n}.png`]); if (i) UI[n] = i; }));
   await Promise.all(['forest', 'desert', 'snow', 'volcano'].map(async d => { const i = await loadAny([`assets/arena/${d}.webp`]); if (i) ARENA[d] = i; }));
 }
 
@@ -703,7 +706,12 @@ function drawBackground(t) {
   const th = themeOf(S.round || 1), g = ctx.createLinearGradient(0, 0, 0, H);
   g.addColorStop(0, th.sky[0]); g.addColorStop(.5, th.sky[1]); g.addColorStop(1, th.sky[2]);
   ctx.fillStyle = g; ctx.fillRect(-400, -400, W + 800, H + 800);
-  const d = th.decor, bgImg = ARENA[d];
+  const d = th.decor;
+  if (d === 'forest' && UI.bg_forest_night) {
+    const im = UI.bg_forest_night, bw = H * im.width / im.height;
+    ctx.drawImage(im, (W - bw) / 2, 0, bw, H); drawAmbient(t, d); return;
+  }
+  const bgImg = ARENA[d];
   if (bgImg) { ctx.drawImage(bgImg, 0, 0, W, H); drawAmbient(t, d); return; }
   if (d === 'desert') {
     const sg = ctx.createRadialGradient(560, 140, 10, 560, 140, 180); sg.addColorStop(0, 'rgba(255,214,140,.7)'); sg.addColorStop(1, 'rgba(255,160,80,0)');
@@ -747,6 +755,7 @@ function drawAmbient(t, d) {
 }
 function drawBoard(t, dragging) {
   const th = themeOf(S.round || 1);
+  if (UI.tile_stone_light && UI.tile_stone_dark) return drawStoneBoard(t, dragging);
   if (ARENA[th.decor]) return drawGridOverlay(t, dragging);
   const L = BX, R = BX + COLS * CELL, T = BY, B = BY + ROWS * CELL;
   const tl = proj(L, T), tr = proj(R, T), bl = proj(L, B), br = proj(R, B);
@@ -790,6 +799,52 @@ function drawBoard(t, dragging) {
   ctx.beginPath(); ctx.moveTo(ml.x, ml.y); ctx.lineTo(mr.x, mr.y); ctx.stroke(); ctx.restore();
   [[ftl.x - 6, ftl.y], [ftr.x + 6, ftr.y]].forEach(([x, y], i) => torch(x, y, t + i * 1.7, .8));
   [[fbl.x - 8, fbl.y], [fbr.x + 8, fbr.y]].forEach(([x, y], i) => torch(x, y, t + i * 2.3, 1));
+}
+function drawStoneBoard(t, dragging) {
+  const L = BX, R = BX + COLS * CELL, T = BY, B = BY + ROWS * CELL;
+  const tl = proj(L, T), tr = proj(R, T), bl = proj(L, B), br = proj(R, B), LIP = 16;
+  // drop shadow, grout base and front lip
+  ctx.fillStyle = 'rgba(0,0,0,.4)'; quad({ x: tl.x - 8, y: tl.y - 4 }, { x: tr.x + 8, y: tr.y - 4 }, { x: br.x + 16, y: br.y + LIP + 14 }, { x: bl.x - 16, y: bl.y + LIP + 14 }); ctx.fill();
+  quad(bl, br, { x: br.x, y: br.y + LIP }, { x: bl.x, y: bl.y + LIP });
+  const lg = ctx.createLinearGradient(0, bl.y, 0, bl.y + LIP); lg.addColorStop(0, '#5a5560'); lg.addColorStop(1, '#2a2630');
+  ctx.fillStyle = lg; ctx.fill();
+  quad(tl, tr, br, bl); ctx.fillStyle = '#2e2a33'; ctx.fill();
+  for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+    const x0 = BX + c * CELL, y0 = BY + r * CELL, m = 2.5, mine = r >= 4;
+    const a = proj(x0 + m, y0 + m), b = proj(x0 + CELL - m, y0 + m), cc = proj(x0 + CELL - m, y0 + CELL - m), d = proj(x0 + m, y0 + CELL - m);
+    const img = (r + c + (hash(r * 9 + c) > .8 ? 1 : 0)) % 2 ? UI.tile_stone_dark : UI.tile_stone_light;
+    ctx.save(); quad(a, b, cc, d); ctx.clip();
+    const x1 = Math.min(a.x, d.x), wid = cc.x - d.x, hgt = d.y - a.y, flip = hash(r * 31 + c * 7) > .5;
+    ctx.translate(x1 + (flip ? wid : 0), a.y); ctx.scale(flip ? -1 : 1, 1);
+    ctx.drawImage(img, 0, 0, wid, hgt);
+    ctx.restore();
+    quad(a, b, cc, d);
+    ctx.fillStyle = mine ? 'rgba(80,150,255,.07)' : 'rgba(255,80,60,.06)'; ctx.fill();
+    ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(20,16,24,.55)'; ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,255,255,.12)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(a.x + 2, a.y + 1.5); ctx.lineTo(b.x - 2, b.y + 1.5); ctx.stroke();
+    if (dragging && mine) {
+      const occ = S.units.some(u => u.where === 'board' && u.c === c && u.r === r && u !== dragging.u);
+      const hov = dragging.hc === c && dragging.hr === r;
+      quad(a, b, cc, d);
+      if (hov) { ctx.fillStyle = occ ? 'rgba(255,214,102,.4)' : 'rgba(255,255,255,.35)'; ctx.fill(); }
+      ctx.strokeStyle = occ ? 'rgba(255,220,120,.8)' : 'rgba(255,255,255,.75)'; ctx.lineWidth = 2; ctx.setLineDash([7, 6]); ctx.stroke(); ctx.setLineDash([]);
+    }
+  }
+  const ml = proj(L, BY + 4 * CELL), mr = proj(R, BY + 4 * CELL);
+  ctx.save(); ctx.shadowColor = '#ffd678'; ctx.shadowBlur = 14;
+  ctx.strokeStyle = `rgba(255,214,120,${.45 + .2 * Math.sin(t * 2)})`; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(ml.x, ml.y); ctx.lineTo(mr.x, mr.y); ctx.stroke(); ctx.restore();
+  // row numbers 1-8 down the left edge, column letters A-F along the front
+  for (let r = 0; r < ROWS; r++) {
+    const p = proj(L, BY + r * CELL + CELL / 2), sz = 26 * (.8 + .2 * p.s), x = p.x - 12 - sz / 2;
+    rr(x - sz / 2, p.y - sz / 2, sz, sz, 6); ctx.fillStyle = 'rgba(40,26,16,.85)'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(201,144,42,.7)'; ctx.stroke();
+    txt(String(r + 1), x, p.y + 1, 17 * (.8 + .2 * p.s), '#f3e3c3', 'center', false);
+  }
+  for (let c = 0; c < COLS; c++) {
+    const p = proj(BX + c * CELL + CELL / 2, B), y = p.y + LIP + 6;
+    rr(p.x - 15, y - 13, 30, 26, 6); ctx.fillStyle = 'rgba(40,26,16,.85)'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(201,144,42,.7)'; ctx.stroke();
+    txt('ABCDEF'[c], p.x, y + 1, 17, '#f3e3c3', 'center', false);
+  }
 }
 function drawGridOverlay(t, dragging) {
   const L = BX, R = BX + COLS * CELL;
@@ -983,10 +1038,33 @@ function btn(x, y, w, h, label, color, on = true, size = 34) {
   ctx.fillStyle = 'rgba(255,255,255,.22)'; rr(x + 8, y + 6, w - 16, h * .3, 10); ctx.fill();
   txt(label, x + w / 2, y + h / 2 + 2, size, '#fff'); ctx.restore();
 }
-const FIGHT_BTN = { x: 490, y: 22, w: 200, h: 70 };
-const SPEED_BTN = { x: 590, y: 26, w: 100, h: 60 };
-const MUTE_BTN = { x: 420, y: 30, w: 56, h: 56 };
-const REROLL = { x: BX + 4 * 126, y: SHOP_Y, w: 96, h: 190 };
+const FIGHT_BTN = { x: 594, y: 12, w: 116, h: 104 };
+const SPEED_BTN = FIGHT_BTN;
+const MUTE_BTN = { x: 642, y: 124, w: 56, h: 56 };
+const COIN_POS = { x: 492, y: 45 };
+const cardRect = i => ({ x: 14 + i * 140, y: SHOP_Y + 18, w: 132, h: 172 });
+const REROLL = cardRect(4);
+// 9-slice: stretch a framed image without distorting its corners
+const NINE = { panel_wood: [21, 53, 470, 153, 40], btn_gold: [8, 18, 303, 103, 32], btn_purple: [18, 22, 164, 216, 28] };
+function nine(name, x, y, w, h, db) {
+  const img = UI[name];
+  if (!img) { rr(x, y, w, h, 14); ctx.fillStyle = 'rgba(30,18,10,.8)'; ctx.fill(); return; }
+  const [sx, sy, sw, sh, sb] = NINE[name], b = Math.min(db || sb, w / 2, h / 2), xs = [0, sb, sw - sb, sw], xd = [0, b, w - b, w];
+  for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) {
+    const ssw = xs[i + 1] - xs[i];
+    const syy = [0, sb, sh - sb, sh], dyy = [0, b, h - b, h];
+    ctx.drawImage(img, sx + xs[i], sy + syy[j], ssw, syy[j + 1] - syy[j], x + xd[i], y + dyy[j], xd[i + 1] - xd[i], dyy[j + 1] - dyy[j]);
+  }
+}
+function icon(name, x, y, s) { if (UI[name]) ctx.drawImage(UI[name], x - s / 2, y - s / 2, s, s); }
+function goldBtn(b, label, on, iconName) {
+  ctx.save(); if (!on) ctx.globalAlpha = .5;
+  ctx.fillStyle = 'rgba(0,0,0,.45)'; rr(b.x + 2, b.y + 6, b.w, b.h, 16); ctx.fill();
+  nine('btn_gold', b.x, b.y, b.w, b.h, 30);
+  if (iconName) { icon(iconName, b.x + b.w / 2, b.y + 38, 54); txt(label, b.x + b.w / 2, b.y + b.h - 24, 24, '#fff8e0'); }
+  else txt(label, b.x + b.w / 2, b.y + b.h / 2 + 2, 38, '#fff8e0');
+  ctx.restore();
+}
 const RARITY = { 3: ['#d9dee4', '#8a96a3'], 4: ['#ffe28a', '#c9902a'], 5: ['#e8b8ff', '#9b5ad6'] };
 function drawMute() {
   const b = MUTE_BTN, cx = b.x + b.w / 2, cy = b.y + b.h / 2;
@@ -997,23 +1075,30 @@ function drawMute() {
   else { ctx.beginPath(); ctx.arc(cx + 3, cy, 8, -.8, .8); ctx.stroke(); ctx.beginPath(); ctx.arc(cx + 3, cy, 15, -.8, .8); ctx.stroke(); }
 }
 function drawHud() {
-  txt(`Pusingan ${S.round}/${MAX_ROUND}`, 30, 38, 34, isBossRound() ? '#ff9cf0' : '#ffe9b0', 'left');
-  for (let i = 0; i < 5; i++) heart(42 + i * 34, 80, 26, i < S.lives);
+  nine('panel_wood', 12, 12, 240, 58, 22);
+  txt(`Pusingan ${S.round}/${MAX_ROUND}`, 132, 42, 28, isBossRound() ? '#ff9cf0' : '#ffe9b0');
+  for (let i = 0; i < 5; i++) {
+    if (UI.icon_heart) { ctx.save(); if (i >= S.lives) { ctx.globalAlpha = .3; ctx.filter = 'grayscale(1)'; } icon('icon_heart', 32 + i * 40, 92, 36); ctx.restore(); }
+    else heart(42 + i * 34, 92, 26, i < S.lives);
+  }
+  if (UI.logo) { const lw = 220, lh = lw * UI.logo.height / UI.logo.width; ctx.drawImage(UI.logo, W / 2 - lw / 2 - 18, 6, lw, lh); }
   const bump = 1 + S.goldBump * .35;
-  coin(232, 80, 15 * bump); txt(String(Math.round(S.goldShown)), 256, 81, 32 * bump, '#ffd84a', 'left');
-  if (S.streak >= 2 && !(S.phase === 'battle' && isBossRound())) txt(`Menang ${S.streak} kali`, 300, 81, 22, '#9df59a', 'left');
+  nine('panel_wood', 462, 18, 122, 56, 22);
+  if (UI.icon_coin) icon('icon_coin', COIN_POS.x, COIN_POS.y, 40 * bump); else coin(COIN_POS.x, COIN_POS.y, 15 * bump);
+  txt(String(Math.round(S.goldShown)), 548, 47, 30 * bump, '#ffe9b0');
+  if (S.streak >= 2 && !(S.phase === 'battle' && isBossRound())) txt(`Menang ${S.streak}x`, 523, 92, 20, '#9df59a');
   drawMute();
-  if (S.phase === 'prep') btn(FIGHT_BTN.x, FIGHT_BTN.y, FIGHT_BTN.w, FIGHT_BTN.h, 'LAWAN!', isBossRound() ? '#b14fd6' : '#ef7a2f', onBoard().length > 0, 38);
-  if (S.phase === 'battle') btn(SPEED_BTN.x, SPEED_BTN.y, SPEED_BTN.w, SPEED_BTN.h, `x${S.speed}`, '#4f86c6', true, 30);
+  if (S.phase === 'prep') goldBtn(FIGHT_BTN, isBossRound() ? 'BOSS!' : 'LAWAN!', onBoard().length > 0, 'icon_swords');
+  if (S.phase === 'battle') goldBtn(SPEED_BTN, `x${S.speed}`, true);
   const boss = S.phase === 'battle' && S.fighters.find(f => f.boss);
   if (boss) {
-    const x = 60, y = 112, w = 600;
-    txt(boss.boss, W / 2, y, 26, '#ff9cf0');
+    const x = 60, y = 112, w = 560;
+    txt(boss.boss, x + w / 2, y, 26, '#ff9cf0');
     rr(x - 4, y + 18, w + 8, 26, 10); ctx.fillStyle = 'rgba(20,8,24,.9)'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = '#2a170b'; ctx.stroke();
     ctx.fillStyle = '#f4e3c0'; ctx.fillRect(x, y + 22, w * Math.max(0, boss.shownHp / boss.maxhp), 18);
     const bg = ctx.createLinearGradient(0, y + 22, 0, y + 40); bg.addColorStop(0, '#e07aff'); bg.addColorStop(1, '#8a2fc0');
     ctx.fillStyle = bg; ctx.fillRect(x, y + 22, w * Math.max(0, boss.hp / boss.maxhp), 18);
-    txt(`${Math.ceil(boss.hp)} / ${Math.round(boss.maxhp)}`, W / 2, y + 31, 16, '#fff');
+    txt(`${Math.ceil(boss.hp)} / ${Math.round(boss.maxhp)}`, x + w / 2, y + 31, 16, '#fff');
   } else drawChips();
 }
 function drawChips() {
@@ -1036,7 +1121,31 @@ function drawChips() {
   if (!keys.length && S.phase === 'prep') txt('Gabung hero sama trait untuk bonus', 30, 130, 18, 'rgba(240,225,200,.6)', 'left', false, FB);
 }
 function drawCard(c, i, t) {
-  const x = BX + i * 126, y = SHOP_Y, w = 118, h = 190, hdef = HEROES[c.type], rar = RARITY[hdef.cost] || RARITY[3];
+  const { x, y, w, h } = cardRect(i), hdef = HEROES[c.type], sc = w / 200, por = UI['portrait_' + c.type];
+  if (!UI.card_frame) return drawCardOld(c, i, t);
+  ctx.save(); if (c.sold) ctx.globalAlpha = .25; else if (S.gold < hdef.cost) ctx.globalAlpha = .55;
+  ctx.fillStyle = 'rgba(0,0,0,.45)'; rr(x + 3, y + 6, w - 4, h - 2, 14); ctx.fill();
+  const wx = x + 34 * sc, wy = y + 38 * sc, ws = 136 * sc;
+  if (!c.sold) {
+    if (por) ctx.drawImage(por, wx, wy + Math.sin(t * 2 + i) * 0, ws, ws);
+    else { ctx.fillStyle = hdef.color; ctx.fillRect(wx, wy, ws, ws); drawIdle(c.type, wx, wy, ws, ws); }
+  } else { ctx.fillStyle = '#1d1410'; ctx.fillRect(wx, wy, ws, ws); }
+  if (hdef.cost >= 4 && !c.sold) {
+    ctx.save(); ctx.beginPath(); ctx.rect(wx, wy, ws, ws); ctx.clip();
+    const sx = wx - 60 + ((t * 120 + i * 70) % (ws + 160));
+    const sg = ctx.createLinearGradient(sx, 0, sx + 50, 0); sg.addColorStop(0, 'rgba(255,255,255,0)'); sg.addColorStop(.5, 'rgba(255,255,255,.35)'); sg.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = sg; ctx.translate(sx + 25, y + h / 2); ctx.rotate(.35); ctx.fillRect(-25, -h, 50, h * 2); ctx.restore();
+    ctx.save(); ctx.shadowColor = (RARITY[hdef.cost] || RARITY[3])[0]; ctx.shadowBlur = 18; ctx.drawImage(UI.card_frame, x, y, w, h); ctx.restore();
+  }
+  ctx.drawImage(UI.card_frame, x, y, w, h);
+  hdef.traits.forEach((tr, j) => { ctx.fillStyle = 'rgba(20,12,8,.75)'; ctx.beginPath(); ctx.arc(wx + 14, wy + 14 + j * 26, 12, 0, 7); ctx.fill(); traitIcon(tr, wx + 14, wy + 14 + j * 26, 8, TRAITS[tr].color); });
+  txt(hdef.name, x + w / 2, y + 193 * sc, 19, '#fff');
+  if (UI.icon_coin) icon('icon_coin', x + w / 2 - 14, y + 229 * sc, 24); else coin(x + w / 2 - 14, y + 229 * sc, 10);
+  txt(String(hdef.cost), x + w / 2 + 8, y + 230 * sc, 23, '#4a2e18', 'left', false);
+  ctx.restore();
+}
+function drawCardOld(c, i, t) {
+  const { x, y, w, h } = cardRect(i), hdef = HEROES[c.type], rar = RARITY[hdef.cost] || RARITY[3];
   ctx.save(); if (c.sold) ctx.globalAlpha = .25; else if (S.gold < hdef.cost) ctx.globalAlpha = .55;
   rr(x, y + 5, w, h, 16); ctx.fillStyle = 'rgba(20,12,8,.6)'; ctx.fill();
   const fg = ctx.createLinearGradient(x, y, x + w, y + h); fg.addColorStop(0, rar[0]); fg.addColorStop(1, rar[1]);
@@ -1058,15 +1167,19 @@ function drawCard(c, i, t) {
   ctx.restore();
 }
 function drawBenchAndShop(t, drag) {
-  rr(BX - 16, BENCH_Y - 8, COLS * CELL + 32, CELL + 16, 18); ctx.fillStyle = 'rgba(30,18,10,.55)'; ctx.fill();
-  for (let i = 0; i < 6; i++) { rr(BX + i * CELL + 6, BENCH_Y + 6, CELL - 12, CELL - 12, 12); ctx.fillStyle = 'rgba(255,255,255,.07)'; ctx.fill(); }
-  const n = onBoard().length;
-  txt(`Pasukan ${n}/${cap()}`, BX + COLS * CELL, BENCH_Y - 22, 24, n >= cap() ? '#ffd84a' : '#d8f5c8', 'right');
-  txt('Bench', BX, BENCH_Y - 22, 24, '#d8c8b0', 'left');
+  nine('panel_wood', BX - 34, BENCH_Y - 44, COLS * CELL + 68, CELL + 62, 34);
+  for (let i = 0; i < 6; i++) {
+    const cx = BX + i * CELL + CELL / 2;
+    rr(BX + i * CELL + 7, BENCH_Y + 4, CELL - 14, CELL - 12, 12); ctx.fillStyle = 'rgba(0,0,0,.28)'; ctx.fill();
+    ctx.fillStyle = 'rgba(201,144,42,.28)'; ctx.beginPath(); ctx.ellipse(cx, BENCH_Y + CELL - 22, 32, 9, 0, 0, 7); ctx.fill();
+  }
   for (const u of S.units) if (u.where === 'bench' && !(drag && drag.u === u)) {
     const p = unitPos(u);
     drawHero({ ui: true, type: u.type, star: u.star, x: p.x, y: p.y, face: 1, pose: 'idle', lift: Math.sin(t * 3 + u.id) * 1.5, alpha: S.phase === 'battle' ? .6 : 1 });
   }
+  const n = onBoard().length, nb = S.units.filter(u => u.where === 'bench').length;
+  txt(`Pasukan ${n}/${cap()}`, BX + COLS * CELL - 4, BENCH_Y - 20, 21, n >= cap() ? '#ffd84a' : '#d8f5c8', 'right');
+  txt(`Bench (${nb}/6)`, BX + 4, BENCH_Y - 20, 21, '#f3e3c3', 'left');
   if (drag) {
     rr(BX - 16, SHOP_Y - 10, COLS * CELL + 32, 212, 18); ctx.fillStyle = 'rgba(200,60,40,.35)'; ctx.fill();
     ctx.lineWidth = 4; ctx.strokeStyle = '#ff8a6b'; ctx.setLineDash([12, 8]); ctx.stroke(); ctx.setLineDash([]);
@@ -1074,7 +1187,19 @@ function drawBenchAndShop(t, drag) {
     txt(`Lepas sini untuk jual (+${v})`, W / 2, SHOP_Y + 95, 34, '#fff');
     return;
   }
+  nine('panel_wood', 2, SHOP_Y + 4, W - 4, H - SHOP_Y - 2, 40);
   S.shop.forEach((c, i) => drawCard(c, i, t));
+  if (UI.btn_purple) {
+    const b = REROLL;
+    ctx.save(); if (S.gold < 2) ctx.globalAlpha = .45;
+    ctx.fillStyle = 'rgba(0,0,0,.45)'; rr(b.x + 3, b.y + 6, b.w - 4, b.h - 2, 14); ctx.fill();
+    nine('btn_purple', b.x + 4, b.y, b.w - 8, b.h, 26);
+    icon('icon_dice', b.x + b.w / 2, b.y + 58, 74);
+    txt('Tukar', b.x + b.w / 2, b.y + 114, 24, '#fff');
+    icon('icon_coin', b.x + b.w / 2 - 12, b.y + 146, 24); txt('2', b.x + b.w / 2 + 8, b.y + 147, 23, '#ffe9b0', 'left');
+    ctx.restore();
+    return;
+  }
   btn(REROLL.x, REROLL.y, REROLL.w, REROLL.h, '', '#5b6f8a', S.gold >= 2);
   ctx.save(); if (S.gold < 2) ctx.globalAlpha = .45;
   ctx.strokeStyle = '#fff'; ctx.lineWidth = 6; ctx.lineCap = 'round';
@@ -1111,7 +1236,7 @@ function drawCoins() {
   for (const c of S.coins) {
     if (c.t < 0) continue;
     const q = Math.min(1, c.t / .6), e = q * q * (3 - 2 * q);
-    const x = c.x0 + (232 - c.x0) * e, y = c.y0 + (80 - c.y0) * e - Math.sin(q * Math.PI) * 160;
+    const x = c.x0 + (COIN_POS.x - c.x0) * e, y = c.y0 + (COIN_POS.y - c.y0) * e - Math.sin(q * Math.PI) * 160;
     coin(x, y, 13 - 3 * q);
   }
 }
@@ -1238,7 +1363,7 @@ cv.addEventListener('pointerdown', e => {
   if (S.phase !== 'prep') return;
   if (inR(p, FIGHT_BTN)) return startBattle();
   if (inR(p, REROLL)) { if (S.gold >= 2) { S.gold -= 2; rollShop(); sfx('click'); } else toast('Gold tak cukup'); return; }
-  for (let i = 0; i < 4; i++) if (inR(p, { x: BX + i * 126, y: SHOP_Y, w: 118, h: 190 })) return buy(i);
+  for (let i = 0; i < 4; i++) if (inR(p, cardRect(i))) return buy(i);
   const u = unitAt(p);
   if (u) { drag = { u, x: p.x, y: p.y, sx: p.x, sy: p.y, moved: false }; cv.setPointerCapture(e.pointerId); }
 });
