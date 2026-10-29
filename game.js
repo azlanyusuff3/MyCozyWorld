@@ -2,7 +2,7 @@
 /* Cozy Arena — auto-battler lawan AI. Canvas 2D, logical 720x1280 (portrait).
    Logik tempur guna grid rata (BX/BY/CELL). Papan dilukis 2.5D melalui proj(). */
 
-const GAME_VERSION = 15, GAME_DATE = '29 Okt 2026';   // samakan dengan VERSION dalam sw.js
+const GAME_VERSION = 16, GAME_DATE = '29 Okt 2026';   // samakan dengan VERSION dalam sw.js
 const TEAM = ['#3fa9ff', '#ff4a3d'];                // biru = kau, merah = musuh
 const W = 720, H = 1280, COLS = 6, ROWS = 8, CELL = 100, BX = 60, BY = 110;
 const BENCH_Y = 940;
@@ -36,7 +36,7 @@ const THEMES = [
   { name: 'Puncak Salji', sky: ['#18263f', '#2c4560', '#162131'], enemy: ['#dbe5ee', '#ccd8e4', '#b8c6d4', '#a9b8c8'], ally: ['#8cc0a2', '#7fb396', '#72a689', '#669a7e'], decor: 'snow', key: 2 },
   { name: 'Kubu Gunung Api', sky: ['#2a0e12', '#521c14', '#180909'], enemy: ['#7a5650', '#6e4c46', '#5f403c', '#543834'], ally: ['#6f8f56', '#64834c', '#5a7844', '#4f6c3c'], decor: 'volcano', key: -5 },
 ];
-const themeOf = r => THEMES[r <= 3 ? 0 : r <= 6 ? 1 : r <= 9 ? 2 : 3];
+const themeOf = r => r > 10 ? THEMES[Math.floor((r - 11) / 3) % 4] : THEMES[r <= 3 ? 0 : r <= 6 ? 1 : r <= 9 ? 2 : 3];   // endless cycles the arenas
 const BOSS = { 5: { type: 'knight', name: 'Bulwark Kegelapan', hpMul: 7, atkMul: 1.5 }, 10: { type: 'mage', name: 'Nimbus Kegelapan', hpMul: 10, atkMul: 1.6 } };
 const PSPEED = { arrow: 900, arrowGold: 1000, orb: 560, leaf: 520, spark: 640, meteor: 1100, fire: 600, cannon: 700, cannonBig: 650 };
 let POOL = [];
@@ -258,11 +258,18 @@ function traitIcon(key, x, y, r, color) {
 let uid = 1;
 const S = { phase: 'loading', round: 1, cam: { z: 1, x: 360, y: 520 }, fx: [], coins: [] };
 let best = 0; try { best = +localStorage.getItem('cozyArenaBest') || 0; } catch (e) {}
-const isBossRound = () => BOSS_ROUNDS.includes(S.round);
+const isBossRound = () => BOSS_ROUNDS.includes(S.round) || (S.round > MAX_ROUND && S.round % 5 === 0);
+// endless mode: a boss every 5 rounds that keeps getting tougher; normal enemies scale up each round
+function bossFor(r) {
+  if (BOSS[r]) return BOSS[r];
+  const n = (r - MAX_ROUND) / 5, b = BOSS[n % 2 ? 5 : 10];
+  return { ...b, name: b.name + ' +' + n, hpMul: b.hpMul * (1 + .45 * n), atkMul: b.atkMul * (1 + .25 * n) };
+}
+const endlessMul = () => S.round > MAX_ROUND ? 1 + .12 * (S.round - MAX_ROUND) : 1;
 
 function newGame() {
   Object.assign(S, {
-    phase: 'prep', shopLocked: false, gold: 10, goldShown: 10, goldBump: 0, round: 1, level: 1, xp: 0, info: null, lives: 5, streak: 0, units: [], shop: [], enemy: [],
+    phase: 'prep', endless: false, shopLocked: false, gold: 10, goldShown: 10, goldBump: 0, round: 1, level: 1, xp: 0, info: null, lives: 5, streak: 0, units: [], shop: [], enemy: [],
     fighters: [], proj: [], fx: [], texts: [], timers: [], coins: [], toast: null, result: null, chips: [],
     battleT: 0, endT: 0, speed: 1, shake: 0, hitstop: 0, slow: 0, camT: null, cam: { z: 1, x: 360, y: 520 }, lastTraits: '',
   });
@@ -271,7 +278,7 @@ function newGame() {
 }
 function showBanner() {
   const th = themeOf(S.round);
-  S.banner = isBossRound() ? { title: 'BOSS!', sub: BOSS[S.round].name, t: 0, color: '#ff7ad9' } : { title: `Pusingan ${S.round}`, sub: th.name, t: 0, color: '#ffe9b0' };
+  S.banner = isBossRound() ? { title: 'BOSS!', sub: bossFor(S.round).name, t: 0, color: '#ff7ad9' } : { title: `Pusingan ${S.round}`, sub: th.name, t: 0, color: '#ffe9b0' };
   if (isBossRound()) sfx('boss');
 }
 // level system: level decides team size; +2 XP free each round, or buy 4 XP for 4 gold
@@ -385,7 +392,7 @@ function aiTurn() {
   while (ai.units.length > capFor(ai.level) + 6) { const w = ai.units.reduce((a, b) => aiValue(a) <= aiValue(b) ? a : b); ai.units.splice(ai.units.indexOf(w), 1); ai.gold += aiValue(w); }
 }
 function genEnemy() {
-  const r = S.round, boss = BOSS[r];
+  const r = S.round, boss = isBossRound() ? bossFor(r) : null;
   const team = [...S.ai.units].sort((a, b) => aiValue(b) - aiValue(a)).slice(0, boss ? Math.min(capFor(S.ai.level), 6) : capFor(S.ai.level));
   const list = team.map(u => ({ type: u.type, star: u.star }));
   const used = new Set();
@@ -409,7 +416,8 @@ function makeFighter(type, star, c, r, team, boss) {
   const f = { id: uid++, team, type, star, h, x: p.x, y: p.y, hp: h.hp * m, maxhp: h.hp * m, atk: h.atk * m, heal: (h.heal || 0) * m,
     cd: rand(.25, .7), mana: 0, target: null, retarget: 0, face: team === 0 ? 1 : -1, atkAnim: 0, flash: 0, alive: true, shield: 0, walk: 0,
     kx: 0, ky: 0, squish: 0, windT: 0, hurtT: 0, castT: 0, asMul: 1, crit: .12, burn: null, leaped: false };
-  if (boss) { const b = BOSS[S.round]; f.boss = b.name; f.hp *= b.hpMul; f.maxhp *= b.hpMul; f.atk *= b.atkMul; f.slamCd = 4.5; }
+  if (team === 1 && !boss && S.round > MAX_ROUND) { const em = endlessMul(); f.hp *= em; f.maxhp *= em; f.atk *= em; }
+  if (boss) { const b = bossFor(S.round); f.boss = b.name; f.hp *= b.hpMul; f.maxhp *= b.hpMul; f.atk *= b.atkMul; f.slamCd = 4.5; }
   f.shownHp = f.hp;
   return f;
 }
@@ -670,8 +678,8 @@ function endBattle(win) {
     .sort((a, b) => (b.dmg + b.heal) - (a.dmg + a.heal)).slice(0, 4);
   S.result = { win, income, t: 0, stars, starSfx: 0, boss, stats, aliveFoes: S.fighters.filter(f => f.alive && f.team === 1).length };
   sfx(win ? 'win' : 'lose');
-  if (S.lives <= 0) { S.phase = 'over'; saveBest(S.round - 1); clearSave(); }
-  else if (win && S.round >= MAX_ROUND) { S.phase = 'victory'; saveBest(MAX_ROUND); clearSave(); }
+  if (S.lives <= 0) { S.phase = 'over'; saveBest(S.endless ? S.round : S.round - 1); clearSave(); }
+  else if (win && S.round >= MAX_ROUND && !S.endless) { S.phase = 'victory'; saveBest(MAX_ROUND); clearSave(); }
   else S.phase = 'result';
 }
 const SAVE_KEY = 'cozyArenaSave';
@@ -679,7 +687,7 @@ let lastSave = '';
 function saveGame(inBattle = false) {
   if (S.phase !== 'prep' && !inBattle) return;
   const data = JSON.stringify({ v: 1, uid, round: S.round, gold: S.gold, lives: S.lives, streak: S.streak, level: S.level, xp: S.xp,
-    units: S.units, shop: S.shop, shopLocked: S.shopLocked, enemy: S.enemy, ai: S.ai, inBattle });
+    units: S.units, shop: S.shop, shopLocked: S.shopLocked, endless: S.endless, enemy: S.enemy, ai: S.ai, inBattle });
   if (data === lastSave) return;
   lastSave = data; try { localStorage.setItem(SAVE_KEY, data); } catch (e) {}
 }
@@ -688,7 +696,7 @@ function clearSave() { lastSave = ''; try { localStorage.removeItem(SAVE_KEY); }
 function resumeGame(d) {
   newGame();
   Object.assign(S, { round: d.round, gold: d.gold, goldShown: d.gold, lives: d.lives, streak: d.streak, level: d.level || 1, xp: d.xp || 0,
-    units: d.units, shop: d.shop, shopLocked: !!d.shopLocked, enemy: d.enemy, ai: d.ai });
+    units: d.units, shop: d.shop, shopLocked: !!d.shopLocked, endless: !!d.endless, enemy: d.enemy, ai: d.ai });
   uid = Math.max(uid, d.uid || 1); S.lastTraits = ''; S.banner = null; showBanner();
   if (d.inBattle) startBattle();   // left in the middle of a fight: replay that same fight (team can't be changed)
 }
@@ -696,9 +704,10 @@ function saveBest(r) { if (r > best) { best = r; try { localStorage.setItem('coz
 function nextRound() {
   const inc = S.result.income;
   for (let i = 0; i < Math.min(inc, 12); i++) S.coins.push({ t: -i * .06, x0: 360 + rand(-80, 80), y0: 560 + rand(-30, 30), val: i === Math.min(inc, 12) - 1 ? inc - (Math.min(inc, 12) - 1) : 1 });
-  if (S.round < MAX_ROUND) S.round++;   // lost the final round: fight it again (costs a life each time)
+  if (S.round < MAX_ROUND || S.endless) S.round++;   // lost the final round: fight it again (costs a life each time)
   S.fighters = []; S.proj = []; S.fx = []; S.texts = [];
   const ai = S.ai; ai.gold += 5 + (S.result.win ? 0 : 2) + Math.min(Math.floor(ai.gold / 10), 3);   // same income rules as the player
+  if (S.endless) ai.gold += 2 + Math.floor((S.round - MAX_ROUND) / 2);   // endless: the AI gets stronger each round
   addXp(ai, 2); const lvUp = addXp(S, 2);   // free XP every round for both sides
   if (!S.shopLocked) rollShop(); else S.shop.forEach(c => { if (c.sold) Object.assign(c, { type: pickWeighted(), sold: false }); });   // locked: keep the cards, refill bought slots
   aiTurn(); genEnemy(); S.phase = 'prep'; S.result = null;
@@ -1145,6 +1154,7 @@ const MUTE_BTN = { x: 642, y: 124, w: 56, h: 56 };
 const COIN_POS = { x: 492, y: 45 };
 const START_BTN = { x: 220, y: 1090, w: 280, h: 92 };
 const CONT_BTN = { x: 200, y: 1072, w: 320, h: 86 }, NEW_BTN = { x: 250, y: 1162, w: 220, h: 34 };
+const ENDLESS_BTN = { x: 180, y: 800, w: 360, h: 84 }, MENU_BTN = { x: 270, y: 930, w: 180, h: 42 };
 const LVL_BTN = { x: 256, y: BENCH_Y - 42, w: 208, h: 40 };
 function drawLevel() {
   const b = LVL_BTN, max = S.level >= MAX_LEVEL, on = !max && S.gold >= XP_COST && S.phase === 'prep';
@@ -1202,7 +1212,7 @@ function drawMute() {
 }
 function drawHud() {
   nine('panel_wood', 12, 12, 240, 58, 22);
-  txt(`Pusingan ${S.round}/${MAX_ROUND}`, 132, 42, 28, isBossRound() ? '#ff9cf0' : '#ffe9b0');
+  txt(S.endless ? `Endless ${S.round}` : `Pusingan ${S.round}/${MAX_ROUND}`, 132, 42, 28, isBossRound() ? '#ff9cf0' : S.endless ? '#ffb86b' : '#ffe9b0');
   for (let i = 0; i < 5; i++) {
     if (UI.icon_heart) { ctx.save(); if (i >= S.lives) { ctx.globalAlpha = .3; ctx.filter = 'grayscale(1)'; } icon('icon_heart', 32 + i * 40, 92, 36); ctx.restore(); }
     else heart(42 + i * 34, 92, 26, i < S.lives);
@@ -1426,7 +1436,7 @@ function drawTitle(t) {
       txt(HEROES[ty].name, x, base + 50 * sc2, 24 * Math.max(sc2, .85), '#fff'); txt(HEROES[ty].role, x, base + 78 * sc2, 18 * Math.max(sc2, .85), '#d8c8b0', 'center', false, FB);
     });
   }
-  const how = ['Beli hero di kedai, seret ke papan', '3 hero sama bergabung jadi ★★', 'Hero trait sama aktifkan bonus', `Kalahkan boss pusingan 5 & ${MAX_ROUND}`];
+  const how = ['Beli hero di kedai, seret ke papan', '3 hero sama bergabung jadi ★★', 'Hero trait sama aktifkan bonus', `Kalahkan boss pusingan 5 & ${MAX_ROUND}, lepas tu cuba Endless`];
   how.forEach((l, i) => txt(l, W / 2, 870 + i * 42, 26, '#f3e3c3', 'center', false, FB));
   if (best) txt(`Rekod terbaik: pusingan ${best}`, W / 2, 1052, 26, '#ffd84a', 'center', false, FB);
   if (S.phase === 'loading') txt('Memuatkan...', W / 2, 1140, 36, '#fff');
@@ -1456,7 +1466,7 @@ function render(t) {
   drawShadows();
   const list = [];
   if (S.phase === 'prep') {
-    for (const e of S.enemy) { const p = cellCenter(e.c, e.r); if (e.boss) p.x += CELL / 2; list.push({ type: e.type, star: e.star, x: p.x, y: p.y, face: -1, team: 1, boss: e.boss && BOSS[S.round].name, pose: 'idle', lift: Math.sin(t * 3 + e.c + e.r) * 1.5, t }); }
+    for (const e of S.enemy) { const p = cellCenter(e.c, e.r); if (e.boss) p.x += CELL / 2; list.push({ type: e.type, star: e.star, x: p.x, y: p.y, face: -1, team: 1, boss: e.boss && bossFor(S.round).name, pose: 'idle', lift: Math.sin(t * 3 + e.c + e.r) * 1.5, t }); }
     for (const u of S.units) if (u.where === 'board' && !(drag && drag.u === u && drag.moved)) {
       const p = unitPos(u);
       list.push({ type: u.type, star: u.star, x: p.x, y: p.y, face: 1, team: 0, pose: 'idle', lift: Math.sin(t * 3 + u.id) * 1.5 });
@@ -1489,8 +1499,16 @@ function render(t) {
       r.win ? (r.boss ? '#b14fd6' : '#4f9a3f') : '#c9483a', 'Tekan untuk teruskan', r.t, r.win ? r.stars : undefined);
     drawStats(r, r.win ? 748 : 718);
   }
-  if (S.phase === 'over') panel('TAMAT', [`Kau bertahan sampai pusingan ${S.round}`, `Rekod terbaik: ${best}`], '#7a3a5a', 'Tekan untuk main semula', S.result ? S.result.t : 1);
-  if (S.phase === 'victory') panel('JUARA!', [`Kau tewaskan semua ${MAX_ROUND} pusingan`, `Nyawa tinggal: ${S.lives}`], '#d9a224', 'Tekan untuk main semula', S.result ? S.result.t : 1, 3);
+  if (S.phase === 'over') panel('TAMAT', [S.endless ? `Endless: tumbang di pusingan ${S.round}` : `Kau bertahan sampai pusingan ${S.round}`, `Rekod terbaik: pusingan ${best}`], '#7a3a5a', 'Tekan untuk main semula', S.result ? S.result.t : 1);
+  if (S.phase === 'victory') {
+    const vt = S.result ? S.result.t : 1;
+    panel('JUARA!', [`Kau tewaskan semua ${MAX_ROUND} pusingan`, `Nyawa tinggal: ${S.lives}`], '#d9a224', '', vt, 3);
+    if (vt > .6) {
+      goldBtn(ENDLESS_BTN, 'TERUS ENDLESS', true);
+      txt('Lawan musuh makin kuat, boss setiap 5 pusingan', W / 2, ENDLESS_BTN.y + ENDLESS_BTN.h + 26, 20, '#f3e3c3', 'center', false, FB);
+      rr(MENU_BTN.x, MENU_BTN.y, MENU_BTN.w, MENU_BTN.h, 20); ctx.fillStyle = 'rgba(20,12,8,.8)'; ctx.fill(); txt('Ke menu', W / 2, MENU_BTN.y + MENU_BTN.h / 2, 22, '#f3e3c3', 'center', false, FB);
+    }
+  }
   drawInfo();
   drawCoins();
 }
@@ -1535,7 +1553,7 @@ function heroInfoAt(p) {
 }
 function drawInfo() {
   const I = S.info; if (!I) return;
-  const h = HEROES[I.type], m = Math.pow(1.8, I.star - 1), bm = I.boss ? BOSS[S.round] : null;
+  const h = HEROES[I.type], m = Math.pow(1.8, I.star - 1), bm = I.boss ? bossFor(S.round) : null;
   ctx.fillStyle = 'rgba(8,6,4,.65)'; ctx.fillRect(-400, -400, W + 800, H + 800);
   const x = 60, y = 300, w = 600, ht = 560;
   nine('panel_wood', x, y, w, ht, 50);
@@ -1571,7 +1589,13 @@ cv.addEventListener('pointerdown', e => {
     return;
   }
   if (S.phase === 'result') { if (S.result.t > .5) nextRound(); return; }
-  if (S.phase === 'over' || S.phase === 'victory') { if (!S.result || S.result.t > .6) { S.phase = 'title'; S.save = loadSave(); } return; }
+  if (S.phase === 'victory') {
+    if (S.result && S.result.t <= .6) return;
+    if (inR(p, ENDLESS_BTN)) { sfx('click'); S.endless = true; S.result.income = S.result.income || 5; nextRound(); toast('Mod Endless! Berapa lama kau boleh bertahan?', 2.4); }
+    else if (inR(p, MENU_BTN)) { S.phase = 'title'; S.save = loadSave(); }
+    return;
+  }
+  if (S.phase === 'over') { if (!S.result || S.result.t > .6) { S.phase = 'title'; S.save = loadSave(); } return; }
   const ch = chipAt(p); if (ch) return showTrait(ch.key);
   press = { x: p.x, y: p.y, t: 0, target: heroInfoAt(p) };
   if (S.phase === 'battle') { if (inR(p, SPEED_BTN)) { sfx('click'); S.speed = S.speed === 1 ? 2 : S.speed === 2 ? 3 : 1; } return; }
