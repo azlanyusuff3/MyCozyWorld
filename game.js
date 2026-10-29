@@ -162,18 +162,22 @@ const POSE_FALLBACK = { windup: 'idle', hurt: 'idle', walk1: 'idle', walk2: 'idl
 function spriteImg(type, pose, v) {
   const im = IMG[type];
   if (pose !== 'idle' && pose !== 'attack' && !im.p[pose]) pose = POSE_FALLBACK[pose] || 'idle';
-  const big = pose !== 'idle' && pose !== 'attack', base = big ? im.p[pose] : im[pose];
+  const own = pose === 'idle' || pose === 'attack', big = im.big || !own, base = own ? im[pose] : im.p[pose];
   if (!v) return { img: base, big };
   const key = pose + v;
   if (!im.v[key]) im.v[key] = v === 'W' ? tinted(base, '#fff') : tinted(base, 'rgba(60,10,90,.55)', 'source-atop');
   return { img: im.v[key], big };
+}
+function drawIdle(t, x, y, w, h) {   // UI portrait: crop the 384 frame out of padded sprites
+  const im = IMG[t], o = im.big ? 96 : 0, s = im.idle.width - 2 * o;
+  ctx.drawImage(im.idle, o, o, s, s, x, y, w, h);
 }
 async function loadAll() {
   await Promise.all(Object.keys(HEROES).map(async t => {
     const src = p => [`assets/heroes/opt/${t}_${p}.webp`, `assets/heroes/${t}_${p}.png`];
     const idle = await loadAny(src('idle')); if (!idle) return;
     const attack = (await loadAny(src('attack'))) || idle;
-    IMG[t] = { idle, attack, p: {}, v: {} };
+    IMG[t] = { idle, attack, p: {}, v: {}, big: idle.width > 400 };
     await Promise.all(POSE_LIST.map(async n => { const i = await loadAny([`assets/heroes/opt/${t}_${n}.webp`]); if (i) IMG[t].p[n] = i; }));
   }));
   POOL = Object.keys(HEROES).filter(t => IMG[t]);
@@ -619,9 +623,9 @@ function boom(x, y, r, color) { S.fx.push({ type: 'boom', x, y, life: .45, max: 
 function scorch(x, y) { S.fx.push({ type: 'scorch', x, y, life: 3, max: 3 }); }
 function slash(t, dir) { S.fx.push({ type: 'slash', x: t.x, y: t.y, life: .22, max: .22, dir }); }
 function shatter(f) {
-  const img = IMG[f.type].idle, n = f.boss ? 4 : 3, sw = img.width / n, sh = img.height / n, sz = CELL * 1.42 * (1 + .1 * (f.star - 1)) * (f.boss ? 1.75 : 1);
+  const img = IMG[f.type].idle, n = f.boss ? 4 : 3, off = IMG[f.type].big ? 96 : 0, sw = (img.width - 2 * off) / n, sh = sw, sz = CELL * 1.42 * (1 + .1 * (f.star - 1)) * (f.boss ? 1.75 : 1);
   for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) {
-    S.fx.push({ type: 'shard', img: f.boss ? spriteImg(f.type, 'idle', 'D').img : img, sx: i * sw, sy: j * sh, sw, sh, size: sz / n, face: f.face,
+    S.fx.push({ type: 'shard', img: f.boss ? spriteImg(f.type, 'idle', 'D').img : img, sx: off + i * sw, sy: off + j * sh, sw, sh, size: sz / n, face: f.face,
       x: f.x + (i - (n - 1) / 2) * sz / n * f.face, y: f.y, z: sz * .96 - (j + .5) * sz / n - CELL * .34 + 34,
       vx: (i - (n - 1) / 2) * rand(90, 220) * f.face + rand(-40, 40), vy: rand(-40, 40), vz: rand(150, 380) - (j - 1) * 60,
       r: 0, vr: rand(-7, 7), life: rand(.8, 1.1), max: 1.1, g: 1100 });
@@ -1006,7 +1010,7 @@ function drawCard(c, i, t) {
   rr(x + 5, y + 5, w - 10, h - 10, 12); ctx.fillStyle = hdef.color; ctx.fill();
   const ag = ctx.createRadialGradient(x + w / 2, y + 60, 5, x + w / 2, y + 60, 70); ag.addColorStop(0, 'rgba(255,255,255,.35)'); ag.addColorStop(1, 'rgba(255,255,255,0)');
   ctx.fillStyle = ag; rr(x + 5, y + 5, w - 10, 110, 12); ctx.fill();
-  if (!c.sold) ctx.drawImage(IMG[c.type].idle, x + 6, y + 4 + Math.sin(t * 2 + i) * 2, 106, 106);
+  if (!c.sold) drawIdle(c.type, x + 6, y + 4 + Math.sin(t * 2 + i) * 2, 106, 106);
   if (hdef.cost >= 4 && !c.sold) {
     ctx.save(); rr(x + 5, y + 5, w - 10, h - 10, 12); ctx.clip();
     const sx = x - 60 + ((t * 120 + i * 70) % (w + 160));
@@ -1102,7 +1106,7 @@ function drawTitle(t) {
       const row = Math.floor(i / perRow), col = i % perRow, cols = Math.min(perRow, n - row * perRow);
       const sc2 = n > 4 ? .72 : 1, x = W / 2 + (col - (cols - 1) / 2) * 140 * (n > 4 ? .95 : 1), base = (n > 4 ? 520 + row * 170 : 640), y = base - 80 * sc2 + Math.sin(t * 2.4 + i) * 6;
       ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.beginPath(); ctx.ellipse(x, base, 50 * sc2, 14 * sc2, 0, 0, 7); ctx.fill();
-      ctx.drawImage(IMG[ty].idle, x - 85 * sc2, y - 20 * sc2, 170 * sc2, 170 * sc2);
+      drawIdle(ty, x - 85 * sc2, y - 20 * sc2, 170 * sc2, 170 * sc2);
       txt(HEROES[ty].name, x, base + 50 * sc2, 24 * Math.max(sc2, .85), '#fff'); txt(HEROES[ty].role, x, base + 78 * sc2, 18 * Math.max(sc2, .85), '#d8c8b0', 'center', false, FB);
     });
   }
