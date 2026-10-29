@@ -2,7 +2,7 @@
 /* Cozy Arena — auto-battler lawan AI. Canvas 2D, logical 720x1280 (portrait).
    Logik tempur guna grid rata (BX/BY/CELL). Papan dilukis 2.5D melalui proj(). */
 
-const GAME_VERSION = 13, GAME_DATE = '29 Okt 2026';   // samakan dengan VERSION dalam sw.js
+const GAME_VERSION = 14, GAME_DATE = '29 Okt 2026';   // samakan dengan VERSION dalam sw.js
 const TEAM = ['#3fa9ff', '#ff4a3d'];                // biru = kau, merah = musuh
 const W = 720, H = 1280, COLS = 6, ROWS = 8, CELL = 100, BX = 60, BY = 110;
 const BENCH_Y = 940;
@@ -262,11 +262,11 @@ const isBossRound = () => BOSS_ROUNDS.includes(S.round);
 
 function newGame() {
   Object.assign(S, {
-    phase: 'prep', gold: 10, goldShown: 10, goldBump: 0, round: 1, lives: 5, streak: 0, units: [], shop: [], enemy: [],
+    phase: 'prep', gold: 10, goldShown: 10, goldBump: 0, round: 1, level: 1, xp: 0, info: null, lives: 5, streak: 0, units: [], shop: [], enemy: [],
     fighters: [], proj: [], fx: [], texts: [], timers: [], coins: [], toast: null, result: null, chips: [],
     battleT: 0, endT: 0, speed: 1, shake: 0, hitstop: 0, slow: 0, camT: null, cam: { z: 1, x: 360, y: 520 }, lastTraits: '',
   });
-  S.ai = { gold: 10, units: [] };
+  S.ai = { gold: 10, units: [], level: 1, xp: 0 };
   rollShop(); aiTurn(); genEnemy(); showBanner();
 }
 function showBanner() {
@@ -274,12 +274,30 @@ function showBanner() {
   S.banner = isBossRound() ? { title: 'BOSS!', sub: BOSS[S.round].name, t: 0, color: '#ff7ad9' } : { title: `Pusingan ${S.round}`, sub: th.name, t: 0, color: '#ffe9b0' };
   if (isBossRound()) sfx('boss');
 }
-const cap = () => Math.min(2 + S.round, 8);
+// level system: level decides team size; +2 XP free each round, or buy 4 XP for 4 gold
+const XP_NEED = [0, 2, 4, 6, 10, 14, 20], MAX_LEVEL = 6, XP_COST = 4, XP_BUY = 4;
+const capFor = lv => Math.min(lv + 2, 8);
+const cap = () => capFor(S.level || 1);
+function addXp(o, n) {   // o = S (player) or S.ai; returns true when it levelled up
+  if (o.level >= MAX_LEVEL) return false;
+  o.xp += n; let up = false;
+  while (o.level < MAX_LEVEL && o.xp >= XP_NEED[o.level]) { o.xp -= XP_NEED[o.level]; o.level++; up = true; }
+  if (o.level >= MAX_LEVEL) o.xp = 0;
+  return up;
+}
+function buyXp() {
+  if (S.level >= MAX_LEVEL) return toast('Level dah maksimum');
+  if (S.gold < XP_COST) return toast('Gold tak cukup');
+  S.gold -= XP_COST; sfx('coin');
+  if (addXp(S, XP_BUY)) levelUpFx(); else sfx('click');
+}
+function levelUpFx() { sfx('merge'); uiBurst(LVL_BTN.x + LVL_BTN.w / 2, LVL_BTN.y + 20, '#ffd84a', 24); toast(`Naik Level ${S.level}! Pasukan boleh ada ${cap()} hero`); }
 const onBoard = () => S.units.filter(u => u.where === 'board');
 function benchFree() { for (let i = 0; i < 6; i++) if (!S.units.some(u => u.where === 'bench' && u.slot === i)) return i; return -1; }
 function toast(msg, t = 1.8) { S.toast = { msg, t }; }
-function pickWeighted() {
-  const w = POOL.map(t => { const c = HEROES[t].cost; return c <= 3 ? 1 : c === 4 ? .75 : (S.round >= 4 ? .45 : .15); });
+function pickWeighted(lv = S.level || 1) {
+  // higher level = better odds for 4 and 5 gold heroes
+  const w = POOL.map(t => { const c = HEROES[t].cost; return c <= 3 ? 1 : c === 4 ? (lv >= 3 ? .8 : .5) : (lv >= 5 ? .55 : lv >= 3 ? .3 : .1); });
   let x = Math.random() * w.reduce((a, b) => a + b, 0);
   for (let i = 0; i < POOL.length; i++) if ((x -= w[i]) <= 0) return POOL[i];
   return POOL[0];
@@ -347,9 +365,11 @@ function aiMerge(ai) {
 }
 const aiValue = u => HEROES[u.type].cost * [1, 3, 9][u.star - 1];
 function aiTurn() {
-  const ai = S.ai, limit = cap() + 6;   // board + bench, same as the player
+  const ai = S.ai, aiCap = capFor(ai.level), limit = aiCap + 6;   // board + bench, same as the player
+  // levels up like a player: buys XP when its team is full or it has spare gold
+  for (let n = 0; n < 2 && ai.level < MAX_LEVEL && ai.gold >= XP_COST + 4 && (ai.units.length >= aiCap || ai.gold >= 14); n++) { ai.gold -= XP_COST; addXp(ai, XP_BUY); }
   for (let roll = 0; roll < 3; roll++) {
-    const shop = Array.from({ length: 4 }, () => pickWeighted());
+    const shop = Array.from({ length: 4 }, () => pickWeighted(ai.level));
     // prefer copies of heroes it already has (to merge), then stronger heroes, then anything
     const order = shop.map((t, i) => ({ t, i, own: ai.units.filter(u => u.type === t && u.star < 3).length, c: HEROES[t].cost }))
       .sort((a, b) => b.own - a.own || b.c - a.c);
@@ -357,16 +377,16 @@ function aiTurn() {
       if (ai.gold < o.c) continue;
       const room = ai.units.length < limit, merges = ai.units.filter(u => u.type === o.t && u.star === 1).length >= 2;
       if (!room && !merges) continue;
-      if (!o.own && ai.units.length >= cap() && Math.random() < .5) continue;   // don't hoard random singles
+      if (!o.own && ai.units.length >= capFor(ai.level) && Math.random() < .5) continue;   // don't hoard random singles
       ai.gold -= o.c; ai.units.push({ type: o.t, star: 1 }); aiMerge(ai);
     }
     if (ai.gold >= 6 + 2) ai.gold -= 2; else break;   // reroll for 2 gold while it can still afford a buy
   }
-  while (ai.units.length > limit) { const w = ai.units.reduce((a, b) => aiValue(a) <= aiValue(b) ? a : b); ai.units.splice(ai.units.indexOf(w), 1); ai.gold += aiValue(w); }
+  while (ai.units.length > capFor(ai.level) + 6) { const w = ai.units.reduce((a, b) => aiValue(a) <= aiValue(b) ? a : b); ai.units.splice(ai.units.indexOf(w), 1); ai.gold += aiValue(w); }
 }
 function genEnemy() {
   const r = S.round, boss = BOSS[r];
-  const team = [...S.ai.units].sort((a, b) => aiValue(b) - aiValue(a)).slice(0, boss ? Math.min(cap(), 6) : cap());
+  const team = [...S.ai.units].sort((a, b) => aiValue(b) - aiValue(a)).slice(0, boss ? Math.min(capFor(S.ai.level), 6) : capFor(S.ai.level));
   const list = team.map(u => ({ type: u.type, star: u.star }));
   const used = new Set();
   const out = [];
@@ -407,6 +427,7 @@ function startBattle() {
   if (!onBoard().length) return toast('Letak sekurang-kurangnya 1 hero atas papan');
   S.fighters = [...onBoard().map(u => makeFighter(u.type, u.star, u.c, u.r, 0)), ...S.enemy.map(e => makeFighter(e.type, e.star, e.c, e.r, 1, e.boss))];
   applyTraits(0); applyTraits(1);
+  saveGame(true);
   S.proj = []; S.timers = []; S.battleT = 0; S.endT = 0; S.phase = 'battle'; S.banner = null;
   sfx('start');
   addText(360, BY + 4 * CELL, 'LAWAN!', '#ffd84a', 84, 1.1, true);
@@ -646,9 +667,27 @@ function endBattle(win) {
   const stars = win ? (alive >= .99 ? 3 : alive >= .5 ? 2 : 1) : 0;
   S.result = { win, income, t: 0, stars, starSfx: 0, boss, aliveFoes: S.fighters.filter(f => f.alive && f.team === 1).length };
   sfx(win ? 'win' : 'lose');
-  if (S.lives <= 0) { S.phase = 'over'; saveBest(S.round - 1); }
-  else if (win && S.round >= MAX_ROUND) { S.phase = 'victory'; saveBest(MAX_ROUND); }
+  if (S.lives <= 0) { S.phase = 'over'; saveBest(S.round - 1); clearSave(); }
+  else if (win && S.round >= MAX_ROUND) { S.phase = 'victory'; saveBest(MAX_ROUND); clearSave(); }
   else S.phase = 'result';
+}
+const SAVE_KEY = 'cozyArenaSave';
+let lastSave = '';
+function saveGame(inBattle = false) {
+  if (S.phase !== 'prep' && !inBattle) return;
+  const data = JSON.stringify({ v: 1, uid, round: S.round, gold: S.gold, lives: S.lives, streak: S.streak, level: S.level, xp: S.xp,
+    units: S.units, shop: S.shop, enemy: S.enemy, ai: S.ai, inBattle });
+  if (data === lastSave) return;
+  lastSave = data; try { localStorage.setItem(SAVE_KEY, data); } catch (e) {}
+}
+function loadSave() { try { const d = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); return d && d.v === 1 && d.lives > 0 ? d : null; } catch (e) { return null; } }
+function clearSave() { lastSave = ''; try { localStorage.removeItem(SAVE_KEY); } catch (e) {} }
+function resumeGame(d) {
+  newGame();
+  Object.assign(S, { round: d.round, gold: d.gold, goldShown: d.gold, lives: d.lives, streak: d.streak, level: d.level || 1, xp: d.xp || 0,
+    units: d.units, shop: d.shop, enemy: d.enemy, ai: d.ai });
+  uid = Math.max(uid, d.uid || 1); S.lastTraits = ''; S.banner = null; showBanner();
+  if (d.inBattle) startBattle();   // left in the middle of a fight: replay that same fight (team can't be changed)
 }
 function saveBest(r) { if (r > best) { best = r; try { localStorage.setItem('cozyArenaBest', r); } catch (e) {} } }
 function nextRound() {
@@ -657,9 +696,10 @@ function nextRound() {
   if (S.round < MAX_ROUND) S.round++;   // lost the final round: fight it again (costs a life each time)
   S.fighters = []; S.proj = []; S.fx = []; S.texts = [];
   const ai = S.ai; ai.gold += 5 + (S.result.win ? 0 : 2) + Math.min(Math.floor(ai.gold / 10), 3);   // same income rules as the player
+  addXp(ai, 2); const lvUp = addXp(S, 2);   // free XP every round for both sides
   rollShop(); aiTurn(); genEnemy(); S.phase = 'prep'; S.result = null;
   showBanner();
-  if (!isBossRound()) later(1.6, () => toast(`Pasukan boleh ada ${cap()} hero sekarang`));
+  if (lvUp) later(1.6, levelUpFx);
 }
 
 /* ---------- effects ---------- */
@@ -1065,6 +1105,20 @@ const SPEED_BTN = FIGHT_BTN;
 const MUTE_BTN = { x: 642, y: 124, w: 56, h: 56 };
 const COIN_POS = { x: 492, y: 45 };
 const START_BTN = { x: 220, y: 1090, w: 280, h: 92 };
+const CONT_BTN = { x: 200, y: 1072, w: 320, h: 86 }, NEW_BTN = { x: 250, y: 1162, w: 220, h: 34 };
+const LVL_BTN = { x: 256, y: BENCH_Y - 42, w: 208, h: 40 };
+function drawLevel() {
+  const b = LVL_BTN, max = S.level >= MAX_LEVEL, on = !max && S.gold >= XP_COST && S.phase === 'prep';
+  ctx.save(); if (!on) ctx.globalAlpha = .7;
+  nine('btn_gold', b.x, b.y, b.w, b.h, 14);
+  txt(`Lv ${S.level}`, b.x + 40, b.y + 18, 22, '#fff8e0');
+  if (max) txt('MAX', b.x + 140, b.y + 18, 20, '#fff8e0');
+  else { txt('+XP', b.x + 118, b.y + 18, 19, '#fff8e0'); icon('icon_coin', b.x + 160, b.y + 18, 20); txt(String(XP_COST), b.x + 182, b.y + 19, 19, '#fff8e0'); }
+  const bw = b.w - 24, fill = max ? 1 : S.xp / XP_NEED[S.level];
+  rr(b.x + 12, b.y + b.h - 10, bw, 6, 3); ctx.fillStyle = 'rgba(40,20,5,.7)'; ctx.fill();
+  if (fill > 0) { rr(b.x + 12, b.y + b.h - 10, Math.max(6, bw * fill), 6, 3); ctx.fillStyle = '#7fe0ff'; ctx.fill(); }
+  ctx.restore();
+}
 const cardRect = i => ({ x: 14 + i * 140, y: SHOP_Y + 18, w: 132, h: 172 });
 const REROLL = cardRect(4);
 // 9-slice: stretch a framed image without distorting its corners
@@ -1201,6 +1255,7 @@ function drawBenchAndShop(t, drag) {
     drawHero({ ui: true, type: u.type, star: u.star, x: p.x, y: p.y, face: 1, pose: 'idle', lift: Math.sin(t * 3 + u.id) * 1.5, alpha: S.phase === 'battle' ? .6 : 1 });
   }
   const n = onBoard().length, nb = S.units.filter(u => u.where === 'bench').length;
+  drawLevel();
   txt(`Pasukan ${n}/${cap()}`, BX + COLS * CELL - 4, BENCH_Y - 20, 21, n >= cap() ? '#ffd84a' : '#d8f5c8', 'right');
   txt(`Bench (${nb}/6)`, BX + 4, BENCH_Y - 20, 21, '#f3e3c3', 'left');
   if (drag) {
@@ -1296,7 +1351,12 @@ function drawTitle(t) {
   how.forEach((l, i) => txt(l, W / 2, 870 + i * 42, 26, '#f3e3c3', 'center', false, FB));
   if (best) txt(`Rekod terbaik: pusingan ${best}`, W / 2, 1052, 26, '#ffd84a', 'center', false, FB);
   if (S.phase === 'loading') txt('Memuatkan...', W / 2, 1140, 36, '#fff');
-  else { ctx.save(); const sc = 1 + Math.sin(t * 4) * .03; ctx.translate(W / 2, START_BTN.y + START_BTN.h / 2); ctx.scale(sc, sc); ctx.translate(-W / 2, -(START_BTN.y + START_BTN.h / 2)); goldBtn(START_BTN, 'MAIN', true); ctx.restore(); }
+  else {
+    const sv = S.save, B = sv ? CONT_BTN : START_BTN;
+    ctx.save(); const sc = 1 + Math.sin(t * 4) * .03; ctx.translate(W / 2, B.y + B.h / 2); ctx.scale(sc, sc); ctx.translate(-W / 2, -(B.y + B.h / 2));
+    goldBtn(B, sv ? `SAMBUNG · P${sv.round}` : 'MAIN', true); ctx.restore();
+    if (sv) { rr(NEW_BTN.x, NEW_BTN.y, NEW_BTN.w, NEW_BTN.h, 17); ctx.fillStyle = 'rgba(20,12,8,.7)'; ctx.fill(); txt('Main baru', W / 2, NEW_BTN.y + 18, 20, '#f3e3c3', 'center', false, FB); }
+  }
   rr(W / 2 - 150, 1200, 300, 44, 22); ctx.fillStyle = 'rgba(12,8,6,.6)'; ctx.fill();
   txt(`Versi ${GAME_VERSION}  ·  ${GAME_DATE}`, W / 2, 1222, 20, '#d8c8b0', 'center', false, FB);
   drawMute();
@@ -1351,6 +1411,7 @@ function render(t) {
   }
   if (S.phase === 'over') panel('TAMAT', [`Kau bertahan sampai pusingan ${S.round}`, `Rekod terbaik: ${best}`], '#7a3a5a', 'Tekan untuk main semula', S.result ? S.result.t : 1);
   if (S.phase === 'victory') panel('JUARA!', [`Kau tewaskan semua ${MAX_ROUND} pusingan`, `Nyawa tinggal: ${S.lives}`], '#d9a224', 'Tekan untuk main semula', S.result ? S.result.t : 1, 3);
+  drawInfo();
   drawCoins();
 }
 
@@ -1370,6 +1431,51 @@ function boardCellAt(x, y) {
   return c >= 0 && c < COLS && r >= 0 && r < ROWS ? { c, r } : null;
 }
 function chipAt(p) { return (S.chips || []).find(c => inR(p, c)); }
+const ULT_DESC = {
+  knight: 'Perisai 4 saat, tebas semua musuh dekat (140% ATK)',
+  archer: '3 panah emas ke 3 musuh terdekat (160% ATK)',
+  mage: 'Meteor jatuh, kena kawasan besar (220% ATK)',
+  healer: 'Pulihkan semua kawan sekaligus (130% heal)',
+  assassin: 'Awal battle lompat ke musuh paling jauh. Ult: 3 tikaman pantas (130% ATK)',
+  bear: 'Pulih 25% HP & paksa musuh sekeliling serang dia',
+  pyro: '4 bola api ke musuh rawak, letup & bakar',
+  gunner: 'Peluru meriam besar, letupan kawasan (240% ATK)',
+};
+let press = null;
+function hitHero(p, x, y, big) { const P = proj(x, y), w = CELL * .5 * P.s * (big ? 1.6 : 1); return Math.abs(p.x - P.x) < w && p.y > P.y - CELL * (big ? 1.5 : .9) * P.s && p.y < P.y + CELL * .5 * P.s; }
+function heroInfoAt(p) {
+  if (S.phase === 'prep') {
+    const u = unitAt(p); if (u) return { type: u.type, star: u.star };
+    for (const e of S.enemy) { const q = cellCenter(e.c, e.r); if (e.boss) q.x += CELL / 2; if (hitHero(p, q.x, q.y, e.boss)) return { type: e.type, star: e.star, boss: e.boss, enemy: true }; }
+    for (let i = 0; i < 4; i++) if (inR(p, cardRect(i)) && !S.shop[i].sold) return { type: S.shop[i].type, star: 1, shop: true };
+  } else if (S.phase === 'battle') {
+    for (const f of S.fighters) if (f.alive && hitHero(p, f.x, f.y, f.boss)) return { type: f.type, star: f.star, boss: f.boss, enemy: f.team === 1 };
+  }
+  return null;
+}
+function drawInfo() {
+  const I = S.info; if (!I) return;
+  const h = HEROES[I.type], m = Math.pow(1.8, I.star - 1), bm = I.boss ? BOSS[S.round] : null;
+  ctx.fillStyle = 'rgba(8,6,4,.65)'; ctx.fillRect(-400, -400, W + 800, H + 800);
+  const x = 60, y = 300, w = 600, ht = 560;
+  nine('panel_wood', x, y, w, ht, 50);
+  const por = UI['portrait_' + I.type];
+  if (por) { ctx.drawImage(por, x + 40, y + 50, 170, 170); ctx.lineWidth = 4; ctx.strokeStyle = '#c9902a'; ctx.strokeRect(x + 40, y + 50, 170, 170); }
+  txt(I.boss ? (typeof I.boss === 'string' ? I.boss : bm.name) : h.name, x + 236, y + 76, 40, I.enemy ? '#ff9c8a' : '#ffe9b0', 'left');
+  txt('★'.repeat(I.star) + '  ' + h.role + (I.enemy ? '  · Musuh' : ''), x + 236, y + 120, 24, I.star === 3 ? '#ff9cf0' : I.star === 2 ? '#c8e6ff' : '#ffd84a', 'left', false, FB);
+  h.traits.forEach((tr, j) => { const tx = x + 236 + j * 150, ty = y + 170; rr(tx, ty - 18, 140, 36, 18); ctx.fillStyle = 'rgba(0,0,0,.4)'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = TRAITS[tr].color; ctx.stroke(); traitIcon(tr, tx + 20, ty, 10, TRAITS[tr].color); txt(TRAITS[tr].name, tx + 38, ty + 1, 19, '#fff', 'left', false, FB); });
+  txt(`Harga ${h.cost} gold`, x + 236, y + 214, 20, '#d8c8b0', 'left', false, FB);
+  const hp = h.hp * m * (bm ? bm.hpMul : 1), atk = h.atk * m * (bm ? bm.atkMul : 1);
+  const rows = [['HP', Math.round(hp)], [h.heal ? 'Heal' : 'Serangan', Math.round(h.heal ? h.heal * m : atk)], ['Jarak', h.range < 2 ? 'Dekat' : `${h.range} petak`],
+    ['Laju serang', `${h.as}s`], ['Armor', `${Math.round(h.armor * 100)}%`], ['Gerak', h.speed >= 180 ? 'Pantas' : h.speed >= 140 ? 'Biasa' : 'Perlahan']];
+  rows.forEach(([k2, v], i) => { const cx = x + 50 + (i % 2) * 260, cy = y + 270 + Math.floor(i / 2) * 50; txt(k2, cx, cy, 22, '#d8c8b0', 'left', false, FB); txt(String(v), cx + 230, cy, 24, '#fff', 'right'); });
+  txt(`Ultimate: ${h.ult}`, x + 50, y + 440, 26, '#9fe8ff', 'left');
+  const d = ULT_DESC[I.type] || '';
+  ctx.font = `700 21px 'Nunito', 'Trebuchet MS', sans-serif`; const words = d.split(' '); let line = '', ly = y + 478;
+  for (const wd of words) { if (ctx.measureText(line + wd).width > w - 100) { txt(line.trim(), x + 50, ly, 21, '#f3e3c3', 'left', false, FB); line = ''; ly += 30; } line += wd + ' '; }
+  txt(line.trim(), x + 50, ly, 21, '#f3e3c3', 'left', false, FB);
+  txt('Tekan untuk tutup', W / 2, y + ht + 30, 22, 'rgba(255,255,255,.7)', 'center', false, FB);
+}
 function showTrait(key) {
   const T = TRAITS[key], who = Object.keys(HEROES).filter(h => HEROES[h].traits.includes(key) && POOL.includes(h)).map(h => HEROES[h].name).join(', ');
   toast(`${T.name} (${who}): ${T.tiers[0]} = ${T.desc[0]}, ${T.tiers[1]} = ${T.desc[1]}`, 3.2);
@@ -1377,20 +1483,28 @@ function showTrait(key) {
 cv.addEventListener('pointerdown', e => {
   audioInit(); goFullscreen();
   const p = toLocal(e);
+  if (S.info) { S.info = null; press = null; return; }
   if (S.phase !== 'loading' && Math.hypot(p.x - (MUTE_BTN.x + 28), p.y - (MUTE_BTN.y + 28)) < 32) return toggleMute();
-  if (S.phase === 'title') { if (inR(p, START_BTN)) { sfx('click'); newGame(); } return; }
+  if (S.phase === 'title') {
+    if (S.save && inR(p, CONT_BTN)) { sfx('click'); resumeGame(S.save); }
+    else if (S.save ? inR(p, NEW_BTN) : inR(p, START_BTN)) { sfx('click'); clearSave(); newGame(); }
+    return;
+  }
   if (S.phase === 'result') { if (S.result.t > .5) nextRound(); return; }
-  if (S.phase === 'over' || S.phase === 'victory') { if (!S.result || S.result.t > .6) S.phase = 'title'; return; }
+  if (S.phase === 'over' || S.phase === 'victory') { if (!S.result || S.result.t > .6) { S.phase = 'title'; S.save = loadSave(); } return; }
   const ch = chipAt(p); if (ch) return showTrait(ch.key);
+  press = { x: p.x, y: p.y, t: 0, target: heroInfoAt(p) };
   if (S.phase === 'battle') { if (inR(p, SPEED_BTN)) { sfx('click'); S.speed = S.speed === 1 ? 2 : S.speed === 2 ? 3 : 1; } return; }
   if (S.phase !== 'prep') return;
   if (inR(p, FIGHT_BTN)) return startBattle();
   if (inR(p, REROLL)) { if (S.gold >= 2) { S.gold -= 2; rollShop(); sfx('click'); } else toast('Gold tak cukup'); return; }
-  for (let i = 0; i < 4; i++) if (inR(p, cardRect(i))) return buy(i);
+  if (inR(p, LVL_BTN)) return buyXp();
+  for (let i = 0; i < 4; i++) if (inR(p, cardRect(i))) { press.card = i; return; }   // buy on release, so a long press can show info instead
   const u = unitAt(p);
   if (u) { drag = { u, x: p.x, y: p.y, sx: p.x, sy: p.y, moved: false }; cv.setPointerCapture(e.pointerId); }
 });
 cv.addEventListener('pointermove', e => {
+  if (press) { const q = toLocal(e); if (Math.hypot(q.x - press.x, q.y - press.y) > 12) press.cancel = true; }
   if (!drag) return; const p = toLocal(e); drag.x = p.x; drag.y = p.y;
   if (Math.hypot(p.x - drag.sx, p.y - drag.sy) > 10) drag.moved = true;
   const cell = boardCellAt(p.x, p.y - 30); drag.hc = cell ? cell.c : -1; drag.hr = cell ? cell.r : -1;
@@ -1407,21 +1521,27 @@ function endDrag() {
   else if (d.y >= SHOP_Y - 20) return sell(u);
   if (!dest) return;
   const occ = S.units.find(o => o !== u && o.where === dest.where && (dest.where === 'board' ? o.c === dest.c && o.r === dest.r : o.slot === dest.slot));
-  if (dest.where === 'board' && old.where !== 'board' && !occ && onBoard().length >= cap()) return toast(`Pasukan dah penuh (${cap()}). Naik pusingan untuk tambah`);
+  if (dest.where === 'board' && old.where !== 'board' && !occ && onBoard().length >= cap()) return toast(`Pasukan dah penuh (${cap()}). Beli XP untuk naik level`);
   Object.assign(u, dest); sfx('place');
   if (occ) Object.assign(occ, old);
   if (dest.where === 'board') { const q = cellCenter(dest.c, dest.r); S.fx.push({ type: 'ring', x: q.x, y: q.y, life: .4, max: .4, color: '#ffffff', r: 60 }); }
   checkTraitsChanged();
 }
-cv.addEventListener('pointerup', endDrag);
-cv.addEventListener('pointercancel', () => { drag = null; });
+cv.addEventListener('pointerup', () => {
+  const pr = press; press = null;
+  if (pr && pr.card !== undefined && !pr.fired && !pr.cancel && S.phase === 'prep') buy(pr.card);
+  endDrag();
+});
+cv.addEventListener('pointercancel', () => { drag = null; press = null; });
 
 /* ---------- loop ---------- */
 let last = 0;
 function loop(ts) {
   const dt = Math.min(.05, (ts - last) / 1000 || 0); last = ts;
+  if (press && !press.fired && !press.cancel && press.target && (press.t += dt) > .45) { press.fired = true; S.info = press.target; drag = null; sfx('click'); }
+  if (S.phase === 'prep' && ts - (S.lastSaveT || 0) > 500) { S.lastSaveT = ts; saveGame(); }
   if (S.phase !== 'loading' && S.phase !== 'title') {
-    let sdt = dt;
+    let sdt = S.info ? 0 : dt;   // battle pauses while the info card is open
     if (S.hitstop > 0) { S.hitstop -= dt; sdt = 0; }
     else if (S.slow > 0) { S.slow -= dt; sdt = dt * .3; }
     if (S.phase === 'battle') { for (let i = 0; i < S.speed; i++) { updateBattle(sdt); if (S.phase !== 'battle') break; updateFx(sdt); } }
@@ -1447,5 +1567,5 @@ function loop(ts) {
 }
 requestAnimationFrame(loop);
 Promise.all([loadAll(), document.fonts ? document.fonts.load(`40px 'Lilita One'`).catch(() => {}) : 0])
-  .then(() => { S.phase = 'title'; })
+  .then(() => { S.phase = 'title'; S.save = loadSave(); })
   .catch(err => { S.phase = 'title'; console.error(err); });

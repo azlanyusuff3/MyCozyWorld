@@ -1,5 +1,5 @@
 // Tukar VERSION setiap kali update game supaya phone ambil versi baru.
-const VERSION = 'cozy-arena-v13';
+const VERSION = 'cozy-arena-v14';
 const ASSETS = [
   './', 'index.html', 'game.js', 'manifest.json',
   'assets/icons/icon-192.png', 'assets/icons/icon-512.png', 'assets/icons/apple-touch-icon.png',
