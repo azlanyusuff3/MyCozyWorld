@@ -2,6 +2,8 @@
 /* Cozy Arena — auto-battler lawan AI. Canvas 2D, logical 720x1280 (portrait).
    Logik tempur guna grid rata (BX/BY/CELL). Papan dilukis 2.5D melalui proj(). */
 
+const GAME_VERSION = 8, GAME_DATE = '29 Okt 2026';   // samakan dengan VERSION dalam sw.js
+const TEAM = ['#3fa9ff', '#ff4a3d'];                // biru = kau, merah = musuh
 const W = 720, H = 1280, COLS = 6, ROWS = 8, CELL = 100, BX = 60, BY = 110;
 const BENCH_Y = 940;
 const SHOP_Y = BENCH_Y + CELL + 22;      // 1062
@@ -42,12 +44,23 @@ let POOL = [];
 /* ---------- canvas ---------- */
 const cv = document.getElementById('game'), ctx = cv.getContext('2d');
 let k = 1, ox = 0, oy = 0, dpr = 1;
+const SA_PROBE = document.createElement('div');
+SA_PROBE.style.cssText = 'position:fixed;left:0;top:0;width:0;height:0;visibility:hidden;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)';
+document.body.appendChild(SA_PROBE);
+function safeArea() { const c = getComputedStyle(SA_PROBE); return { top: parseFloat(c.paddingTop) || 0, bottom: parseFloat(c.paddingBottom) || 0 }; }
+const standalone = () => matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches || navigator.standalone;
+function goFullscreen() {
+  const el = document.documentElement;
+  if (standalone() || document.fullscreenElement || !el.requestFullscreen) return;
+  el.requestFullscreen({ navigationUI: 'hide' }).then(() => { try { screen.orientation.lock('portrait').catch(() => {}); } catch (e) {} }).catch(() => {});
+}
 function resize() {
   dpr = Math.min(window.devicePixelRatio || 1, 2);
-  const w = innerWidth, h = innerHeight;
+  const w = innerWidth, h = innerHeight, sa = safeArea();
   cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
   cv.style.width = w + 'px'; cv.style.height = h + 'px';
-  k = Math.min(w / W, h / H); ox = (w - W * k) / 2; oy = (h - H * k) / 2;
+  const ah = h - sa.top - sa.bottom;
+  k = Math.min(w / W, ah / H); ox = (w - W * k) / 2; oy = sa.top + (ah - H * k) / 2;
 }
 addEventListener('resize', resize); resize();
 function proj(x, y) {
@@ -165,7 +178,7 @@ function spriteImg(type, pose, v) {
   const own = pose === 'idle' || pose === 'attack', big = im.big || !own, base = own ? im[pose] : im.p[pose];
   if (!v) return { img: base, big };
   const key = pose + v;
-  if (!im.v[key]) im.v[key] = v === 'W' ? tinted(base, '#fff') : tinted(base, 'rgba(60,10,90,.55)', 'source-atop');
+  if (!im.v[key]) im.v[key] = v === 'W' ? tinted(base, '#fff') : v === 'T0' ? tinted(base, TEAM[0]) : v === 'T1' ? tinted(base, TEAM[1]) : tinted(base, 'rgba(60,10,90,.55)', 'source-atop');
   return { img: im.v[key], big };
 }
 function drawIdle(t, x, y, w, h) {   // UI portrait: crop the 384 frame out of padded sprites
@@ -808,14 +821,21 @@ function drawHero(o) {
   }
   ctx.fillStyle = 'rgba(0,0,0,.32)'; ctx.beginPath(); ctx.ellipse(P.x, foot, sz * .26, sz * .08, 0, 0, 7); ctx.fill();
   if (o.team !== undefined) {
-    ctx.strokeStyle = o.boss ? 'rgba(220,120,255,.95)' : o.team === 1 ? 'rgba(255,96,80,.9)' : 'rgba(110,240,170,.9)'; ctx.lineWidth = o.boss ? 4 : 3;
-    ctx.beginPath(); ctx.ellipse(P.x, foot, sz * .3, sz * .1, 0, 0, 7); ctx.stroke();
+    const tc = o.boss ? '#d478ff' : TEAM[o.team];
+    ctx.globalAlpha = (o.alpha ?? 1) * .35; ctx.fillStyle = tc; ctx.beginPath(); ctx.ellipse(P.x, foot, sz * .3, sz * .1, 0, 0, 7); ctx.fill();
+    ctx.globalAlpha = o.alpha ?? 1; ctx.strokeStyle = tc; ctx.lineWidth = o.boss ? 4.5 : 3.5; ctx.stroke();
   }
   if (o.burn) { ctx.globalAlpha = .5 + .3 * Math.sin(o.t * 20); ctx.fillStyle = '#ff7a2e'; ctx.beginPath(); ctx.ellipse(P.x, foot - 4, sz * .22, sz * .06, 0, 0, 7); ctx.fill(); ctx.globalAlpha = o.alpha ?? 1; }
   const sq = (o.squash || 0) + (o.squish ? Math.sin(o.squish * Math.PI) * (o.boss ? .05 : .12) : 0);
   ctx.translate(P.x + (o.lunge || 0) * s, foot - (o.lift || 0) * s); ctx.scale(o.face, 1); if (o.rot) ctx.rotate(o.rot);
   if (sq) ctx.scale(1 + sq, 1 - sq);
   const sp = spriteImg(o.type, o.pose, o.boss ? 'D' : ''), dw = sz * (sp.big ? PADR : 1), dy = -sz * .96 - (dw - sz) / 2;
+  if (o.team !== undefined && !o.boss) {
+    const ol = spriteImg(o.type, o.pose, 'T' + o.team).img, d = 2.6 * (o.ui ? 1 : P.s);
+    ctx.globalAlpha = (o.alpha ?? 1) * .95;
+    for (const [ddx, ddy] of [[d, 0], [-d, 0], [0, d], [0, -d]]) ctx.drawImage(ol, -dw / 2 + ddx, dy + ddy, dw, dw);
+    ctx.globalAlpha = o.alpha ?? 1;
+  }
   ctx.drawImage(sp.img, -dw / 2, dy, dw, dw);
   if (o.flash > 0) { ctx.globalAlpha = (o.alpha ?? 1) * Math.min(1, o.flash / .14) * .85; ctx.drawImage(spriteImg(o.type, o.pose, 'W').img, -dw / 2, dy, dw, dw); }
   ctx.restore();
@@ -831,7 +851,7 @@ function drawHero(o) {
     const w = 76, x = P.x - w / 2, y = top - 4;
     rr(x - 2, y - 2, w + 4, 15, 5); ctx.fillStyle = 'rgba(20,12,8,.85)'; ctx.fill();
     ctx.fillStyle = '#f4e3c0'; ctx.fillRect(x, y, w * Math.max(0, o.shownHp / o.maxhp), 8);
-    ctx.fillStyle = o.team === 1 ? '#ff5a4a' : '#5fe07a'; ctx.fillRect(x, y, w * Math.max(0, o.hp / o.maxhp), 8);
+    ctx.fillStyle = TEAM[o.team] || TEAM[0]; ctx.fillRect(x, y, w * Math.max(0, o.hp / o.maxhp), 8);
     ctx.fillStyle = 'rgba(0,0,0,.35)'; for (let i = 1; i < 4; i++) ctx.fillRect(x + w * i / 4, y, 1.5, 8);
     ctx.fillStyle = o.mana >= 100 ? '#c8f4ff' : '#58c8ff'; ctx.fillRect(x, y + 9, w * Math.min(100, o.mana) / 100, 3);
   }
@@ -1115,6 +1135,8 @@ function drawTitle(t) {
   if (best) txt(`Rekod terbaik: pusingan ${best}`, W / 2, 1052, 26, '#ffd84a', 'center', false, FB);
   if (S.phase === 'loading') txt('Memuatkan...', W / 2, 1140, 36, '#fff');
   else { ctx.globalAlpha = .6 + .4 * Math.sin(t * 4); txt('Tekan untuk mula', W / 2, 1140, 42, '#fff'); ctx.globalAlpha = 1; }
+  rr(W / 2 - 150, 1200, 300, 44, 22); ctx.fillStyle = 'rgba(12,8,6,.6)'; ctx.fill();
+  txt(`Versi ${GAME_VERSION}  ·  ${GAME_DATE}`, W / 2, 1222, 20, '#d8c8b0', 'center', false, FB);
   drawMute();
 }
 
@@ -1191,7 +1213,7 @@ function showTrait(key) {
   toast(`${T.name} (${who}): ${T.tiers[0]} = ${T.desc[0]}, ${T.tiers[1]} = ${T.desc[1]}`, 3.2);
 }
 cv.addEventListener('pointerdown', e => {
-  audioInit();
+  audioInit(); goFullscreen();
   const p = toLocal(e);
   if (S.phase !== 'loading' && Math.hypot(p.x - (MUTE_BTN.x + 28), p.y - (MUTE_BTN.y + 28)) < 32) return toggleMute();
   if (S.phase === 'title') { sfx('click'); newGame(); return; }
