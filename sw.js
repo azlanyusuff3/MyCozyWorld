@@ -1,9 +1,12 @@
 // Tukar VERSION setiap kali update game supaya phone ambil versi baru.
-const VERSION = 'cozy-arena-v4';
+const VERSION = 'cozy-arena-v5';
 const ASSETS = [
   './', 'index.html', 'game.js', 'manifest.json',
   'assets/icons/icon-192.png', 'assets/icons/icon-512.png', 'assets/icons/apple-touch-icon.png',
   ...['knight', 'archer', 'mage', 'healer'].flatMap(t => [`assets/heroes/opt/${t}_idle.webp`, `assets/heroes/opt/${t}_attack.webp`]),
+  ...['knight', 'archer', 'healer'].flatMap(t => ['windup', 'hurt', 'walk1', 'walk2', 'victory', 'cast'].map(n => `assets/heroes/opt/${t}_${n}.webp`)),
+  ...['windup', 'walk1', 'walk2', 'cast'].map(n => `assets/heroes/opt/mage_${n}.webp`),
+  ...['forest', 'desert', 'snow', 'volcano'].map(d => `assets/arena/${d}.webp`),
 ];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(VERSION).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));

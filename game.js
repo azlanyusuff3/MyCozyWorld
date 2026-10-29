@@ -156,13 +156,25 @@ function tinted(img, color, mode = 'source-in') {
   g.globalCompositeOperation = mode; g.fillStyle = color; g.fillRect(0, 0, c.width, c.height);
   return c;
 }
+const POSE_LIST = ['windup', 'hurt', 'walk1', 'walk2', 'victory', 'cast'];
+const PADR = 576 / 384;                 // pose canvases carry 96px padding around the 384px idle frame
+const POSE_FALLBACK = { windup: 'idle', hurt: 'idle', walk1: 'idle', walk2: 'idle', victory: 'idle', cast: 'attack' };
+function spriteImg(type, pose, v) {
+  const im = IMG[type];
+  if (pose !== 'idle' && pose !== 'attack' && !im.p[pose]) pose = POSE_FALLBACK[pose] || 'idle';
+  const big = pose !== 'idle' && pose !== 'attack', base = big ? im.p[pose] : im[pose];
+  if (!v) return { img: base, big };
+  const key = pose + v;
+  if (!im.v[key]) im.v[key] = v === 'W' ? tinted(base, '#fff') : tinted(base, 'rgba(60,10,90,.55)', 'source-atop');
+  return { img: im.v[key], big };
+}
 async function loadAll() {
   await Promise.all(Object.keys(HEROES).map(async t => {
     const src = p => [`assets/heroes/opt/${t}_${p}.webp`, `assets/heroes/${t}_${p}.png`];
     const idle = await loadAny(src('idle')); if (!idle) return;
     const attack = (await loadAny(src('attack'))) || idle;
-    IMG[t] = { idle, attack, idleW: tinted(idle, '#fff'), attackW: tinted(attack, '#fff'),
-      idleD: tinted(idle, 'rgba(60,10,90,.55)', 'source-atop'), attackD: tinted(attack, 'rgba(60,10,90,.55)', 'source-atop') };
+    IMG[t] = { idle, attack, p: {}, v: {} };
+    await Promise.all(POSE_LIST.map(async n => { const i = await loadAny([`assets/heroes/opt/${t}_${n}.webp`]); if (i) IMG[t].p[n] = i; }));
   }));
   POOL = Object.keys(HEROES).filter(t => IMG[t]);
   await Promise.all(['forest', 'desert', 'snow', 'volcano'].map(async d => { const i = await loadAny([`assets/arena/${d}.webp`]); if (i) ARENA[d] = i; }));
@@ -325,7 +337,7 @@ function makeFighter(type, star, c, r, team, boss) {
   if (boss) p.x += CELL / 2;
   const f = { id: uid++, team, type, star, h, x: p.x, y: p.y, hp: h.hp * m, maxhp: h.hp * m, atk: h.atk * m, heal: (h.heal || 0) * m,
     cd: rand(.25, .7), mana: 0, target: null, retarget: 0, face: team === 0 ? 1 : -1, atkAnim: 0, flash: 0, alive: true, shield: 0, walk: 0,
-    kx: 0, ky: 0, squish: 0, asMul: 1, crit: .12, burn: null, leaped: false };
+    kx: 0, ky: 0, squish: 0, windT: 0, hurtT: 0, castT: 0, asMul: 1, crit: .12, burn: null, leaped: false };
   if (boss) { const b = BOSS[S.round]; f.boss = b.name; f.hp *= b.hpMul; f.maxhp *= b.hpMul; f.atk *= b.atkMul; f.slamCd = 4.5; }
   f.shownHp = f.hp;
   return f;
@@ -358,6 +370,7 @@ const reach = (f, t) => f.h.range * CELL + (t.boss ? 40 : 0) + (f.boss ? 40 : 0)
 function updateFighter(f, dt) {
   f.atkAnim = Math.max(0, f.atkAnim - dt); f.flash = Math.max(0, f.flash - dt); f.shield = Math.max(0, f.shield - dt);
   f.squish = Math.max(0, f.squish - dt * 4);
+  f.windT = Math.max(0, f.windT - dt); f.hurtT = Math.max(0, f.hurtT - dt); f.castT = Math.max(0, f.castT - dt);
   f.cd -= dt; f.retarget -= dt;
   if (f.kx || f.ky) { f.x += f.kx * dt; f.y += f.ky * dt; const d = Math.max(0, 1 - dt * 9); f.kx *= d; f.ky *= d; if (Math.abs(f.kx) + Math.abs(f.ky) < 5) f.kx = f.ky = 0; }
   if (f.burn) {
@@ -426,7 +439,11 @@ function meteor(f, tt, r, amt) {
     onHit: () => { sfx('boom'); splash(f, tt, r, amt, true); S.shake = .4; S.hitstop = .09; scorch(tt.x, tt.y); } });
 }
 function attack(f, t, healing) {
-  f.atkAnim = .32; f.mana = Math.min(100, f.mana + (f.type === 'healer' ? 28 : 20));
+  f.mana = Math.min(100, f.mana + (f.type === 'healer' ? 28 : 20));
+  f.windT = .12;
+  later(.12, () => { if (!f.alive) return; f.atkAnim = .32; strike(f, t, healing); });
+}
+function strike(f, t, healing) {
   if (healing) { sfx('spark'); return shoot(f, t, 'leaf', () => healUnit(t, f.heal)); }
   switch (f.h.proj) {
     case 'arrow': sfx('arrow'); shoot(f, t, 'arrow', () => hit(f, t, f.atk)); break;
@@ -438,7 +455,7 @@ function attack(f, t, healing) {
   }
 }
 function cast(f, t, healing) {
-  f.atkAnim = .55;
+  f.atkAnim = .55; f.castT = .7;
   addText(f.x, f.y - 130, f.h.ult, '#9fe8ff', 34, 1.3);
   ring(f.x, f.y, '#9fe8ff'); sfx('ult');
   S.slow = .55; S.camT = { x: f.x, y: f.y - 40, z: 1.08, t: .7 };
@@ -488,7 +505,8 @@ function hit(src, t, amt, heavy) {
   const armor = Math.min(.85, t.h.armor + (t.shield > 0 ? .5 : 0));
   const crit = Math.random() < (src.crit || .12);
   const dmg = Math.max(1, Math.round(amt * (1 - armor) * rand(.9, 1.1) * (crit ? 1.6 : 1)));
-  t.hp -= dmg; t.flash = .14; t.squish = 1; t.mana = Math.min(100, t.mana + dmg / t.maxhp * (t.boss ? 20 : 50));
+  t.hp -= dmg; t.flash = .14; t.squish = 1;
+  if (!t.boss && (crit || heavy || dmg > t.maxhp * .07)) t.hurtT = .3; t.mana = Math.min(100, t.mana + dmg / t.maxhp * (t.boss ? 20 : 50));
   addText(t.x + rand(-14, 14), t.y - (t.boss ? 170 : 100), crit ? dmg + '!' : '' + dmg, crit ? '#ffd23e' : '#ffffff', crit ? 46 : 32, .9, crit);
   sparks(t.x, t.y - 45, src.team === 0 ? '#ffe9a8' : '#ff8a6b', crit ? 16 : 8);
   if (crit) { sfx('crit'); S.hitstop = Math.max(S.hitstop, .07); S.shake = Math.max(S.shake, .14); }
@@ -602,7 +620,7 @@ function slash(t, dir) { S.fx.push({ type: 'slash', x: t.x, y: t.y, life: .22, m
 function shatter(f) {
   const img = IMG[f.type].idle, n = f.boss ? 4 : 3, sw = img.width / n, sh = img.height / n, sz = CELL * 1.42 * (1 + .1 * (f.star - 1)) * (f.boss ? 1.75 : 1);
   for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) {
-    S.fx.push({ type: 'shard', img: f.boss ? IMG[f.type].idleD : img, sx: i * sw, sy: j * sh, sw, sh, size: sz / n, face: f.face,
+    S.fx.push({ type: 'shard', img: f.boss ? spriteImg(f.type, 'idle', 'D').img : img, sx: i * sw, sy: j * sh, sw, sh, size: sz / n, face: f.face,
       x: f.x + (i - (n - 1) / 2) * sz / n * f.face, y: f.y, z: sz * .96 - (j + .5) * sz / n - CELL * .34 + 34,
       vx: (i - (n - 1) / 2) * rand(90, 220) * f.face + rand(-40, 40), vy: rand(-40, 40), vz: rand(150, 380) - (j - 1) * 60,
       r: 0, vr: rand(-7, 7), life: rand(.8, 1.1), max: 1.1, g: 1100 });
@@ -792,9 +810,9 @@ function drawHero(o) {
   const sq = (o.squash || 0) + (o.squish ? Math.sin(o.squish * Math.PI) * (o.boss ? .05 : .12) : 0);
   ctx.translate(P.x + (o.lunge || 0) * s, foot - (o.lift || 0) * s); ctx.scale(o.face, 1); if (o.rot) ctx.rotate(o.rot);
   if (sq) ctx.scale(1 + sq, 1 - sq);
-  const im = IMG[o.type];
-  ctx.drawImage(o.boss ? im[o.pose + 'D'] : im[o.pose], -sz / 2, -sz * .96, sz, sz);
-  if (o.flash > 0) { ctx.globalAlpha = (o.alpha ?? 1) * Math.min(1, o.flash / .14) * .85; ctx.drawImage(im[o.pose + 'W'], -sz / 2, -sz * .96, sz, sz); }
+  const sp = spriteImg(o.type, o.pose, o.boss ? 'D' : ''), dw = sz * (sp.big ? PADR : 1), dy = -sz * .96 - (dw - sz) / 2;
+  ctx.drawImage(sp.img, -dw / 2, dy, dw, dw);
+  if (o.flash > 0) { ctx.globalAlpha = (o.alpha ?? 1) * Math.min(1, o.flash / .14) * .85; ctx.drawImage(spriteImg(o.type, o.pose, 'W').img, -dw / 2, dy, dw, dw); }
   ctx.restore();
   if (o.shield > 0) {
     ctx.save(); ctx.globalAlpha = .35 + .15 * Math.sin(o.t * 8);
@@ -815,10 +833,17 @@ function drawHero(o) {
   if (o.star > 1 || o.bars) txt('★'.repeat(o.star), P.x, top - (o.bars ? 16 : 2), 20, o.star === 3 ? '#ff9cf0' : o.star === 2 ? '#c8e6ff' : '#ffd84a');
 }
 function fighterView(f, t) {
-  const atk = f.atkAnim > 0;
-  return { type: f.type, star: f.star, x: f.x, y: f.y, face: f.face, team: f.team, pose: atk ? 'attack' : 'idle', boss: f.boss,
+  const atk = f.atkAnim > 0, won = f.team === 0 && !S.fighters.some(g => g.alive && g.team !== f.team);
+  let pose = 'idle';
+  if (f.castT > 0) pose = 'cast';
+  else if (f.hurtT > 0) pose = 'hurt';
+  else if (atk) pose = 'attack';
+  else if (f.windT > 0) pose = 'windup';
+  else if (won) pose = 'victory';
+  else if (f.walk > 0) pose = Math.floor(f.walk * 3.5) % 2 ? 'walk2' : 'walk1';
+  return { type: f.type, star: f.star, x: f.x, y: f.y, face: f.face, team: f.team, pose, boss: f.boss,
     lunge: atk ? Math.sin((1 - f.atkAnim / .32) * Math.PI) * 10 * f.face : 0,
-    lift: f.walk > 0 ? Math.abs(Math.sin(f.walk * 11)) * 8 : Math.sin(t * 3 + f.id) * 1.5,
+    lift: won ? Math.abs(Math.sin(t * 6 + f.id)) * 16 : f.walk > 0 ? Math.abs(Math.sin(f.walk * 11)) * 8 : Math.sin(t * 3 + f.id) * 1.5,
     squash: f.walk > 0 ? 0 : Math.sin(t * 3 + f.id) * .012, squish: f.squish, burn: f.burn,
     flash: f.flash, bars: true, hp: f.hp, shownHp: f.shownHp, maxhp: f.maxhp, mana: f.mana, shield: f.shield, t };
 }
