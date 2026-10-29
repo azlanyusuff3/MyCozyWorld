@@ -2,7 +2,7 @@
 /* Cozy Arena — auto-battler lawan AI. Canvas 2D, logical 720x1280 (portrait).
    Logik tempur guna grid rata (BX/BY/CELL). Papan dilukis 2.5D melalui proj(). */
 
-const GAME_VERSION = 10, GAME_DATE = '29 Okt 2026';   // samakan dengan VERSION dalam sw.js
+const GAME_VERSION = 11, GAME_DATE = '29 Okt 2026';   // samakan dengan VERSION dalam sw.js
 const TEAM = ['#3fa9ff', '#ff4a3d'];                // biru = kau, merah = musuh
 const W = 720, H = 1280, COLS = 6, ROWS = 8, CELL = 100, BX = 60, BY = 110;
 const BENCH_Y = 940;
@@ -266,7 +266,8 @@ function newGame() {
     fighters: [], proj: [], fx: [], texts: [], timers: [], coins: [], toast: null, result: null, chips: [],
     battleT: 0, endT: 0, speed: 1, shake: 0, hitstop: 0, slow: 0, camT: null, cam: { z: 1, x: 360, y: 520 }, lastTraits: '',
   });
-  rollShop(); genEnemy(); showBanner();
+  S.ai = { gold: 10, units: [] };
+  rollShop(); aiTurn(); genEnemy(); showBanner();
 }
 function showBanner() {
   const th = themeOf(S.round);
@@ -336,18 +337,37 @@ function sell(u) {
   toast(`Jual ${HEROES[u.type].name} +${v} gold`); checkTraitsChanged();
 }
 
-function genEnemy() {
-  const r = S.round, list = [];
-  const boss = BOSS[r];
-  const n = boss ? Math.min(r - 1, 6) : Math.min(r + 1, 8);
-  for (let i = 0; i < n; i++) {
-    let t = POOL[Math.random() * POOL.length | 0];
-    if (i === 0 && n >= 2 && !boss) t = 'knight';
-    let star = 1;
-    if (Math.random() < Math.min(.12 * (r - 2), .75)) star = 2;
-    if (r >= 8 && Math.random() < .15 * (r - 7)) star = 3;
-    list.push({ type: t, star });
+/* AI opponent plays by the player's rules: same starting gold and income, its own 4-card shop
+   (same odds), costs to buy and reroll, stars only by merging 3 copies, same team size cap. */
+function aiMerge(ai) {
+  for (let star = 1; star < 3; star++) for (const t of new Set(ai.units.map(u => u.type))) {
+    const g = ai.units.filter(u => u.type === t && u.star === star);
+    if (g.length >= 3) { g.slice(0, 3).forEach(u => ai.units.splice(ai.units.indexOf(u), 1)); ai.units.push({ type: t, star: star + 1 }); return aiMerge(ai); }
   }
+}
+const aiValue = u => HEROES[u.type].cost * [1, 3, 9][u.star - 1];
+function aiTurn() {
+  const ai = S.ai, limit = cap() + 6;   // board + bench, same as the player
+  for (let roll = 0; roll < 3; roll++) {
+    const shop = Array.from({ length: 4 }, () => pickWeighted());
+    // prefer copies of heroes it already has (to merge), then stronger heroes, then anything
+    const order = shop.map((t, i) => ({ t, i, own: ai.units.filter(u => u.type === t && u.star < 3).length, c: HEROES[t].cost }))
+      .sort((a, b) => b.own - a.own || b.c - a.c);
+    for (const o of order) {
+      if (ai.gold < o.c) continue;
+      const room = ai.units.length < limit, merges = ai.units.filter(u => u.type === o.t && u.star === 1).length >= 2;
+      if (!room && !merges) continue;
+      if (!o.own && ai.units.length >= cap() && Math.random() < .5) continue;   // don't hoard random singles
+      ai.gold -= o.c; ai.units.push({ type: o.t, star: 1 }); aiMerge(ai);
+    }
+    if (ai.gold >= 6 + 2) ai.gold -= 2; else break;   // reroll for 2 gold while it can still afford a buy
+  }
+  while (ai.units.length > limit) { const w = ai.units.reduce((a, b) => aiValue(a) <= aiValue(b) ? a : b); ai.units.splice(ai.units.indexOf(w), 1); ai.gold += aiValue(w); }
+}
+function genEnemy() {
+  const r = S.round, boss = BOSS[r];
+  const team = [...S.ai.units].sort((a, b) => aiValue(b) - aiValue(a)).slice(0, boss ? Math.min(cap(), 6) : cap());
+  const list = team.map(u => ({ type: u.type, star: u.star }));
   const used = new Set();
   const out = [];
   if (boss) { const c = 2, row = boss.type === 'knight' ? 2 : 1; used.add(row * 10 + c); used.add(row * 10 + c + 1); out.push({ type: boss.type, star: 2, c, r: row, boss: true }); }
@@ -634,8 +654,10 @@ function saveBest(r) { if (r > best) { best = r; try { localStorage.setItem('coz
 function nextRound() {
   const inc = S.result.income;
   for (let i = 0; i < Math.min(inc, 12); i++) S.coins.push({ t: -i * .06, x0: 360 + rand(-80, 80), y0: 560 + rand(-30, 30), val: i === Math.min(inc, 12) - 1 ? inc - (Math.min(inc, 12) - 1) : 1 });
-  S.round++; S.fighters = []; S.proj = []; S.fx = []; S.texts = [];
-  rollShop(); genEnemy(); S.phase = 'prep'; S.result = null;
+  if (S.round < MAX_ROUND) S.round++;   // lost the final round: fight it again (costs a life each time)
+  S.fighters = []; S.proj = []; S.fx = []; S.texts = [];
+  const ai = S.ai; ai.gold += 5 + (S.result.win ? 0 : 2) + Math.min(Math.floor(ai.gold / 10), 3);   // same income rules as the player
+  rollShop(); aiTurn(); genEnemy(); S.phase = 'prep'; S.result = null;
   showBanner();
   if (!isBossRound()) later(1.6, () => toast(`Pasukan boleh ada ${cap()} hero sekarang`));
 }
@@ -1042,6 +1064,7 @@ const FIGHT_BTN = { x: 594, y: 12, w: 116, h: 104 };
 const SPEED_BTN = FIGHT_BTN;
 const MUTE_BTN = { x: 642, y: 124, w: 56, h: 56 };
 const COIN_POS = { x: 492, y: 45 };
+const START_BTN = { x: 220, y: 1090, w: 280, h: 92 };
 const cardRect = i => ({ x: 14 + i * 140, y: SHOP_Y + 18, w: 132, h: 172 });
 const REROLL = cardRect(4);
 // 9-slice: stretch a framed image without distorting its corners
@@ -1273,7 +1296,7 @@ function drawTitle(t) {
   how.forEach((l, i) => txt(l, W / 2, 870 + i * 42, 26, '#f3e3c3', 'center', false, FB));
   if (best) txt(`Rekod terbaik: pusingan ${best}`, W / 2, 1052, 26, '#ffd84a', 'center', false, FB);
   if (S.phase === 'loading') txt('Memuatkan...', W / 2, 1140, 36, '#fff');
-  else { ctx.globalAlpha = .6 + .4 * Math.sin(t * 4); txt('Tekan untuk mula', W / 2, 1140, 42, '#fff'); ctx.globalAlpha = 1; }
+  else { ctx.save(); const sc = 1 + Math.sin(t * 4) * .03; ctx.translate(W / 2, START_BTN.y + START_BTN.h / 2); ctx.scale(sc, sc); ctx.translate(-W / 2, -(START_BTN.y + START_BTN.h / 2)); goldBtn(START_BTN, 'MAIN', true); ctx.restore(); }
   rr(W / 2 - 150, 1200, 300, 44, 22); ctx.fillStyle = 'rgba(12,8,6,.6)'; ctx.fill();
   txt(`Versi ${GAME_VERSION}  ·  ${GAME_DATE}`, W / 2, 1222, 20, '#d8c8b0', 'center', false, FB);
   drawMute();
@@ -1355,7 +1378,7 @@ cv.addEventListener('pointerdown', e => {
   audioInit(); goFullscreen();
   const p = toLocal(e);
   if (S.phase !== 'loading' && Math.hypot(p.x - (MUTE_BTN.x + 28), p.y - (MUTE_BTN.y + 28)) < 32) return toggleMute();
-  if (S.phase === 'title') { sfx('click'); newGame(); return; }
+  if (S.phase === 'title') { if (inR(p, START_BTN)) { sfx('click'); newGame(); } return; }
   if (S.phase === 'result') { if (S.result.t > .5) nextRound(); return; }
   if (S.phase === 'over' || S.phase === 'victory') { if (!S.result || S.result.t > .6) S.phase = 'title'; return; }
   const ch = chipAt(p); if (ch) return showTrait(ch.key);
@@ -1414,7 +1437,7 @@ function loop(ts) {
     S.coins = S.coins.filter(c => !c.done);
     S.goldBump = Math.max(0, S.goldBump - dt * 4);
     S.goldShown += (S.gold - S.goldShown) * Math.min(1, dt * 10); if (Math.abs(S.gold - S.goldShown) < .05) S.goldShown = S.gold;
-    const ct = S.camT && S.camT.t > 0 ? S.camT : null;
+    const ct = null;   // camera zoom/pan disabled (Versi 11): board stays still
     if (S.camT) S.camT.t -= dt;
     const tz = ct ? ct.z : 1, tx = ct ? ct.x : 360, ty = ct ? ct.y : BY + 4 * CELL, e = Math.min(1, dt * (ct ? 7 : 4));
     S.cam.z += (tz - S.cam.z) * e; S.cam.x += (tx - S.cam.x) * e; S.cam.y += (ty - S.cam.y) * e;
