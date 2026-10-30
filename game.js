@@ -2,7 +2,7 @@
 /* Cozy Arena — auto-battler lawan AI. Canvas 2D, logical 720x1280 (portrait).
    Logik tempur guna grid rata (BX/BY/CELL). Papan dilukis 2.5D melalui proj(). */
 
-const GAME_VERSION = 16, GAME_DATE = '29 Okt 2026';   // samakan dengan VERSION dalam sw.js
+const GAME_VERSION = 17, GAME_DATE = '29 Okt 2026';   // samakan dengan VERSION dalam sw.js
 const TEAM = ['#3fa9ff', '#ff4a3d'];                // biru = kau, merah = musuh
 const W = 720, H = 1280, COLS = 6, ROWS = 8, CELL = 100, BX = 60, BY = 110;
 const BENCH_Y = 940;
@@ -24,6 +24,17 @@ const HEROES = {
   pyro:     { name: 'Ember', role: 'Pyromancer', cost: 5, hp: 450, atk: 88, range: 3.5, as: 1.3, armor: .05, speed: 130, proj: 'fire', color: '#d0532a', ult: 'Hujan Api!', traits: ['arcane', 'pemburu'] },
   gunner:   { name: 'Pip', role: 'Gunner', cost: 4, hp: 430, atk: 72, range: 4.5, as: 1.1, armor: .05, speed: 135, proj: 'cannon', color: '#4a7a8a', ult: 'Meriam Besar!', traits: ['pemburu', 'hutan'] },
 };
+const ITEMS = {
+  sword:  { name: 'Pedang Gangsa',   desc: '+20% serangan' },
+  bow:    { name: 'Busur Angin',     desc: '+25% laju serang' },
+  staff:  { name: 'Tongkat Bintang', desc: 'Mula battle dengan +40 mana' },
+  shield: { name: 'Perisai Oak',     desc: '+15% armor' },
+  heart:  { name: 'Loket Jantung',   desc: '+25% HP' },
+  claw:   { name: 'Kuku Serigala',   desc: '+15% peluang critical' },
+  leaf:   { name: 'Daun Ajaib',      desc: 'Pulih 2% HP setiap saat' },
+  boots:  { name: 'Kasut Pantas',    desc: 'Gerak 30% lebih laju' },
+};
+const ITEM_IDS = Object.keys(ITEMS), BAG_MAX = 6, ITEM_SLOTS = 2;
 const TRAITS = {
   berani:  { name: 'Berani', color: '#e0614f', tiers: [2, 4], desc: ['+20% HP', '+45% HP'] },
   hutan:   { name: 'Hutan', color: '#6cc25a', tiers: [2, 4], desc: ['+15% laju serang', '+35% laju serang'] },
@@ -207,6 +218,7 @@ async function loadAll() {
   UI.logo = await loadAny(['assets/ui/logo.webp']);
   const uiArt = ['bg_forest_night', 'panel_wood', 'card_frame', 'btn_gold', 'btn_purple', 'icon_coin', 'icon_heart', 'icon_dice', 'icon_swords', 'icon_star', 'tile_stone_light', 'tile_stone_dark',
     ...Object.keys(HEROES).map(t => 'portrait_' + t)];
+  await Promise.all(ITEM_IDS.map(async n => { const i = await loadAny([`assets/ui/items/item_${n}.webp`, `assets/ui/items/item_${n}.png`]); if (i) UI['item_' + n] = i; }));
   await Promise.all(uiArt.map(async n => { const i = await loadAny([`assets/ui/${n}.webp`, `assets/ui/${n}.png`]); if (i) UI[n] = i; }));
   await Promise.all(['forest', 'desert', 'snow', 'volcano'].map(async d => { const i = await loadAny([`assets/arena/${d}.webp`]); if (i) ARENA[d] = i; }));
 }
@@ -269,11 +281,11 @@ const endlessMul = () => S.round > MAX_ROUND ? 1 + .12 * (S.round - MAX_ROUND) :
 
 function newGame() {
   Object.assign(S, {
-    phase: 'prep', endless: false, shopLocked: false, gold: 10, goldShown: 10, goldBump: 0, round: 1, level: 1, xp: 0, info: null, lives: 5, streak: 0, units: [], shop: [], enemy: [],
+    phase: 'prep', items: [], endless: false, shopLocked: false, gold: 10, goldShown: 10, goldBump: 0, round: 1, level: 1, xp: 0, info: null, lives: 5, streak: 0, units: [], shop: [], enemy: [],
     fighters: [], proj: [], fx: [], texts: [], timers: [], coins: [], toast: null, result: null, chips: [],
     battleT: 0, endT: 0, speed: 1, shake: 0, hitstop: 0, slow: 0, camT: null, cam: { z: 1, x: 360, y: 520 }, lastTraits: '',
   });
-  S.ai = { gold: 10, units: [], level: 1, xp: 0 };
+  S.ai = { gold: 10, units: [], level: 1, xp: 0, items: [] };
   rollShop(); aiTurn(); genEnemy(); showBanner();
 }
 function showBanner() {
@@ -346,7 +358,7 @@ function merge(type, star) {
   if (g.length < 3) return;
   const three = g.slice(0, 3);
   const keep = three.find(u => u.where === 'board') || three.find(u => u.slot >= 0) || three[0];
-  for (const u of three) if (u !== keep) S.units.splice(S.units.indexOf(u), 1);
+  for (const u of three) if (u !== keep) { S.units.splice(S.units.indexOf(u), 1); for (const it of u.items || []) giveItem(keep, it); }
   keep.star++;
   if (keep.where === 'bench' && keep.slot < 0) keep.slot = benchFree();
   const p = unitPos(keep);
@@ -356,9 +368,17 @@ function merge(type, star) {
   toast(`${HEROES[type].name} naik ${'★'.repeat(keep.star)}!`);
   merge(type, keep.star); checkTraitsChanged();
 }
+// move an item onto a hero (2 slots); if it is full the item goes back to the bag
+function giveItem(u, it) { u.items ||= []; if (u.items.length < ITEM_SLOTS) u.items.push(it); else S.items.push(it); }
+function dropItems(n, why) {
+  const got = [];
+  for (let i = 0; i < n; i++) { const it = ITEM_IDS[Math.random() * ITEM_IDS.length | 0]; if (S.items.length < BAG_MAX) { S.items.push(it); got.push(it); } }
+  if (got.length) { S.itemFx = { list: got, t: 0, why }; sfx('star'); }
+}
 function sell(u) {
   const v = HEROES[u.type].cost * [1, 3, 9][u.star - 1];
   S.gold += v; S.units.splice(S.units.indexOf(u), 1); sfx('coin');
+  for (const it of u.items || []) S.items.push(it);   // items go back to the bag
   toast(`Jual ${HEROES[u.type].name} +${v} gold`); checkTraitsChanged();
 }
 
@@ -367,7 +387,7 @@ function sell(u) {
 function aiMerge(ai) {
   for (let star = 1; star < 3; star++) for (const t of new Set(ai.units.map(u => u.type))) {
     const g = ai.units.filter(u => u.type === t && u.star === star);
-    if (g.length >= 3) { g.slice(0, 3).forEach(u => ai.units.splice(ai.units.indexOf(u), 1)); ai.units.push({ type: t, star: star + 1 }); return aiMerge(ai); }
+    if (g.length >= 3) { g.slice(0, 3).forEach(u => ai.units.splice(ai.units.indexOf(u), 1)); ai.units.push({ type: t, star: star + 1, items: g.slice(0, 3).flatMap(u => u.items || []).slice(0, ITEM_SLOTS) }); ai.items.push(...g.slice(0, 3).flatMap(u => u.items || []).slice(ITEM_SLOTS)); return aiMerge(ai); }
   }
 }
 const aiValue = u => HEROES[u.type].cost * [1, 3, 9][u.star - 1];
@@ -391,10 +411,15 @@ function aiTurn() {
   }
   while (ai.units.length > capFor(ai.level) + 6) { const w = ai.units.reduce((a, b) => aiValue(a) <= aiValue(b) ? a : b); ai.units.splice(ai.units.indexOf(w), 1); ai.gold += aiValue(w); }
 }
+function aiEquip(ai) {
+  const order = [...ai.units].sort((a, b) => aiValue(b) - aiValue(a)).slice(0, capFor(ai.level));
+  for (const u of order) { u.items ||= []; while (u.items.length < ITEM_SLOTS && ai.items.length) u.items.push(ai.items.shift()); }
+}
 function genEnemy() {
+  aiEquip(S.ai);
   const r = S.round, boss = isBossRound() ? bossFor(r) : null;
   const team = [...S.ai.units].sort((a, b) => aiValue(b) - aiValue(a)).slice(0, boss ? Math.min(capFor(S.ai.level), 6) : capFor(S.ai.level));
-  const list = team.map(u => ({ type: u.type, star: u.star }));
+  const list = team.map(u => ({ type: u.type, star: u.star, items: u.items || [] }));
   const used = new Set();
   const out = [];
   if (boss) { const c = 2, row = boss.type === 'knight' ? 2 : 1; used.add(row * 10 + c); used.add(row * 10 + c + 1); out.push({ type: boss.type, star: 2, c, r: row, boss: true }); }
@@ -410,12 +435,12 @@ function genEnemy() {
 }
 
 /* ---------- battle ---------- */
-function makeFighter(type, star, c, r, team, boss) {
+function makeFighter(type, star, c, r, team, boss, items) {
   const h = HEROES[type], m = Math.pow(1.8, star - 1), p = cellCenter(c, r);
   if (boss) p.x += CELL / 2;
   const f = { id: uid++, team, type, star, h, x: p.x, y: p.y, hp: h.hp * m, maxhp: h.hp * m, atk: h.atk * m, heal: (h.heal || 0) * m,
     cd: rand(.25, .7), mana: 0, target: null, retarget: 0, face: team === 0 ? 1 : -1, atkAnim: 0, flash: 0, alive: true, shield: 0, walk: 0,
-    kx: 0, ky: 0, squish: 0, windT: 0, hurtT: 0, castT: 0, asMul: 1, crit: .12, burn: null, leaped: false };
+    kx: 0, ky: 0, squish: 0, windT: 0, hurtT: 0, castT: 0, asMul: 1, crit: .12, burn: null, leaped: false, items: items || [], armorB: 0, spdMul: 1, regen: 0 };
   if (team === 1 && !boss && S.round > MAX_ROUND) { const em = endlessMul(); f.hp *= em; f.maxhp *= em; f.atk *= em; }
   if (boss) { const b = bossFor(S.round); f.boss = b.name; f.hp *= b.hpMul; f.maxhp *= b.hpMul; f.atk *= b.atkMul; f.slamCd = 4.5; }
   f.shownHp = f.hp;
@@ -430,10 +455,23 @@ function applyTraits(team) {
     f.mana = [0, 35, 70][lv('arcane')];
     f.crit = .12 + [0, .12, .25][lv('pemburu')];
   }
+  for (const f of fs) applyItems(f);
+}
+function applyItems(f) {
+  for (const it of f.items) switch (it) {
+    case 'sword': f.atk *= 1.2; break;
+    case 'bow': f.asMul *= 1.25; break;
+    case 'staff': f.mana = Math.min(100, f.mana + 40); break;
+    case 'shield': f.armorB += .15; break;
+    case 'heart': f.hp *= 1.25; f.maxhp *= 1.25; f.shownHp = f.hp; break;
+    case 'claw': f.crit += .15; break;
+    case 'leaf': f.regen += .02; break;
+    case 'boots': f.spdMul *= 1.3; break;
+  }
 }
 function startBattle() {
   if (!onBoard().length) return toast('Letak sekurang-kurangnya 1 hero atas papan');
-  S.fighters = [...onBoard().map(u => makeFighter(u.type, u.star, u.c, u.r, 0)), ...S.enemy.map(e => makeFighter(e.type, e.star, e.c, e.r, 1, e.boss))];
+  S.fighters = [...onBoard().map(u => makeFighter(u.type, u.star, u.c, u.r, 0, false, u.items)), ...S.enemy.map(e => makeFighter(e.type, e.star, e.c, e.r, 1, e.boss, e.items))];
   applyTraits(0); applyTraits(1);
   saveGame(true);
   S.proj = []; S.timers = []; S.battleT = 0; S.endT = 0; S.phase = 'battle'; S.banner = null;
@@ -448,6 +486,7 @@ function nearest(f, team) {
 }
 const reach = (f, t) => f.h.range * CELL + (t.boss ? 40 : 0) + (f.boss ? 40 : 0);
 function updateFighter(f, dt) {
+  if (f.regen && f.alive && f.hp < f.maxhp) { f.hp = Math.min(f.maxhp, f.hp + f.maxhp * f.regen * dt); f.regenT = (f.regenT || 0) + dt; if (f.regenT > 1) { f.regenT = 0; leaves(f.x, f.y); } }
   f.atkAnim = Math.max(0, f.atkAnim - dt); f.flash = Math.max(0, f.flash - dt); f.shield = Math.max(0, f.shield - dt);
   f.squish = Math.max(0, f.squish - dt * 4);
   f.windT = Math.max(0, f.windT - dt); f.hurtT = Math.max(0, f.hurtT - dt); f.castT = Math.max(0, f.castT - dt);
@@ -496,7 +535,7 @@ function updateFighter(f, dt) {
       if (f.mana >= 100) { f.mana = 0; cast(f, tgt, healing); } else attack(f, tgt, healing);
     }
   } else {
-    const sp = f.h.speed * (f.boss ? .8 : 1) * dt; f.x += dx / d * sp; f.y += dy / d * sp; f.walk += dt;
+    const sp = f.h.speed * (f.boss ? .8 : 1) * f.spdMul * dt; f.x += dx / d * sp; f.y += dy / d * sp; f.walk += dt;
   }
 }
 function bossSkill(f) {
@@ -586,7 +625,7 @@ function shoot(f, t, kind, onHit) {
 }
 function hit(src, t, amt, heavy) {
   if (!t.alive) return;
-  const armor = Math.min(.85, t.h.armor + (t.shield > 0 ? .5 : 0));
+  const armor = Math.min(.85, t.h.armor + (t.armorB || 0) + (t.shield > 0 ? .5 : 0));
   const crit = Math.random() < (src.crit || .12);
   const dmg = Math.max(1, Math.round(amt * (1 - armor) * rand(.9, 1.1) * (crit ? 1.6 : 1)));
   src.dmgDone = (src.dmgDone || 0) + Math.min(dmg, t.hp); t.hp -= dmg; t.flash = .14; t.squish = 1;
@@ -671,6 +710,7 @@ function endBattle(win) {
   const boss = isBossRound();
   const income = 5 + (win ? 2 : 0) + (win && boss ? 5 : 0) + Math.min(Math.floor(S.gold / 10), 3);
   if (!win) S.lives--;
+  if (win) { const n = boss ? 2 : Math.random() < .25 ? 1 : 0; if (n) S.pendingDrop = { n, why: boss ? 'Boss jatuhkan item!' : 'Jumpa item!' }; }
   S.streak = win ? S.streak + 1 : 0;
   const mine = S.fighters.filter(f => f.team === 0), alive = mine.filter(f => f.alive).length / Math.max(1, mine.length);
   const stars = win ? (alive >= .99 ? 3 : alive >= .5 ? 2 : 1) : 0;
@@ -687,7 +727,7 @@ let lastSave = '';
 function saveGame(inBattle = false) {
   if (S.phase !== 'prep' && !inBattle) return;
   const data = JSON.stringify({ v: 1, uid, round: S.round, gold: S.gold, lives: S.lives, streak: S.streak, level: S.level, xp: S.xp,
-    units: S.units, shop: S.shop, shopLocked: S.shopLocked, endless: S.endless, enemy: S.enemy, ai: S.ai, inBattle });
+    units: S.units, shop: S.shop, shopLocked: S.shopLocked, endless: S.endless, items: S.items, enemy: S.enemy, ai: S.ai, inBattle });
   if (data === lastSave) return;
   lastSave = data; try { localStorage.setItem(SAVE_KEY, data); } catch (e) {}
 }
@@ -696,7 +736,7 @@ function clearSave() { lastSave = ''; try { localStorage.removeItem(SAVE_KEY); }
 function resumeGame(d) {
   newGame();
   Object.assign(S, { round: d.round, gold: d.gold, goldShown: d.gold, lives: d.lives, streak: d.streak, level: d.level || 1, xp: d.xp || 0,
-    units: d.units, shop: d.shop, shopLocked: !!d.shopLocked, endless: !!d.endless, enemy: d.enemy, ai: d.ai });
+    units: d.units, shop: d.shop, shopLocked: !!d.shopLocked, endless: !!d.endless, items: d.items || [], enemy: d.enemy, ai: d.ai });
   uid = Math.max(uid, d.uid || 1); S.lastTraits = ''; S.banner = null; showBanner();
   if (d.inBattle) startBattle();   // left in the middle of a fight: replay that same fight (team can't be changed)
 }
@@ -704,15 +744,19 @@ function saveBest(r) { if (r > best) { best = r; try { localStorage.setItem('coz
 function nextRound() {
   const inc = S.result.income;
   for (let i = 0; i < Math.min(inc, 12); i++) S.coins.push({ t: -i * .06, x0: 360 + rand(-80, 80), y0: 560 + rand(-30, 30), val: i === Math.min(inc, 12) - 1 ? inc - (Math.min(inc, 12) - 1) : 1 });
+  const wasBoss = isBossRound();
   if (S.round < MAX_ROUND || S.endless) S.round++;   // lost the final round: fight it again (costs a life each time)
   S.fighters = []; S.proj = []; S.fx = []; S.texts = [];
   const ai = S.ai; ai.gold += 5 + (S.result.win ? 0 : 2) + Math.min(Math.floor(ai.gold / 10), 3);   // same income rules as the player
   if (S.endless) ai.gold += 2 + Math.floor((S.round - MAX_ROUND) / 2);   // endless: the AI gets stronger each round
+  { const n = wasBoss ? 2 : Math.random() < .25 ? 1 : 0;   // the AI finds items on the same odds (checked before the round number moves on below)
+    for (let i = 0; i < n; i++) ai.items.push(ITEM_IDS[Math.random() * ITEM_IDS.length | 0]); }
   addXp(ai, 2); const lvUp = addXp(S, 2);   // free XP every round for both sides
   if (!S.shopLocked) rollShop(); else S.shop.forEach(c => { if (c.sold) Object.assign(c, { type: pickWeighted(), sold: false }); });   // locked: keep the cards, refill bought slots
   aiTurn(); genEnemy(); S.phase = 'prep'; S.result = null;
   showBanner();
   if (lvUp) later(1.6, levelUpFx);
+  if (S.pendingDrop) { const d = S.pendingDrop; S.pendingDrop = null; dropItems(d.n, d.why); }
 }
 
 /* ---------- effects ---------- */
@@ -1013,6 +1057,7 @@ function drawHero(o) {
     ctx.fillStyle = 'rgba(0,0,0,.35)'; for (let i = 1; i < 4; i++) ctx.fillRect(x + w * i / 4, y, 1.5, 8);
     ctx.fillStyle = o.mana >= 100 ? '#c8f4ff' : '#58c8ff'; ctx.fillRect(x, y + 9, w * Math.min(100, o.mana) / 100, 3);
   }
+  if (o.items && o.items.length) { const isz = o.ui ? 22 : 24 * Math.max(.8, P.s), base = foot + 4; o.items.forEach((it, i) => { const ix = P.x + (i - (o.items.length - 1) / 2) * (isz + 2); ctx.fillStyle = 'rgba(20,12,8,.75)'; ctx.beginPath(); ctx.arc(ix, base, isz / 2 + 2, 0, 7); ctx.fill(); icon('item_' + it, ix, base, isz); }); }
   if (o.star > 1 || o.bars) txt('★'.repeat(o.star), P.x, top - (o.bars ? 16 : 2), 20, o.star === 3 ? '#ff9cf0' : o.star === 2 ? '#c8e6ff' : '#ffd84a');
 }
 function fighterView(f, t) {
@@ -1024,7 +1069,7 @@ function fighterView(f, t) {
   else if (f.windT > 0) pose = 'windup';
   else if (won) pose = 'victory';
   else if (f.walk > 0) pose = Math.floor(f.walk * 3.5) % 2 ? 'walk2' : 'walk1';
-  return { type: f.type, star: f.star, x: f.x, y: f.y, face: f.face, team: f.team, pose, boss: f.boss, dir: f.dir,
+  return { type: f.type, star: f.star, x: f.x, y: f.y, face: f.face, team: f.team, pose, boss: f.boss, dir: f.dir, items: f.items,
     lunge: atk ? Math.sin((1 - f.atkAnim / .32) * Math.PI) * 10 * f.face : 0,
     lift: won ? Math.abs(Math.sin(t * 6 + f.id)) * 16 : f.walk > 0 ? Math.abs(Math.sin(f.walk * 11)) * 8 : Math.sin(t * 3 + f.id) * 1.5,
     squash: f.walk > 0 ? 0 : Math.sin(t * 3 + f.id) * .012, squish: f.squish, burn: f.burn,
@@ -1155,6 +1200,31 @@ const COIN_POS = { x: 492, y: 45 };
 const START_BTN = { x: 220, y: 1090, w: 280, h: 92 };
 const CONT_BTN = { x: 200, y: 1072, w: 320, h: 86 }, NEW_BTN = { x: 250, y: 1162, w: 220, h: 34 };
 const ENDLESS_BTN = { x: 180, y: 800, w: 360, h: 84 }, MENU_BTN = { x: 270, y: 930, w: 180, h: 42 };
+const BAG = { x: 4, y: 196, s: 50, gap: 6 };
+const bagRect = i => ({ x: BAG.x, y: BAG.y + i * (BAG.s + BAG.gap), w: BAG.s, h: BAG.s });
+function drawBag(t) {
+  if (!S.items || (!S.items.length && !(itemDrag && itemDrag.moved))) return;
+  for (let i = 0; i < BAG_MAX; i++) {
+    const r = bagRect(i), it = S.items[i];
+    if (!it && i >= S.items.length) break;
+    ctx.save(); if (itemDrag && itemDrag.i === i && itemDrag.moved) ctx.globalAlpha = .3;
+    rr(r.x, r.y, r.w, r.h, 10); ctx.fillStyle = 'rgba(30,18,10,.85)'; ctx.fill(); ctx.lineWidth = 2.5; ctx.strokeStyle = '#c9902a'; ctx.stroke();
+    icon('item_' + it, r.x + r.w / 2, r.y + r.h / 2, BAG.s * .82);
+    ctx.restore();
+  }
+  if (S.phase === 'prep' && S.items.length && S.round <= 2 && !itemDrag) { ctx.globalAlpha = .7 + .3 * Math.sin(t * 4); txt('Seret item ke hero', BAG.x + BAG.s + 8, BAG.y - 14, 16, '#ffe9b0', 'left', false, FB); ctx.globalAlpha = 1; }
+}
+function drawItemDrop(dt) {
+  const f = S.itemFx; if (!f) return; f.t += dt;
+  if (f.t > 2.2) { S.itemFx = null; return; }
+  const a = f.t < .2 ? f.t / .2 : f.t > 1.8 ? (2.2 - f.t) / .4 : 1, y = 520;
+  ctx.save(); ctx.globalAlpha = a;
+  rr(W / 2 - 200, y - 70, 400, 150, 22); ctx.fillStyle = 'rgba(20,12,8,.9)'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = '#ffd84a'; ctx.stroke();
+  txt(f.why, W / 2, y - 40, 28, '#ffd84a');
+  f.list.forEach((it, i) => { const x = W / 2 + (i - (f.list.length - 1) / 2) * 170; icon('item_' + it, x - 50, y + 22, 54 * (1 + .15 * Math.sin(f.t * 6))); txt(ITEMS[it].name, x + 10, y + 12, 17, '#fff', 'left', false, FB); txt(ITEMS[it].desc, x + 10, y + 36, 14, '#bfe7c8', 'left', false, FB); });
+  ctx.restore();
+}
+let itemDrag = null;
 const LVL_BTN = { x: 256, y: BENCH_Y - 42, w: 208, h: 40 };
 function drawLevel() {
   const b = LVL_BTN, max = S.level >= MAX_LEVEL, on = !max && S.gold >= XP_COST && S.phase === 'prep';
@@ -1312,7 +1382,7 @@ function drawBenchAndShop(t, drag) {
   }
   for (const u of S.units) if (u.where === 'bench' && !(drag && drag.u === u)) {
     const p = unitPos(u);
-    drawHero({ ui: true, type: u.type, star: u.star, x: p.x, y: p.y, face: 1, pose: 'idle', lift: Math.sin(t * 3 + u.id) * 1.5, alpha: S.phase === 'battle' ? .6 : 1 });
+    drawHero({ ui: true, type: u.type, star: u.star, items: u.items, x: p.x, y: p.y, face: 1, pose: 'idle', lift: Math.sin(t * 3 + u.id) * 1.5, alpha: S.phase === 'battle' ? .6 : 1 });
   }
   const n = onBoard().length, nb = S.units.filter(u => u.where === 'bench').length;
   drawLevel();
@@ -1436,7 +1506,7 @@ function drawTitle(t) {
       txt(HEROES[ty].name, x, base + 50 * sc2, 24 * Math.max(sc2, .85), '#fff'); txt(HEROES[ty].role, x, base + 78 * sc2, 18 * Math.max(sc2, .85), '#d8c8b0', 'center', false, FB);
     });
   }
-  const how = ['Beli hero di kedai, seret ke papan', '3 hero sama bergabung jadi ★★', 'Hero trait sama aktifkan bonus', `Kalahkan boss pusingan 5 & ${MAX_ROUND}, lepas tu cuba Endless`];
+  const how = ['Beli hero di kedai, seret ke papan', '3 hero sama bergabung jadi ★★', 'Hero trait sama aktifkan bonus', `Kalahkan boss untuk dapat item, pakai pada hero`];
   how.forEach((l, i) => txt(l, W / 2, 870 + i * 42, 26, '#f3e3c3', 'center', false, FB));
   if (best) txt(`Rekod terbaik: pusingan ${best}`, W / 2, 1052, 26, '#ffd84a', 'center', false, FB);
   if (S.phase === 'loading') txt('Memuatkan...', W / 2, 1140, 36, '#fff');
@@ -1466,10 +1536,10 @@ function render(t) {
   drawShadows();
   const list = [];
   if (S.phase === 'prep') {
-    for (const e of S.enemy) { const p = cellCenter(e.c, e.r); if (e.boss) p.x += CELL / 2; list.push({ type: e.type, star: e.star, x: p.x, y: p.y, face: -1, team: 1, boss: e.boss && bossFor(S.round).name, pose: 'idle', lift: Math.sin(t * 3 + e.c + e.r) * 1.5, t }); }
+    for (const e of S.enemy) { const p = cellCenter(e.c, e.r); if (e.boss) p.x += CELL / 2; list.push({ type: e.type, star: e.star, items: e.items, x: p.x, y: p.y, face: -1, team: 1, boss: e.boss && bossFor(S.round).name, pose: 'idle', lift: Math.sin(t * 3 + e.c + e.r) * 1.5, t }); }
     for (const u of S.units) if (u.where === 'board' && !(drag && drag.u === u && drag.moved)) {
       const p = unitPos(u);
-      list.push({ type: u.type, star: u.star, x: p.x, y: p.y, face: 1, team: 0, pose: 'idle', lift: Math.sin(t * 3 + u.id) * 1.5 });
+      list.push({ type: u.type, star: u.star, items: u.items, x: p.x, y: p.y, face: 1, team: 0, pose: 'idle', lift: Math.sin(t * 3 + u.id) * 1.5 });
     }
   } else for (const fi of S.fighters) if (fi.alive) list.push(fighterView(fi, t));
   list.sort((a, b) => a.y - b.y).forEach(drawHero);
@@ -1509,6 +1579,9 @@ function render(t) {
       rr(MENU_BTN.x, MENU_BTN.y, MENU_BTN.w, MENU_BTN.h, 20); ctx.fillStyle = 'rgba(20,12,8,.8)'; ctx.fill(); txt('Ke menu', W / 2, MENU_BTN.y + MENU_BTN.h / 2, 22, '#f3e3c3', 'center', false, FB);
     }
   }
+  drawBag(t);
+  if (itemDrag && itemDrag.moved) { const u = unitAt(itemDrag); if (u) { const q = unitPos(u), P = u.where === 'board' ? proj(q.x, q.y) : q; ctx.strokeStyle = '#ffd84a'; ctx.lineWidth = 3; ctx.beginPath(); ctx.ellipse(P.x, P.y + 20, 44, 16, 0, 0, 7); ctx.stroke(); } icon('item_' + itemDrag.it, itemDrag.x, itemDrag.y - 20, 58); }
+  drawItemDrop(1 / 60);
   drawInfo();
   drawCoins();
 }
@@ -1543,11 +1616,11 @@ let press = null;
 function hitHero(p, x, y, big) { const P = proj(x, y), w = CELL * .5 * P.s * (big ? 1.6 : 1); return Math.abs(p.x - P.x) < w && p.y > P.y - CELL * (big ? 1.5 : .9) * P.s && p.y < P.y + CELL * .5 * P.s; }
 function heroInfoAt(p) {
   if (S.phase === 'prep') {
-    const u = unitAt(p); if (u) return { type: u.type, star: u.star };
-    for (const e of S.enemy) { const q = cellCenter(e.c, e.r); if (e.boss) q.x += CELL / 2; if (hitHero(p, q.x, q.y, e.boss)) return { type: e.type, star: e.star, boss: e.boss, enemy: true }; }
+    const u = unitAt(p); if (u) return { type: u.type, star: u.star, items: u.items };
+    for (const e of S.enemy) { const q = cellCenter(e.c, e.r); if (e.boss) q.x += CELL / 2; if (hitHero(p, q.x, q.y, e.boss)) return { type: e.type, star: e.star, boss: e.boss, enemy: true, items: e.items }; }
     for (let i = 0; i < 4; i++) if (inR(p, cardRect(i)) && !S.shop[i].sold) return { type: S.shop[i].type, star: 1, shop: true };
   } else if (S.phase === 'battle') {
-    for (const f of S.fighters) if (f.alive && hitHero(p, f.x, f.y, f.boss)) return { type: f.type, star: f.star, boss: f.boss, enemy: f.team === 1 };
+    for (const f of S.fighters) if (f.alive && hitHero(p, f.x, f.y, f.boss)) return { type: f.type, star: f.star, boss: f.boss, enemy: f.team === 1, items: f.items };
   }
   return null;
 }
@@ -1563,6 +1636,8 @@ function drawInfo() {
   txt('★'.repeat(I.star) + '  ' + h.role + (I.enemy ? '  · Musuh' : ''), x + 236, y + 120, 24, I.star === 3 ? '#ff9cf0' : I.star === 2 ? '#c8e6ff' : '#ffd84a', 'left', false, FB);
   h.traits.forEach((tr, j) => { const tx = x + 236 + j * 150, ty = y + 170; rr(tx, ty - 18, 140, 36, 18); ctx.fillStyle = 'rgba(0,0,0,.4)'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = TRAITS[tr].color; ctx.stroke(); traitIcon(tr, tx + 20, ty, 10, TRAITS[tr].color); txt(TRAITS[tr].name, tx + 38, ty + 1, 19, '#fff', 'left', false, FB); });
   txt(`Harga ${h.cost} gold`, x + 236, y + 214, 20, '#d8c8b0', 'left', false, FB);
+  (I.items || []).forEach((it, i) => { const ix = x + 420 + i * 70, iy = y + 214; icon('item_' + it, ix, iy - 4, 40); });
+  if (I.items && I.items.length) txt(I.items.map(it => ITEMS[it].desc).join(' · '), x + 50, y + 405, 17, '#ffe39a', 'left', false, FB);
   const hp = h.hp * m * (bm ? bm.hpMul : 1), atk = h.atk * m * (bm ? bm.atkMul : 1);
   const rows = [['HP', Math.round(hp)], [h.heal ? 'Heal' : 'Serangan', Math.round(h.heal ? h.heal * m : atk)], ['Jarak', h.range < 2 ? 'Dekat' : `${h.range} petak`],
     ['Laju serang', `${h.as}s`], ['Armor', `${Math.round(h.armor * 100)}%`], ['Gerak', h.speed >= 180 ? 'Pantas' : h.speed >= 140 ? 'Biasa' : 'Perlahan']];
@@ -1604,12 +1679,14 @@ cv.addEventListener('pointerdown', e => {
   if (Math.hypot(p.x - LOCK_POS.x, p.y - LOCK_POS.y) < 26) { S.shopLocked = !S.shopLocked; sfx('click'); toast(S.shopLocked ? 'Kedai dikunci: kad kekal untuk pusingan depan' : 'Kedai dibuka'); return; }
   if (inR(p, REROLL)) { if (S.gold >= 2) { S.gold -= 2; S.shopLocked = false; rollShop(); sfx('click'); } else toast('Gold tak cukup'); return; }
   if (inR(p, LVL_BTN)) return buyXp();
+  for (let i = 0; i < (S.items || []).length; i++) if (inR(p, bagRect(i))) { itemDrag = { i, it: S.items[i], x: p.x, y: p.y, sx: p.x, sy: p.y, moved: false }; cv.setPointerCapture(e.pointerId); return; }
   for (let i = 0; i < 4; i++) if (inR(p, cardRect(i))) { press.card = i; return; }   // buy on release, so a long press can show info instead
   const u = unitAt(p);
   if (u) { drag = { u, x: p.x, y: p.y, sx: p.x, sy: p.y, moved: false }; cv.setPointerCapture(e.pointerId); }
 });
 cv.addEventListener('pointermove', e => {
   if (press) { const q = toLocal(e); if (Math.hypot(q.x - press.x, q.y - press.y) > 12) press.cancel = true; }
+  if (itemDrag) { const q = toLocal(e); itemDrag.x = q.x; itemDrag.y = q.y; if (Math.hypot(q.x - itemDrag.sx, q.y - itemDrag.sy) > 10) itemDrag.moved = true; return; }
   if (!drag) return; const p = toLocal(e); drag.x = p.x; drag.y = p.y;
   if (Math.hypot(p.x - drag.sx, p.y - drag.sy) > 10) drag.moved = true;
   const cell = boardCellAt(p.x, p.y - 30); drag.hc = cell ? cell.c : -1; drag.hr = cell ? cell.r : -1;
@@ -1633,11 +1710,22 @@ function endDrag() {
   checkTraitsChanged();
 }
 cv.addEventListener('pointerup', () => {
+  if (itemDrag) {
+    const d = itemDrag; itemDrag = null;
+    if (!d.moved) { const I = ITEMS[d.it]; return toast(`${I.name}: ${I.desc}. Seret ke hero untuk pasang`, 2.4); }
+    const u = unitAt({ x: d.x, y: d.y - 20 }) || unitAt(d);
+    if (!u) return;
+    u.items ||= [];
+    if (u.items.length >= ITEM_SLOTS) return toast(`${HEROES[u.type].name} dah pakai ${ITEM_SLOTS} item`);
+    S.items.splice(d.i, 1); u.items.push(d.it); sfx('merge');
+    const q = unitPos(u), P = u.where === 'board' ? proj(q.x, q.y) : q; uiBurst(P.x, P.y - 20, '#ffd84a', 16);
+    return toast(`${HEROES[u.type].name} pakai ${ITEMS[d.it].name}`);
+  }
   const pr = press; press = null;
   if (pr && pr.card !== undefined && !pr.fired && !pr.cancel && S.phase === 'prep') buy(pr.card);
   endDrag();
 });
-cv.addEventListener('pointercancel', () => { drag = null; press = null; });
+cv.addEventListener('pointercancel', () => { drag = null; press = null; itemDrag = null; });
 
 /* ---------- loop ---------- */
 let last = 0;
