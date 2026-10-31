@@ -59,7 +59,7 @@ Each sofa is a LONG 4-seat waiting sofa, very wide and low (about 4x wider than 
 - Row 2: **sofa_seleb** — glamorous deep-pink tufted velvet sofa with gold legs; **magazine** — small wooden magazine rack with colourful magazines; **plant** — potted monstera plant in a cream pot.
 Commit as `salon/sprites/sheets/sofas.png`.
 
-## [ ] Task I — Salon helpers Aiman & Lina (same layouts as Mira in PROMPTS.md BATCH 1)
+## [x] Task I — Salon helpers Aiman & Lina (same layouts as Mira in PROMPTS.md BATCH 1)
 They work with Mira, so they wear the SAME salon uniform style as Mira (same apron design with the scissors pocket) but in their own colour, and must look clearly different from Mira and all guests. Same chibi proportions as `mira_ref.png`.
 
 **Aiman** — cheerful young man ~20, the shampoo boy. Short neat black hair with a small side part, tan skin, mint-teal t-shirt, white apron, dark grey trousers, white sneakers, small towel over one shoulder.
