@@ -32,7 +32,7 @@ Chunky round game icons (like mobile game UI), one per cell, each on a soft circ
 - Row 1: wash (bubbles + shampoo bottle), cut (scissors), color (paint palette / dye brush)
 - Row 2: style (blow dryer with wind), pay (coin pouch), coffee (steaming cup)
 
-## [ ] Task D — UI icons → `icons_b.png`
+## [x] Task D — UI icons → `icons_b.png`
 Same badge style as Task C but **no badge circle** (just the object, thick outline):
 - Row 1: gold coin, yellow star, red heart
 - Row 2: broken heart, hourglass, small gold crown
