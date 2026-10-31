@@ -42,7 +42,7 @@ Same style as Task D (no badge):
 - Row 1: phone camera (influencer), lightning bolt (impatient), padlock
 - Row 2: sparkle cluster, red anger mark (manga 💢 style), pink heart with sparkles (happy)
 
-## [ ] Task F — Logo → `logo.png`
+## [x] Task F — Logo → `logo.png`
 Canvas 1536x1024, flat magenta background, NO grid. Big centred game logo text **"Cozy Salon"** in a chunky rounded cute font, pink and cream with a thick plum outline, a little pair of scissors and a comb crossed behind it, small sparkles. Text must be spelled exactly "Cozy Salon".
 
 ## [ ] Task G — Backgrounds (NOT magenta, NOT grid, PORTRAIT 1024x1365)
