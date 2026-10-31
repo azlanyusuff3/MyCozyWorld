@@ -1,8 +1,8 @@
-# Cozy Arena
+# MyCozyWorld
 
-Auto-battler lawan AI (PWA). Beli hero, susun atas papan, tekan LAWAN.
+Mobile-first Progressive Web App collection.
 
-- Main: buka GitHub Pages repo ni (Settings → Pages → Deploy from branch → main / root)
-- Hero: Bramble (Archer), Nimbus (Mage), Bulwark (Knight), Willow (Healer)
-- Gambar asal: `assets/heroes/*.png`; versi ringan yang game guna: `assets/heroes/opt/*.webp`
-- Lepas update game, tukar `VERSION` dalam `sw.js` supaya phone ambil versi baru
+- **Cozy Arena:** Original auto-battler, launch from `?game=arena`. Existing `game.js` and assets are preserved.
+- **Cozy Salon:** Time-management salon game at `salon/`. Tap or drag guests to shampoo, haircut, hair-color, blow-dry and checkout stations. Earn tips, upgrade equipment and progress through 60 levels. Uses its own save key `mycozyworld_cozy_salon_v1`.
+
+Deploy with GitHub Pages: main branch, repository root. The shared service worker caches both games for offline play after installation.
