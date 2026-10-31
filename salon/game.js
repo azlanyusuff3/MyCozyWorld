@@ -2,7 +2,7 @@
 // Sprite hooks: letak gambar dalam salon/sprites/ (lihat SPRITES di bawah). Kalau tiada, game lukis placeholder sendiri.
 (() => {
 'use strict';
-const SALON_VERSION = 10, SALON_DATE = '31 Okt 2026';
+const SALON_VERSION = 11, SALON_DATE = '31 Okt 2026';
 const $ = id => document.getElementById(id);
 const KEY = 'mycozyworld_cozy_salon_v2', OLD_KEY = 'mycozyworld_cozy_salon_v1', LIMIT = 60;
 const W = 720, H = 960;   // logical canvas size (portrait)
@@ -249,7 +249,7 @@ function renderGoals() {
     return `<div class="goal-row ${claimed ? 'claimed' : ok ? '' : 'locked'}"><div class="goal-txt"><b>${a[1]}</b><small>${a[2]}</small></div><button class="claim-btn" data-ach="${a[0]}" ${ok && !claimed ? '' : 'disabled'}>${claimed ? '✓' : '🪙 ' + a[4]}</button></div>`;
   }).join('');
   const ready = D.goals.filter(q => q.prog >= q.n && !q.claimed).length + ACH.filter(a => a[3]() && !state.ach[a[0]]).length;
-  $('goalBadge').textContent = ready ? ready + ' ganjaran sedia!' : '';
+  $('goalBadge').textContent = ready || '';
 }
 
 // ---------- level design ----------
@@ -314,7 +314,7 @@ function begin(n) {
   if (upg('helper1')) game.staff.push(mk('aiman', STAFF.aiman.home.x, STAFF.aiman.home.y));
   if (upg('helper2')) game.staff.push(mk('lina', STAFF.lina.home.x, STAFF.lina.home.y));
   game.mira = game.staff[0];
-  $('homeView').hidden = true; $('gameView').hidden = false; $('overlay').hidden = true;
+  $('homeView').hidden = true; $('gameView').hidden = false; $('overlay').hidden = true; document.querySelectorAll('.sheet').forEach(x => x.hidden = true);
   $('playingLevel').textContent = 'LEVEL ' + n; $('hudLoc').textContent = game.loc.name.toUpperCase();
   resize(); hud(); window.scrollTo(0, 0); sound('door');
 }
@@ -894,8 +894,10 @@ cv.addEventListener('pointercancel', () => { drag = null; });
 
 // ---------- home ----------
 function home() {
-  if (SPRITE_LIST.has('logo') && !$('salonLogo')) { const l = new Image(); l.id = 'salonLogo'; l.className = 'salon-logo'; l.alt = 'Cozy Salon'; l.src = 'sprites/logo.webp'; $('homeView').querySelector('.hero-copy').prepend(l); }
+  const ml = $('menuLogo'); if (ml) ml.hidden = !SPRITE_LIST.has('logo');
   mode = 'home'; game = null; selected = null;
+  $('shopCoins').textContent = state.coins;
+  $('shopBadge').textContent = UP.filter(u => state.level >= u.unlock && upg(u.key) < u.max && state.coins >= priceOf(u)).length || '';
   $('homeView').hidden = false; $('gameView').hidden = true; $('overlay').hidden = true;
   $('walletStat').textContent = state.coins;
   $('starsStat').textContent = Object.values(state.stars).reduce((a, b) => a + (Number(b) || 0), 0);
@@ -910,7 +912,8 @@ function home() {
   $('locationRow').innerHTML = LOCS.map(l => {
     const open = state.level >= l.from, cur = l === L;
     const st = Array.from({ length: 15 }, (_, i) => state.stars[l.from + i] || 0).reduce((a, b) => a + b, 0);
-    return `<div class="loc ${open ? '' : 'locked'} ${cur ? 'current' : ''}" style="background:${l.wall}"><span class="loc-ic">${open ? l.icon : '🔒'}</span>${l.name}<small>${open ? '⭐ ' + st + '/45' : 'Level ' + l.from}</small></div>`;
+    const pic = SPRITE_LIST.has('loc_' + l.key) ? 'sprites/loc_' + l.key + '.webp' : SPRITE_LIST.has('bg_' + l.key) ? 'sprites/bg_' + l.key + '.webp' : '';
+    return `<div class="loc-card ${open ? '' : 'locked'} ${cur ? 'current' : ''}" style="background-color:${l.wall};${pic ? `background-image:url(${pic})` : ''}"><div class="loc-info"><b>${l.icon} ${l.name}</b><small>${open ? '⭐ ' + st + ' / 45 · Level ' + l.from + '–' + (l.from + 14) : 'Buka di Level ' + l.from}</small></div></div>`;
   }).join('');
   $('upgradeGrid').innerHTML = CATS.map(([c, title]) => `<h3 class="cat-head">${title}</h3>` + UP.filter(u => u.cat === c).map(u => {
     const lv = upg(u.key), price = priceOf(u), locked = state.level < u.unlock, maxed = lv >= u.max, dis = locked || maxed || state.coins < price;
@@ -920,21 +923,42 @@ function home() {
     return `<article class="upgrade"><div class="upgrade-icon">${u.icon}</div><h3>${u.name}</h3><p>${u.info}</p><div class="upgrade-level">${lvTxt}</div><button class="buy-btn" data-upgrade="${u.key}" ${dis ? 'disabled' : ''}>${btn}</button></article>`;
   }).join('')).join('');
   renderGoals();
+  [['sheetShop', 'dock_shop'], ['sheetGoals', 'dock_missions'], ['sheetMap', 'dock_map'], ['sheetHow', 'dock_help']].forEach(([k, n]) => { const b = document.querySelector(`[data-sheet=${k}] .dock-ic`); if (b && SPRITE_LIST.has(n) && !b.querySelector('img')) b.innerHTML = `<img src="sprites/${n}.webp" alt="">`; });
   $('versionNote').textContent = 'Versi ' + SALON_VERSION + ' · ' + SALON_DATE + ' · Progress disimpan dalam device ni.';
 }
 // little animated hero on home screen
 const hc = $('heroCanvas'), hx = hc.getContext('2d');
 function drawHero() {
   if (mode !== 'home' || !ART_READY) return;
-  const sp = img('mira_happy') || img('mira_front_idle');
-  hx.setTransform(1, 0, 0, 1, 0, 0); hx.clearRect(0, 0, 300, 300);
-  hx.fillStyle = '#ffffff88'; hx.beginPath(); hx.arc(150, 160, 120, 0, Math.PI * 2); hx.fill();
-  const b = Math.sin(performance.now() / 300) * 6;
-  if (sp) hx.drawImage(sp, 30, 30 + b, 240, 240);
-  else { hx.save(); hx.translate(150, 190 + b); hx.scale(1.8, 1.8); swapCtx(hx, () => chibi(0, 0, { skin: '#f6cdb1', hair: '#7a3b52', style: 3, outfit: '#e56b93', mood: 1, apron: true })); hx.restore(); }
-  hx.font = '30px system-ui'; hx.textAlign = 'center'; hx.textBaseline = 'middle';
-  const t = performance.now() / 500; hx.fillText('✨', 150 + Math.cos(t) * 110, 140 + Math.sin(t) * 80); hx.fillText('✂️', 150 - Math.cos(t) * 110, 160 - Math.sin(t) * 70);
+  const W2 = 720, H2 = 900, t = performance.now();
+  hx.setTransform(hc.width / W2, 0, 0, hc.height / H2, 0, 0);
+  const L = locOf(state.level), bg = img('menu_bg') || img('bg_' + L.key);
+  if (bg) { const sc = Math.max(W2 / bg.width, H2 / bg.height); hx.drawImage(bg, (W2 - bg.width * sc) / 2, (H2 - bg.height * sc) / 2, bg.width * sc, bg.height * sc); }
+  else { const gr = hx.createLinearGradient(0, 0, 0, H2); gr.addColorStop(0, '#ffd9e6'); gr.addColorStop(1, '#fff0dc'); hx.fillStyle = gr; hx.fillRect(0, 0, W2, H2); }
+  if (!img('menu_bg')) { const v = hx.createLinearGradient(0, 0, 0, H2); v.addColorStop(0, '#fff3f800'); v.addColorStop(.55, '#ffe6ef55'); v.addColorStop(1, '#ffd2e3ee'); hx.fillStyle = v; hx.fillRect(0, 0, W2, H2); }
+  // spotlight
+  const rg = hx.createRadialGradient(360, 470, 20, 360, 470, 300); rg.addColorStop(0, '#ffffffaa'); rg.addColorStop(1, '#ffffff00'); hx.fillStyle = rg; hx.fillRect(0, 200, W2, 700);
+  const crew = [
+    ['mira_happy', 360, 455, 300, 0],
+    [upg('helper1') ? 'aiman_front_idle' : 'guest_makcik_after', 165, 500, 240, 1.3],
+    [upg('helper2') ? 'lina_front_idle' : 'guest_seleb_after', 555, 500, 240, 2.4],
+  ];
+  // back pair first, Mira in front
+  for (const [n, x, y, sz, ph] of [crew[1], crew[2], crew[0]]) {
+    const im = img(n); if (!im) continue;
+    const b = Math.sin(t / 380 + ph) * 7;
+    hx.fillStyle = '#00000022'; hx.beginPath(); hx.ellipse(x, y + sz * .47, sz * .26, sz * .05, 0, 0, Math.PI * 2); hx.fill();
+    hx.drawImage(im, x - sz / 2, y - sz / 2 + b, sz, sz);
+  }
+  hx.font = '34px system-ui'; hx.textAlign = 'center'; hx.textBaseline = 'middle';
+  for (let i = 0; i < 6; i++) { const a = t / 1400 + i * 1.05; hx.globalAlpha = .5 + .5 * Math.sin(t / 300 + i); const ic = img('ic_sparkle'); const x = 360 + Math.cos(a) * 300, y = 430 + Math.sin(a * 1.3) * 120; if (ic) hx.drawImage(ic, x - 18, y - 18, 36, 36); else hx.fillText('✨', x, y); }
+  hx.globalAlpha = 1;
 }
+function sizeHero() { const r = hc.getBoundingClientRect(), d = Math.min(2, devicePixelRatio || 1); if (r.width) { hc.width = Math.round(r.width * d); hc.height = Math.round(r.height * d); } }
+addEventListener('resize', sizeHero); setTimeout(sizeHero, 0);
+// bottom sheets
+document.querySelectorAll('[data-sheet]').forEach(b => b.addEventListener('click', () => { home(); $(b.dataset.sheet).hidden = false; sound('tap'); }));
+document.querySelectorAll('.sheet').forEach(sh => sh.addEventListener('click', e => { if (e.target === sh || e.target.closest('.sheet-close')) { sh.hidden = true; } }));
 function swapCtx(c, fn) { const old = ctx; ctx = c; try { fn(); } finally { ctx = old; } }
 
 // ---------- buttons ----------

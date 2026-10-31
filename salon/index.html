@@ -19,55 +19,64 @@
     <div class="top-btns"><button id="musicBtn" class="icon-btn" type="button" aria-label="Toggle music">🎵</button><button id="soundBtn" class="icon-btn" type="button" aria-label="Toggle sound">🔊</button></div>
   </header>
 
-  <main id="homeView" class="view">
-    <section class="hero">
-      <div class="hero-copy">
-        <p class="eyebrow">KISAH SALON KECIL KAU</p>
-        <h1>Style, smile<br>&amp; shine! <span>✦</span></h1>
-        <p>Bantu Mira layan pelanggan, buat combo dan bina salon paling cozy dari kampung sampai studio seleb.</p>
+  <main id="homeView" class="view home">
+    <section class="menu-stage">
+      <canvas id="heroCanvas" class="menu-canvas" width="720" height="900" aria-hidden="true"></canvas>
+      <div class="menu-top">
+        <div class="chip"><span>🪙</span><b id="walletStat">0</b></div>
+        <div class="chip"><span>⭐</span><b id="starsStat">0</b></div>
+        <div class="chip"><span>🏆</span><b id="levelStat">1 / 60</b></div>
       </div>
-      <canvas id="heroCanvas" class="hero-art" width="300" height="300" aria-hidden="true"></canvas>
+      <div class="menu-logo"><img id="menuLogo" src="sprites/logo.webp" alt="Cozy Salon"></div>
+      <div class="menu-bottom">
+        <div class="level-card">
+          <span class="eyebrow" id="missionEyebrow">KEDAI KAMPUNG</span>
+          <h2 id="missionTitle">Level 1</h2>
+          <p id="missionDesc"></p>
+        </div>
+        <button id="playBtn" class="play-big" type="button">▶ MAIN LEVEL 1</button>
+      </div>
     </section>
 
-    <div class="home-stats">
-      <div><span class="stat-icon">🪙</span><span><small>COINS</small><b id="walletStat">0</b></span></div>
-      <div><span class="stat-icon">⭐</span><span><small>STARS</small><b id="starsStat">0</b></span></div>
-      <div><span class="stat-icon">🏆</span><span><small>LEVEL</small><b id="levelStat">1 / 60</b></span></div>
-    </div>
-
-    <div class="section-heading"><div><span class="eyebrow">PERJALANAN</span><h2>Salon Kau</h2></div></div>
-    <div id="locationRow" class="location-row"></div>
-
-    <section class="mission-card">
-      <div><p class="eyebrow" id="missionEyebrow">CABARAN HARI INI</p><h2 id="missionTitle">Level 1</h2><p id="missionDesc"></p></div>
-      <span class="mission-icon" id="missionIcon">💇</span>
-    </section>
-    <button id="playBtn" class="primary-btn" type="button">▶ MAIN LEVEL 1</button>
-
-    <details class="howto">
-      <summary>📖 Cara main</summary>
-      <ol>
-        <li><b>Tap pelanggan</b> (atau drag) → <b>tap station</b> yang dia perlukan (ikon dalam bubble).</li>
-        <li>Mira akan jalan dan buat kerja. Kau boleh susun sampai <b>5 kerja</b> dalam queue, jadi tap laju-laju!</li>
-        <li>Kerja jenis sama berturut-turut = <b>COMBO</b> dan tip lebih besar.</li>
-        <li>Hair dryer jalan sendiri, Mira tak perlu tunggu.</li>
-        <li>Habis service, hantar ke <b>kaunter 💰</b> untuk bayar.</li>
-        <li>Masa Mira gunting/warna, keluar <b>bar timing</b>. Tap stesen bila jarum dalam zon hijau = <b>PERFECT</b> (tip + laju).</li>
-        <li>Pelanggan ada <b>⭐ hajat</b>: nak PERFECT atau nak dilayan cepat. Tunaikan untuk bonus!</li>
-        <li>Pelanggan marah? Tap dia → tap <b>mesin kopi ☕</b>.</li>
-        <li>Level 8 boleh upah <b>Aiman</b> (shampoo + kopi), level 14 <b>Lina</b> (kaunter). Kerja mereka masuk queue sendiri.</li>
-      </ol>
-    </details>
-
-    <div id="goalsBox">
-      <div class="section-heading"><div><span class="eyebrow">SETIAP HARI</span><h2>Misi Harian 📅</h2></div><span class="upgrade-tag" id="goalBadge"></span></div>
-      <div id="dailyList" class="goal-list"></div>
-      <details class="ach-box"><summary>🏆 Pencapaian <span id="achCount"></span></summary><div id="achList" class="goal-list"></div></details>
-    </div>
-    <div class="section-heading"><div><span class="eyebrow">KEDAI</span><h2>Peralatan & Salon</h2></div><span class="upgrade-tag">KEKAL</span></div>
-    <div id="upgradeGrid" class="upgrade-grid"></div>
+    <nav class="menu-dock">
+      <button class="dock-btn" data-sheet="sheetShop"><span class="dock-ic">🛒</span><small>Kedai</small><i class="badge" id="shopBadge"></i></button>
+      <button class="dock-btn" data-sheet="sheetGoals"><span class="dock-ic">📅</span><small>Misi</small><i class="badge" id="goalBadge"></i></button>
+      <button class="dock-btn" data-sheet="sheetMap"><span class="dock-ic">🗺️</span><small>Peta</small></button>
+      <button class="dock-btn" data-sheet="sheetHow"><span class="dock-ic">📖</span><small>Cara Main</small></button>
+    </nav>
     <p class="footer-note" id="versionNote"></p>
   </main>
+
+  <div id="sheetShop" class="sheet" hidden><div class="sheet-card">
+    <div class="sheet-head"><h2>🛒 Kedai Salon</h2><span class="chip small"><span>🪙</span><b id="shopCoins">0</b></span><button class="sheet-close" type="button">✕</button></div>
+    <div id="upgradeGrid" class="upgrade-grid"></div>
+  </div></div>
+
+  <div id="sheetGoals" class="sheet" hidden><div class="sheet-card" id="goalsBox">
+    <div class="sheet-head"><h2>📅 Misi Harian</h2><button class="sheet-close" type="button">✕</button></div>
+    <div id="dailyList" class="goal-list"></div>
+    <h3 class="cat-head">🏆 Pencapaian <span id="achCount"></span></h3>
+    <div id="achList" class="goal-list"></div>
+  </div></div>
+
+  <div id="sheetMap" class="sheet" hidden><div class="sheet-card">
+    <div class="sheet-head"><h2>🗺️ Perjalanan Salon</h2><button class="sheet-close" type="button">✕</button></div>
+    <div id="locationRow" class="location-row"></div>
+  </div></div>
+
+  <div id="sheetHow" class="sheet" hidden><div class="sheet-card">
+    <div class="sheet-head"><h2>📖 Cara Main</h2><button class="sheet-close" type="button">✕</button></div>
+    <ol class="howto-list">
+      <li><b>Tap pelanggan</b> (atau drag) → <b>tap stesen</b> yang dia perlukan (ikon dalam bubble).</li>
+      <li>Mira jalan dan buat kerja. Susun sampai <b>5 kerja</b> dalam queue, jadi tap laju-laju!</li>
+      <li>Kerja jenis sama berturut-turut = <b>COMBO</b> dan tip lebih besar.</li>
+      <li>Masa gunting/warna keluar <b>bar timing</b>. Tap stesen bila jarum dalam zon hijau = <b>PERFECT</b>.</li>
+      <li>Pelanggan ada <b>⭐ hajat</b>: nak PERFECT atau nak cepat. Tunaikan untuk bonus!</li>
+      <li>Hair dryer jalan sendiri. Habis service, hantar ke <b>kaunter 💰</b>.</li>
+      <li>Pelanggan marah? Tap dia → tap <b>mesin kopi ☕</b>.</li>
+      <li>Level 8 upah <b>Aiman</b> (shampoo + kopi), level 14 <b>Lina</b> (kaunter).</li>
+    </ol>
+  </div></div>
 
   <main id="gameView" class="view game" hidden>
     <section class="game-hud">

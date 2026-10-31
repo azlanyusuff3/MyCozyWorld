@@ -116,6 +116,15 @@ def main():
                 names.add(n)
             else:
                 save_group('', {n: im}, names)
+    if os.path.exists(p('dock')):
+        for n, im in cells(p('dock'), [['dock_shop', 'dock_missions', 'dock_map'], ['dock_help', 'dock_music', 'dock_sound']]).items():
+            save_group('', {n: im}, names)
+    if os.path.exists(p('locs')):
+        for n, im in cells(p('locs'), [['loc_kampung', 'loc_mall', 'loc_resort'], ['loc_seleb', None, None]]).items():
+            save_group('', {n: im}, names)
+    if os.path.exists(p('menu_bg')):
+        Image.open(p('menu_bg')).convert('RGB').resize((720, 900), Image.LANCZOS).save(os.path.join(HERE, 'menu_bg.webp'), 'WEBP', quality=85)
+        names.add('menu_bg')
     for loc in ['kampung', 'mall', 'resort', 'seleb']:
         if os.path.exists(p('bg_' + loc)):
             Image.open(p('bg_' + loc)).convert('RGB').resize((720, 960), Image.LANCZOS).save(os.path.join(HERE, 'bg_' + loc + '.webp'), 'WEBP', quality=85)

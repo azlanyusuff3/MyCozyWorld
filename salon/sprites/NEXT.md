@@ -93,5 +93,18 @@ Normal RULES, props only, no people, same style. Each cell one item:
 - pay: white marble-top counter with a tablet POS and a small orchid.
 - coffee: silver espresso machine on a white round table with two cups.
 
+## [ ] Task L — Cozy Salon MAIN MENU art
+The home screen is now a game-style menu (big scene + logo + PLAY button + 4 round dock buttons). Make it gorgeous:
+1. `menu_bg.png` — **PORTRAIT 1024x1280, NOT magenta, no grid, no text, no people.** Cozy pastel **storefront exterior** of the Cozy Salon on a sunny Malaysian street: pink-and-cream shop front with a striped awning, big glass window showing salon chairs and mirrors inside, potted plants, a little bench, bunting flags, soft sky with clouds at the top. Keep the top 30% fairly simple (sky/awning — the logo goes there) and the bottom 30% simple pavement (UI goes there). Characters stand in the middle, so leave the middle-front floor area open.
+2. `dock.png` — normal RULES (magenta, 3x2). Chunky glossy mobile-game menu icons, no badge circle, thick plum outline: Row 1: **shop** (cute pink shopping bag with a bow), **missions** (clipboard with checkmarks and a star), **map** (folded treasure-style map with a heart pin). Row 2: **help** (open storybook with a sparkle), **music** (pink music note), **sound** (cute speaker).
+3. `locs.png` — normal RULES (magenta, 3x2). Small **storefront exterior** illustrations of each salon location, same style, front view: Row 1: **kampung** (wooden kampung shop house with zinc roof, coconut tree, flower pots), **mall** (shiny shop inside a mall, glass front, KL-tower-ish skyline hint), **resort** (beachside rattan hut salon with palm trees and sea). Row 2: **seleb** (glamorous celebrity studio front with gold trim, red carpet, spotlights), and leave the last 2 cells empty magenta.
+
+## [ ] Task M — MyCozyWorld HUB game cards (commit to `assets/hub/sheets/`, NOT the salon folder)
+The hub page shows 3 game cards. Make one **square 1024x1024 key-art background** per game (**NOT magenta, no text, no logo** — the logo is placed on top later, so keep the top-centre area calm):
+- `assets/hub/sheets/card_arena.png` — cozy fantasy battle arena at dusk, grassy board with soft glowing tiles, a few chibi heroes in the style of `assets/heroes/opt/knight_idle.webp` (knight, fox archer, mage) at the bottom.
+- `assets/hub/sheets/card_salon.png` — inside the cozy pastel salon with Mira (`salon/sprites/sheets/mira_ref.png`) at the bottom-left styling a happy customer, sparkles.
+- `assets/hub/sheets/card_chess.png` — a pastel fantasy chessboard on a castle balcony at golden hour, chibi chess pieces in the style of `cozy-chess/sprites/white_king_idle.webp` and `black_knight_idle.webp` facing off at the bottom.
+- `assets/hub/sheets/logo_chess.png` — 1536x1024 flat magenta background, big chunky cute game logo text **"Cozy Chess"** (spelled exactly) in cream and royal purple with gold outline, a small crown and a knight piece, sparkles. Same logo style as `salon/sprites/sheets/logo.png` and `assets/ui/logo.png`.
+
 ---
 After you finish, tell the user "Cozy Salon art round done" so Claude can process the sheets.
