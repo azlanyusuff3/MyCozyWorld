@@ -392,6 +392,8 @@ function hud() {
 }
 
 // ---------- drawing ----------
+// arah sprite: turun = front, naik = back, kiri/kanan = side (sprite side menghadap kanan, flip bila ke kiri)
+function dirOf(dx, dy) { return Math.abs(dx) > Math.abs(dy) * 1.2 ? 'side' : dy > 0 ? 'front' : 'back'; }
 function resize() {
   const maxW = Math.min(620, window.innerWidth - 16);
   const top = cv.getBoundingClientRect().top || 110;
@@ -472,12 +474,14 @@ function drawGuest(g) {
   const bnc = g.bounce > 0 ? Math.sin(g.bounce * Math.PI) * 14 : 0;
   const x = g.x, y = g.y - bob - bnc - (seated ? 0 : 6);
   const mood = g.angry ? 0 : g.happyLeave ? 1 : g.patience / g.max;
-  const pose = g.walking ? (Math.sin(performance.now() / 110) > 0 ? 'walk1' : 'walk2') : g.status === 'serve' ? 'chair' : mood < .3 ? 'angry' : g.done.length && g.step >= g.steps.length - 1 ? 'after' : 'sit';
+  const dir = dirOf(g.tx - g.x, g.ty - g.y), step = Math.sin(performance.now() / 110) > 0 ? 'walk1' : 'walk2';
+  const pose = g.walking ? dir + '_' + step : g.status === 'serve' ? 'chair' : mood < .3 ? 'angry' : g.done.length && g.step >= g.steps.length - 1 ? 'after' : 'sit';
   const sp = img('guest_' + g.type + '_' + pose);
+  const flip = g.walking && dir === 'side' && g.tx < g.x;
   const sel = selected === g.id;
   if (sel) { ell(x, g.y + 34, 52, 16, '#ffe36e'); }
   else ell(x, g.y + 34, 40, 12, '#00000026');
-  if (sp) { ctx.drawImage(sp, x - 75, y - 125, 150, 150); }
+  if (sp) { ctx.save(); ctx.translate(x, y); if (flip) ctx.scale(-1, 1); ctx.drawImage(sp, -75, -125, 150, 150); ctx.restore(); }
   else chibi(x, y, { skin: SKIN[g.skin], hair: HAIR[g.hair], style: g.style, outfit: OUTFIT[g.outfit], mood, tudung: g.tudung || 0, closed: g.status === 'serve', shine: g.shine, crown: g.type === 'vip', walking: g.walking });
   if (g.status === 'serve' && TYPES[g.at?.o?.kind]?.staff === false) { ctx.globalAlpha = .5; ell(x, y - 60, 46, 38, '#fff'); ctx.globalAlpha = 1; }
   if (g.sparkle > 0) { ctx.globalAlpha = Math.min(1, g.sparkle); const t = performance.now() / 200; for (let i = 0; i < 5; i++) emoji('✨', x + Math.cos(t + i * 1.3) * 50, y - 60 + Math.sin(t * 1.2 + i) * 40, 18); ctx.globalAlpha = 1; }
@@ -550,11 +554,13 @@ function drawMira() {
   const m = game.mira, moving = Math.hypot(m.tx - m.x, m.ty - m.y) > 2;
   const working = m.cur && m.phase === 'do';
   const kind = m.cur?.k === 'work' ? m.cur.slot.kind : m.cur?.k;
-  const pose = moving ? (Math.sin(m.walk) > 0 ? 'walk1' : 'walk2') : working ? (kind === 'cut' || kind === 'color' ? 'cut' : kind === 'wash' ? 'wash' : 'idle') : m.happy > 0 ? 'happy' : 'idle';
+  if (moving) m.dir = dirOf(m.tx - m.x, m.ty - m.y);
+  const md = m.dir || 'front';
+  const pose = moving ? md + '_' + (Math.sin(m.walk) > 0 ? 'walk1' : 'walk2') : working ? (kind === 'cut' || kind === 'color' ? 'cut' : kind === 'wash' ? 'wash' : md + '_idle') : m.happy > 0 ? 'happy' : 'front_idle';
   const bob = moving ? Math.abs(Math.sin(m.walk)) * 7 : working ? Math.sin(performance.now() / 90) * 2 : 0;
   ell(m.x, m.y + 36, 42, 12, '#00000030');
   const sp = img('mira_' + pose);
-  ctx.save(); ctx.translate(m.x, m.y - bob); if (m.face < 0) ctx.scale(-1, 1);
+  ctx.save(); ctx.translate(m.x, m.y - bob); if (m.face < 0 && (!sp || md === 'side' || working)) ctx.scale(-1, 1);
   if (sp) ctx.drawImage(sp, -80, -135, 160, 160);
   else {
     chibi(0, 0, { skin: '#f6cdb1', hair: '#7a3b52', style: 3, outfit: '#e56b93', mood: m.happy > 0 ? 1 : .7, apron: true, walking: moving });
@@ -702,7 +708,7 @@ function home() {
 const hc = $('heroCanvas'), hx = hc.getContext('2d');
 function drawHero() {
   if (mode !== 'home') return;
-  const sp = img('mira_happy');
+  const sp = img('mira_happy') || img('mira_front_idle');
   hx.setTransform(1, 0, 0, 1, 0, 0); hx.clearRect(0, 0, 300, 300);
   hx.fillStyle = '#ffffff88'; hx.beginPath(); hx.arc(150, 160, 120, 0, Math.PI * 2); hx.fill();
   const b = Math.sin(performance.now() / 300) * 6;
