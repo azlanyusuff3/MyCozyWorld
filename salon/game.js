@@ -2,7 +2,7 @@
 // Sprite hooks: letak gambar dalam salon/sprites/ (lihat SPRITES di bawah). Kalau tiada, game lukis placeholder sendiri.
 (() => {
 'use strict';
-const SALON_VERSION = 2, SALON_DATE = '31 Okt 2026';
+const SALON_VERSION = 3, SALON_DATE = '31 Okt 2026';
 const $ = id => document.getElementById(id);
 const KEY = 'mycozyworld_cozy_salon_v2', OLD_KEY = 'mycozyworld_cozy_salon_v1', LIMIT = 60;
 const W = 720, H = 960;   // logical canvas size (portrait)
@@ -198,7 +198,7 @@ function spawnGuest() {
     patience: base, max: base, tip: 0, bounce: 0, sparkle: 0, coffee: 0, done: [] };
   if (type === 'makcik') g.style = -1; // tudung
   if (type === 'remaja' && Math.random() < .6) g.style = 5;
-  seat.guestId = g.id; game.guests.push(g); game.spawned++;
+  seat.guestId = g.id; game.guests.push(g); game.spawned++; hud();
   sound('door'); return true;
 }
 const G = id => game && game.guests.find(g => g.id === id);
