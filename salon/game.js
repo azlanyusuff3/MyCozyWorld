@@ -2,7 +2,7 @@
 // Sprite hooks: letak gambar dalam salon/sprites/ (lihat SPRITES di bawah). Kalau tiada, game lukis placeholder sendiri.
 (() => {
 'use strict';
-const SALON_VERSION = 6, SALON_DATE = '31 Okt 2026';
+const SALON_VERSION = 7, SALON_DATE = '31 Okt 2026';
 const $ = id => document.getElementById(id);
 const KEY = 'mycozyworld_cozy_salon_v2', OLD_KEY = 'mycozyworld_cozy_salon_v1', LIMIT = 60;
 const W = 720, H = 960;   // logical canvas size (portrait)
@@ -59,15 +59,27 @@ const UP = [
 // Nama fail: salon/sprites/<nama>.webp  (contoh mira_idle.webp, guest_makcik_sit.webp, bg_kampung.webp, st_wash.webp)
 const IMG = {};
 let SPRITE_LIST = new Set();
-fetch('sprites/list.json', { cache: 'no-cache' }).then(r => r.ok ? r.json() : []).then(a => { SPRITE_LIST = new Set(a); if (mode === 'home') home(); }).catch(() => {});
+// Preload SEMUA gambar dulu supaya game tak pernah tunjuk placeholder sekejap.
+let ART_READY = false, artDone = 0, artTotal = 0;
+function artProgress() {
+  const btn = $('playBtn'); if (!btn || mode !== 'home') return;
+  if (ART_READY) { btn.disabled = false; btn.textContent = '▶ MAIN LEVEL ' + state.level; }
+  else { btn.disabled = true; btn.textContent = '⏳ Memuatkan gambar… ' + (artTotal ? Math.floor(artDone / artTotal * 100) : 0) + '%'; }
+}
+fetch('sprites/list.json').then(r => r.ok ? r.json() : []).catch(() => []).then(list => {
+  artTotal = list.length;
+  return Promise.all(list.map(name => new Promise(res => {
+    const i = new Image(); i.ok = false; i.decoding = 'async';
+    const done = ok => { i.ok = ok; if (ok) SPRITE_LIST.add(name); artDone++; artProgress(); res(); };
+    i.onload = () => (i.decode ? i.decode().catch(() => {}) : Promise.resolve()).then(() => done(true));
+    i.onerror = () => done(false);
+    i.src = 'sprites/' + name + '.webp'; IMG[name] = i;
+  })));
+}).then(() => { ART_READY = true; if (mode === 'home') home(); artProgress(); });
 function img(name) {
   if (!SPRITE_LIST.has(name)) return null;
-  if (!(name in IMG)) {
-    const i = new Image(); i.ok = false;
-    i.onload = () => { i.ok = true; }; i.onerror = () => {};
-    i.src = 'sprites/' + name + '.webp'; IMG[name] = i;
-  }
-  return IMG[name].ok ? IMG[name] : null;
+  const i = IMG[name];
+  return i && i.ok ? i : null;
 }
 
 // ---------- save ----------
@@ -723,7 +735,7 @@ function home() {
   $('missionEyebrow').textContent = L.icon + ' ' + L.name.toUpperCase();
   $('missionTitle').textContent = 'Level ' + state.level + ' · ' + levelTitle(state.level);
   $('missionDesc').textContent = 'Layan ' + goalGuests(state.level) + ' daripada ' + totalGuests(state.level) + ' pelanggan.' + (GUESTS.remaja.from === state.level ? ' Pelanggan baru: Remaja ⚡ (cepat bosan)!' : GUESTS.vip.from === state.level ? ' Pelanggan baru: VIP 👑 (tip besar)!' : GUESTS.seleb.from === state.level ? ' Pelanggan baru: Influencer 📸!' : state.level === 3 ? ' Station baru: Hair Dryer 💨!' : state.level === 5 ? ' Station baru: Warna 🎨!' : '');
-  $('playBtn').textContent = '▶ MAIN LEVEL ' + state.level;
+  artProgress();
   $('soundBtn').textContent = state.muted ? '🔇' : '🔊';
   $('locationRow').innerHTML = LOCS.map(l => {
     const open = state.level >= l.from, cur = l === L;
@@ -740,7 +752,7 @@ function home() {
 // little animated hero on home screen
 const hc = $('heroCanvas'), hx = hc.getContext('2d');
 function drawHero() {
-  if (mode !== 'home') return;
+  if (mode !== 'home' || !ART_READY) return;
   const sp = img('mira_happy') || img('mira_front_idle');
   hx.setTransform(1, 0, 0, 1, 0, 0); hx.clearRect(0, 0, 300, 300);
   hx.fillStyle = '#ffffff88'; hx.beginPath(); hx.arc(150, 160, 120, 0, Math.PI * 2); hx.fill();
@@ -753,7 +765,7 @@ function drawHero() {
 function swapCtx(c, fn) { const old = ctx; ctx = c; try { fn(); } finally { ctx = old; } }
 
 // ---------- buttons ----------
-$('playBtn').addEventListener('click', () => begin(state.level));
+$('playBtn').addEventListener('click', () => { if (ART_READY) begin(state.level); });
 $('pauseBtn').addEventListener('click', pause);
 $('soundBtn').addEventListener('click', () => { state.muted = !state.muted; save(); $('soundBtn').textContent = state.muted ? '🔇' : '🔊'; if (!state.muted) sound('tap'); });
 $('upgradeGrid').addEventListener('click', e => {

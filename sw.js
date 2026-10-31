@@ -1,5 +1,5 @@
 // Tukar VERSION setiap kali update game supaya phone ambil versi baru.
-const VERSION = 'mycozyworld-v24';
+const VERSION = 'mycozyworld-v25';
 const ASSETS = [
   './', 'index.html', 'game.js', 'manifest.json', 'salon/index.html', 'salon/style.css', 'salon/game.js', 'salon/sprites/list.json', 'cozy-chess/', 'cozy-chess/index.html', 'cozy-chess/style.css', 'cozy-chess/game.js', 'cozy-chess/sprites/list.json',
   ...['white', 'black'].flatMap(c => ['king', 'queen', 'rook', 'bishop', 'knight', 'pawn'].flatMap(t => ['idle', 'attack', 'hurt'].map(n => `cozy-chess/sprites/${c}_${t}_${n}.webp`))),
@@ -17,7 +17,10 @@ const ASSETS = [
 ];
 self.addEventListener('install', e => {
   // cache: 'reload' skips the browser's HTTP cache, so a new version never stores stale files
-  e.waitUntil(caches.open(VERSION).then(c => c.addAll(ASSETS.map(u => new Request(u, { cache: 'reload' })))).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(VERSION).then(c => c.addAll(ASSETS.map(u => new Request(u, { cache: 'reload' })))
+    // Cozy Salon: cache semua sprite yang tersenarai dalam list.json
+    .then(() => fetch('salon/sprites/list.json', { cache: 'reload' }).then(r => r.json()).then(l => c.addAll(l.map(n => new Request('salon/sprites/' + n + '.webp', { cache: 'reload' })))).catch(() => {})))
+    .then(() => self.skipWaiting()));
 });
 self.addEventListener('activate', e => {
   e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== VERSION).map(k => caches.delete(k)))).then(() => self.clients.claim()));
