@@ -45,7 +45,7 @@ Same style as Task D (no badge):
 ## [x] Task F — Logo → `logo.png`
 Canvas 1536x1024, flat magenta background, NO grid. Big centred game logo text **"Cozy Salon"** in a chunky rounded cute font, pink and cream with a thick plum outline, a little pair of scissors and a comb crossed behind it, small sparkles. Text must be spelled exactly "Cozy Salon".
 
-## [ ] Task G — Backgrounds (NOT magenta, NOT grid, PORTRAIT 1024x1365)
+## [x] Task G — Backgrounds (NOT magenta, NOT grid, PORTRAIT 1024x1365)
 Each one is an **EMPTY** salon seen from a slightly-raised front view: the back wall with two windows fills the top ~25%, the rest is open floor (no furniture, no chairs, no people, no text, no sofa). The game places stations on top, so keep the floor clean and evenly lit.
 - `bg_kampung.png` — village shop: warm peach wallpaper with tiny flowers, wooden floorboards, windows showing coconut trees.
 - `bg_mall.png` — KL mall salon: lavender and white walls, glossy pale tiles, windows showing city towers.
