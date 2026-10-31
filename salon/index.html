@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#fce5ed">
+<title>Cozy Salon | MyCozyWorld</title>
+<link rel="manifest" href="../manifest.json">
+<link rel="icon" href="../assets/icons/icon-192.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <header class="topbar">
+    <a class="hub-link" href="../" aria-label="Back to game hub">‹ <span>GAMES</span></a>
+    <div class="branding"><span class="brand-mark">✂</span><div><span class="brand-caption">MYCOZYWORLD</span><strong>Cozy Salon</strong></div></div>
+    <button id="soundBtn" class="sound-btn" type="button" aria-label="Toggle sound">🔊</button>
+  </header>
+  <main id="homeView" class="view">
+    <section class="hero">
+      <div class="hero-copy"><p class="eyebrow">YOUR LITTLE SALON STORY</p><h1>Style, smile<br>&amp; shine! <span>✦</span></h1><p>Welcome guests, manage your stations and build the coziest salon in town.</p></div>
+      <div class="hero-art" aria-hidden="true"><div class="art-sparkle one">✦</div><div class="art-sparkle two">✧</div><div class="mirror"><span>♡</span></div><div class="art-customer"><span class="art-hair"></span><span class="art-face">•ᴗ•</span><span class="art-dress"></span></div><div class="art-chair"></div><div class="art-comb">✂</div></div>
+    </section>
+    <div class="home-stats" aria-label="Your salon progress">
+      <div><span class="stat-icon">🪙</span><span><small>COINS</small><b id="walletStat">120</b></span></div>
+      <div><span class="stat-icon">⭐</span><span><small>STARS</small><b id="starsStat">0</b></span></div>
+      <div><span class="stat-icon">🏆</span><span><small>LEVEL</small><b id="levelStat">1 / 60</b></span></div>
+    </div>
+    <section class="mission-card"><div><p class="eyebrow">TODAY'S CHALLENGE</p><h2 id="missionTitle">Level 1 · First Day</h2><p id="missionDesc">Serve your guests before their patience runs out.</p></div><span class="mission-icon">💇</span></section>
+    <button id="playBtn" class="primary-btn" type="button">▶ PLAY LEVEL 1</button>
+    <p class="hint"><b>How to play:</b> tap a guest, then tap their next station. You can also drag a guest onto a matching station. Finish with checkout!</p>
+    <div class="section-heading"><div><span class="eyebrow">MAKE IT BETTER</span><h2>Salon Upgrades</h2></div><span class="upgrade-tag">PERMANENT</span></div>
+    <div id="upgradeGrid" class="upgrade-grid"></div>
+    <p class="footer-note">Progress is saved on this device. Offline play works after the game is cached.</p>
+  </main>
+  <main id="gameView" class="view" hidden>
+    <section class="game-hud">
+      <div class="hud-level"><span class="eyebrow">NOW PLAYING</span><b id="playingLevel">LEVEL 1</b></div>
+      <div class="hud-stat"><small>SERVED</small><b id="servedCount">0 / 5</b></div>
+      <div class="hud-stat"><small>EARNED</small><b id="earnedCount">🪙 0</b></div>
+      <button id="pauseBtn" class="pause-btn" type="button" aria-label="Pause game">Ⅱ</button>
+    </section>
+    <div class="goal-track" role="progressbar" aria-label="Guests served toward target"><div id="goalFill"></div></div>
+    <p class="goal-caption" id="goalCaption">Serve 4 guests to clear this level.</p>
+    <section class="salon-room">
+      <div class="room-molding"><span>✧</span> THE HAPPY LITTLE SALON <span>✧</span></div>
+      <div class="room-decoration" aria-hidden="true"><span>✦</span><span>♡</span><span>✂</span></div>
+      <div id="stationGrid" class="station-grid"></div>
+    </section>
+    <section class="lounge">
+      <div class="lounge-heading"><div><p class="eyebrow">WAITING LOUNGE</p><h2>Our lovely guests <span id="waitingBadge">0</span></h2></div><div class="lounge-bell" aria-hidden="true">🛎️</div></div>
+      <div id="guestList" class="guest-list" aria-label="Guests waiting to be served"></div>
+    </section>
+    <p id="gameHint" class="game-hint" aria-live="polite">Tap a guest, then choose the station they need.</p>
+  </main>
+</div>
+<div id="overlay" class="overlay" hidden role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <div class="modal"><div id="modalIcon" class="modal-icon">⏸</div><h2 id="modalTitle">Paused</h2><p id="modalText"></p><div id="modalActions" class="modal-actions"></div></div>
+</div>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<script defer src="game.js"></script>
+<script>
+if ('serviceWorker' in navigator) addEventListener('load', function() {
+  navigator.serviceWorker.register('../sw.js', {scope:'../'}).catch(function(){});
+});
+</script>
+</body>
+</html>
