@@ -72,5 +72,17 @@ They work with Mira, so they wear the SAME salon uniform style as Mira (same apr
 - `lina_walk.png` — same layout as Aiman's walk.
 - `lina_side.png` — Row 1: side_idle, side_walk1, side_walk2 (facing right). Row 2: **pay** (side view facing right, typing on a small handheld card machine, smiling), **wave** (front, waving goodbye), **happy** (front, jumping, arms up).
 
+## [ ] Task J — Station tiers (Pro & Emas) → `stations_pro.png`, `stations_gold.png`
+The game now lets players upgrade each station: Biasa (current `stations.png`) → **Pro** → **Emas**.
+Use EXACTLY the same 3x2 layout, camera angle, size and position per cell as `stations.png`, so they swap in place:
+Row 1: wash, cut, color. Row 2: style (hood dryer), pay (counter), coffee machine.
+- `stations_pro.png` — the same pieces but clearly nicer/modern: chrome details, plusher leather, LED ring mirror, sleeker dryer, tidier trolley, better register, bigger espresso machine. Keep each station's colour (blue sink chair, pink cut chair, lavender colour chair, yellow dryer chair).
+- `stations_gold.png` — luxury version: gold frames and trims, velvet upholstery in the same colours, ornate gold mirror with tiny bulbs, crystal details, small sparkles. Clearly the fanciest.
+
+## [ ] Task K — Decorations → `decor.png`
+Normal RULES, props only, no people, same style. Each cell one item:
+- Row 1: **aquarium** (small rounded fish tank on a wooden stand, colourful tropical fish, bubbles), **tv** (wall-mounted flat TV showing a cute hair-style show, seen from the front), **chandelier** (hanging crystal chandelier with a short chain at the top, glowing softly).
+- Row 2: **jukebox** (cute retro pastel jukebox with lights), **flowers** (tall flower stand with a big bouquet of pink and white flowers), **neon** (pink neon heart sign with a little pair of scissors, glowing, wall-mounted, NO text).
+
 ---
 After you finish, tell the user "Cozy Salon art round done" so Claude can process the sheets.

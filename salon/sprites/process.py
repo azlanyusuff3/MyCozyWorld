@@ -88,6 +88,15 @@ def main():
     if os.path.exists(p('stations')):
         for n, im in cells(p('stations'), STATIONS).items():
             save_group('', {n: im}, names)
+    for suf in ['pro', 'gold']:
+        if os.path.exists(p('stations_' + suf)):
+            grid = [[n + '_' + suf for n in row] for row in STATIONS]
+            for n, im in cells(p('stations_' + suf), grid).items():
+                save_group('', {n: im}, names)
+    if os.path.exists(p('decor')):
+        grid = [['deco_aquarium', 'deco_tv', 'deco_chandelier'], ['deco_jukebox', 'deco_flowers', 'deco_neon']]
+        for n, im in cells(p('decor'), grid).items():
+            save_group('', {n: im}, names)
     for sh, grid in ICONS.items():
         if os.path.exists(p(sh)):
             for n, im in cells(p(sh), grid).items():

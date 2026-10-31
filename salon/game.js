@@ -2,7 +2,7 @@
 // Sprite hooks: letak gambar dalam salon/sprites/ (lihat SPRITES di bawah). Kalau tiada, game lukis placeholder sendiri.
 (() => {
 'use strict';
-const SALON_VERSION = 8, SALON_DATE = '31 Okt 2026';
+const SALON_VERSION = 9, SALON_DATE = '31 Okt 2026';
 const $ = id => document.getElementById(id);
 const KEY = 'mycozyworld_cozy_salon_v2', OLD_KEY = 'mycozyworld_cozy_salon_v1', LIMIT = 60;
 const W = 720, H = 960;   // logical canvas size (portrait)
@@ -40,20 +40,37 @@ const HAIR = ['#4b2f3f','#8a5434','#e2a457','#2d3a4f','#a3506f','#6b4840','#c76b
 const OUTFIT = ['#79c5b6','#db91b0','#9ca9da','#f2b775','#be99cc','#8fc98a','#e7898a'];
 const STYLES = ['long','bob','bun','pony','curly','short'];
 
+const TIER = ['Biasa', 'Pro', 'Emas'];
 const UP = [
-  { key: 'wash',   name: 'Shampoo Wangi',   icon: '🫧', info: 'Shampoo 18% lebih laju.',            base: 80,  max: 3, unlock: 1 },
-  { key: 'cut',    name: 'Gunting Emas',    icon: '✂️', info: 'Gunting 18% lebih laju.',            base: 90,  max: 3, unlock: 1 },
-  { key: 'shoes',  name: 'Kasut Laju Mira', icon: '👟', info: 'Mira berjalan 20% lebih laju.',      base: 110, max: 3, unlock: 2 },
-  { key: 'comfort',name: 'Majalah & Sofa',  icon: '🛋️', info: 'Patience turun 12% lebih perlahan.', base: 120, max: 3, unlock: 2 },
-  { key: 'style',  name: 'Dryer Turbo',     icon: '💨', info: 'Hair dryer 18% lebih laju.',         base: 140, max: 3, unlock: 3 },
-  { key: 'coffee', name: 'Mesin Kopi',      icon: '☕', info: 'Bagi kopi: pulihkan patience pelanggan.', base: 150, max: 2, unlock: 4 },
-  { key: 'color',  name: 'Color Bar Premium', icon: '🎨', info: 'Warna 18% lebih laju.',           base: 170, max: 3, unlock: 5 },
-  { key: 'chair',  name: 'Kerusi Gunting #2', icon: '🪑', info: 'Tambah satu lagi station gunting.', base: 300, max: 1, unlock: 6 },
-  { key: 'sofa',   name: 'Sofa Extra',      icon: '🛋️', info: 'Tambah 1 tempat duduk menunggu.',    base: 220, max: 1, unlock: 7 },
-  { key: 'helper1', name: 'Pembantu Aiman', icon: '🧑‍🔧', info: 'Aiman buat semua shampoo & hantar kopi. Mira fokus gunting.', base: 450, max: 1, unlock: 8 },
-  { key: 'helper2', name: 'Juruwang Lina', icon: '👩‍💼', info: 'Lina jaga kaunter bayar. Mira tak perlu ke kaunter lagi.', base: 700, max: 1, unlock: 14 },
-  { key: 'wash2',  name: 'Sinki #2',        icon: '🚿', info: 'Tambah satu lagi sinki shampoo.',    base: 380, max: 1, unlock: 10 },
+  // 🧰 peralatan (tier stesen: Biasa → Pro → Emas, gambar stesen bertukar)
+  { cat: 'alat', key: 'wash',  name: 'Sinki',          icon: '🫧', info: 'Shampoo lebih laju & tip lebih besar.', base: 120, max: 2, unlock: 1, tier: true },
+  { cat: 'alat', key: 'cut',   name: 'Kerusi Gunting', icon: '✂️', info: 'Gunting lebih laju & tip lebih besar.', base: 140, max: 2, unlock: 1, tier: true },
+  { cat: 'alat', key: 'style', name: 'Hair Dryer',     icon: '💨', info: 'Dryer lebih laju & tip lebih besar.',   base: 160, max: 2, unlock: 3, tier: true },
+  { cat: 'alat', key: 'color', name: 'Color Bar',      icon: '🎨', info: 'Warna lebih laju & tip lebih besar.',   base: 190, max: 2, unlock: 5, tier: true },
+  { cat: 'alat', key: 'coffee',name: 'Mesin Kopi',     icon: '☕', info: 'Bagi kopi: pulihkan patience pelanggan.', base: 150, max: 2, unlock: 4 },
+  { cat: 'alat', key: 'shoes', name: 'Kasut Laju',     icon: '👟', info: 'Semua staf berjalan 20% lebih laju.',   base: 110, max: 3, unlock: 2 },
+  // 🪑 stesen tambahan
+  { cat: 'stesen', key: 'chair',  name: 'Kerusi Gunting #2', icon: '🪑', info: 'Tambah satu lagi stesen gunting.', base: 300, max: 1, unlock: 6 },
+  { cat: 'stesen', key: 'sofa',   name: 'Sofa Extra',        icon: '🛋️', info: 'Tambah 1 tempat duduk menunggu.',  base: 220, max: 1, unlock: 7 },
+  { cat: 'stesen', key: 'style2', name: 'Hair Dryer #2',     icon: '💨', info: 'Tambah satu lagi hair dryer.',     base: 420, max: 1, unlock: 9 },
+  { cat: 'stesen', key: 'wash2',  name: 'Sinki #2',          icon: '🚿', info: 'Tambah satu lagi sinki shampoo.',  base: 380, max: 1, unlock: 10 },
+  { cat: 'stesen', key: 'color2', name: 'Color Bar #2',      icon: '🎨', info: 'Tambah satu lagi stesen warna.',   base: 520, max: 1, unlock: 12 },
+  // 👥 pekerja
+  { cat: 'staff', key: 'helper1', name: 'Pembantu Aiman', icon: '🧑‍🔧', info: 'Aiman buat semua shampoo & hantar kopi.', base: 450, max: 1, unlock: 8 },
+  { cat: 'staff', key: 'helper2', name: 'Juruwang Lina',  icon: '👩‍💼', info: 'Lina jaga kaunter bayar.', base: 700, max: 1, unlock: 14 },
+  // 🖼️ dekorasi (ada kesan)
+  { cat: 'dekor', key: 'comfort',  name: 'Majalah',      icon: '📰', info: 'Patience turun 12% lebih perlahan.', base: 120, max: 3, unlock: 2 },
+  { cat: 'dekor', key: 'd_flowers',name: 'Pasu Bunga',   icon: '💐', info: 'Tip +3%.',                      base: 90,  max: 1, unlock: 2 },
+  { cat: 'dekor', key: 'd_aquarium',name: 'Akuarium',    icon: '🐠', info: 'Pelanggan tenang: patience -8% lebih perlahan.', base: 260, max: 1, unlock: 4 },
+  { cat: 'dekor', key: 'd_tv',     name: 'TV Lounge',    icon: '📺', info: 'Yang menunggu di sofa kurang bosan (-15%).', base: 340, max: 1, unlock: 7 },
+  { cat: 'dekor', key: 'd_chandelier', name: 'Chandelier', icon: '💡', info: 'Salon nampak mewah: tip +10%.', base: 600, max: 1, unlock: 11 },
+  { cat: 'dekor', key: 'd_jukebox',name: 'Jukebox',      icon: '📻', info: 'Masa combo lebih panjang (+1.5s).', base: 520, max: 1, unlock: 16 },
+  { cat: 'dekor', key: 'd_neon',   name: 'Neon Hati',    icon: '💖', info: 'Vibe Instagram: tip +5%.', base: 800, max: 1, unlock: 20 },
 ];
+const CATS = [['alat', '🧰 Peralatan'], ['stesen', '🪑 Stesen Tambahan'], ['staff', '👥 Pekerja'], ['dekor', '🖼️ Dekorasi']];
+const priceOf = u => Math.round(u.base * Math.pow(u.tier ? 2.4 : 1.8, upg(u.key)));
+const tipMult = () => 1 + upg('d_flowers') * .03 + upg('d_chandelier') * .1 + upg('d_neon') * .05;
+
 
 // ---------- sprites (optional) ----------
 // Nama fail: salon/sprites/<nama>.webp  (contoh mira_idle.webp, guest_makcik_sit.webp, bg_kampung.webp, st_wash.webp)
@@ -85,7 +102,7 @@ function img(name) {
 // ---------- save ----------
 let state = load();
 function load() {
-  const s = { level: 1, coins: 100, stars: {}, upgrades: {}, muted: false };
+  const s = { level: 1, coins: 100, stars: {}, upgrades: {}, muted: false, music: true, stats: {}, daily: null, ach: {} };
   try {
     const x = JSON.parse(localStorage.getItem(KEY) || localStorage.getItem(OLD_KEY) || 'null');
     if (x && typeof x === 'object') {
@@ -93,7 +110,10 @@ function load() {
       s.coins = Math.max(0, Number(x.coins) || 0);
       s.stars = x.stars && typeof x.stars === 'object' ? x.stars : {};
       s.upgrades = x.upgrades && typeof x.upgrades === 'object' ? x.upgrades : {};
-      s.muted = !!x.muted;
+      s.muted = !!x.muted; s.music = x.music !== false;
+      s.stats = x.stats && typeof x.stats === 'object' ? x.stats : {};
+      s.daily = x.daily && typeof x.daily === 'object' ? x.daily : null;
+      s.ach = x.ach && typeof x.ach === 'object' ? x.ach : {};
     }
   } catch (e) {}
   UP.forEach(u => s.upgrades[u.key] = Math.min(u.max, Math.max(0, Number(s.upgrades[u.key]) || 0)));
@@ -121,6 +141,33 @@ function noise(dur, freq, vol = .05, delay = 0) {
   s.buffer = b; f.type = 'bandpass'; f.frequency.value = freq; g.gain.value = vol;
   s.connect(f).connect(g).connect(a.destination); s.start(t);
 }
+// ---- muzik latar (procedural, cozy lo-fi) ----
+const Music = { on: false, timer: 0, next: 0, step: 0, bus: null };
+const PROG = [[0, 4, 7, 11], [9, 12, 16, 19], [5, 9, 12, 16], [7, 11, 14, 17]]; // Imaj7 vi IV V
+const PENTA = [0, 2, 4, 7, 9, 12, 14, 16];
+const hz = n => 261.63 * Math.pow(2, n / 12);
+function mNote(f, t, dur, type, vol) {
+  const a = audio, o = a.createOscillator(), g = a.createGain();
+  o.type = type; o.frequency.value = f; g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + .02); g.gain.exponentialRampToValueAtTime(.0005, t + dur);
+  o.connect(g).connect(Music.bus); o.start(t); o.stop(t + dur + .05);
+}
+function musicTick() {
+  if (!audio) return;
+  const key = [0, 2, -3, 5][game ? LOCS.indexOf(game.loc) : 0] || 0, bpm = mode === 'play' ? 104 : 84, e8 = 60 / bpm / 2;
+  while (Music.next < audio.currentTime + .25) {
+    const st = Music.step, bar = Math.floor(st / 8) % 4, ch = PROG[bar].map(n => n + key), t = Music.next;
+    if (st % 8 === 0) ch.forEach((n, i) => mNote(hz(n - 12), t + i * .02, e8 * 7.5, 'triangle', .022));
+    if (st % 4 === 0) mNote(hz(ch[0] - 24), t, e8 * 3, 'sine', .07);
+    if (st % 2 === 1 || Math.random() < .25) mNote(hz(ch[0] - 12) * 2, t, .05, 'square', .006); // hi-hat-ish tick
+    if (Math.random() < .42) mNote(hz(PENTA[Math.floor(Math.random() * PENTA.length)] + key + 12), t, e8 * 1.6, 'triangle', .03);
+    Music.next += e8; Music.step++;
+  }
+}
+function musicUpdate() {
+  const want = state.music && !document.hidden && mode !== 'pause';
+  if (want && !Music.on) { const a = ac(); if (!a) return; if (!Music.bus) { Music.bus = a.createGain(); Music.bus.gain.value = .8; Music.bus.connect(a.destination); } Music.next = a.currentTime + .1; Music.on = true; Music.timer = setInterval(musicTick, 90); }
+  else if (!want && Music.on) { clearInterval(Music.timer); Music.on = false; }
+}
 function sound(k) {
   if (state.muted) return;
   try {
@@ -132,6 +179,7 @@ function sound(k) {
     else if (k === 'dry') noise(.5, 2200, .025);
     else if (k === 'combo') [523, 659, 784, 1047].forEach((f, i) => tone(f, f * 1.01, .12, 'triangle', .06, i * .06));
     else if (k === 'door') { tone(1175, 1170, .3, 'sine', .05); tone(1568, 1560, .4, 'sine', .04, .12); }
+    else if (k === 'perfect') { [1047, 1319, 1568, 2093].forEach((f, i) => tone(f, f * 1.02, .14, 'triangle', .06, i * .05)); noise(.25, 6000, .03, .1); }
     else if (k === 'win') [523, 659, 784, 659, 784, 1047].forEach((f, i) => tone(f, f, .16, 'triangle', .07, i * .11));
   } catch (e) {}
 }
@@ -143,6 +191,65 @@ function modal(icon, title, text, actions) {
   $('modalIcon').textContent = icon; $('modalTitle').textContent = title; $('modalText').textContent = text;
   $('modalActions').innerHTML = actions.map((a, i) => `<button type="button" data-action="${a[1]}" ${i ? 'class="secondary"' : ''}>${a[0]}</button>`).join('');
   $('overlay').hidden = false;
+}
+
+// ---------- stats, misi harian, pencapaian ----------
+function stat(k, v, isMax) {
+  const S = state.stats;
+  S[k] = isMax ? Math.max(S[k] || 0, v) : (S[k] || 0) + v;
+  const D = dailyToday();
+  for (const q of D.goals) if (q.id === k && !q.claimed) q.prog = isMax ? Math.max(q.prog, v) : q.prog + v;
+}
+const DAILY_POOL = [
+  { id: 'served', t: n => `Layan ${n} pelanggan`, n: [8, 12, 16] },
+  { id: 'perfect', t: n => `Dapat ${n} PERFECT ✨`, n: [3, 5, 8] },
+  { id: 'combo', t: n => `Buat combo x${n}`, n: [3, 4], max: true },
+  { id: 'makcik', t: n => `Layan ${n} Mak Cik`, n: [2, 4] },
+  { id: 'earned', t: n => `Kumpul 🪙${n}`, n: [300, 600, 1000] },
+  { id: 'coffee', t: n => `Bagi kopi ${n} kali`, n: [2, 4], need: () => upg('coffee') },
+  { id: 'wish', t: n => `Tunaikan ${n} hajat ⭐`, n: [1, 3], need: () => state.level >= 7 },
+  { id: 'stars3', t: n => `Dapat 3 bintang ${n} kali`, n: [1, 2] },
+];
+function dailyToday() {
+  const day = new Date().toDateString();
+  if (!state.daily || state.daily.day !== day) {
+    const pool = DAILY_POOL.filter(q => !q.need || q.need()).sort(() => Math.random() - .5).slice(0, 3);
+    state.daily = { day, goals: pool.map(q => { const ni = Math.min(q.n.length - 1, Math.floor(state.level / 12)); const n = q.n[Math.floor(Math.random() * (ni + 1))]; return { id: q.id, n, prog: 0, claimed: false, reward: 60 + n * (q.id === 'earned' ? .12 : 12) }; }) };
+  }
+  return state.daily;
+}
+const ACH = [
+  ['served25', '👋 Pelanggan Pertama', 'Layan 25 pelanggan', () => (state.stats.served || 0) >= 25, 100],
+  ['served200', '💇 Stylist Popular', 'Layan 200 pelanggan', () => (state.stats.served || 0) >= 200, 400],
+  ['served1000', '👑 Ratu Salon', 'Layan 1000 pelanggan', () => (state.stats.served || 0) >= 1000, 1500],
+  ['perfect10', '✨ Tangan Ajaib', '10 PERFECT', () => (state.stats.perfect || 0) >= 10, 150],
+  ['perfect100', '💎 Tangan Emas', '100 PERFECT', () => (state.stats.perfect || 0) >= 100, 800],
+  ['combo4', '🔥 Combo Master', 'Combo x4', () => (state.stats.combo || 0) >= 4, 200],
+  ['combo6', '🌋 Combo Legenda', 'Combo x6', () => (state.stats.combo || 0) >= 6, 600],
+  ['wish10', '⭐ Penunai Hajat', 'Tunaikan 10 hajat', () => (state.stats.wish || 0) >= 10, 400],
+  ['makcik20', '🧕 Kesayangan Mak Cik', 'Layan 20 Mak Cik', () => (state.stats.makcik || 0) >= 20, 300],
+  ['vip10', '💼 Kawan Datin', 'Layan 10 VIP', () => (state.stats.vip || 0) >= 10, 400],
+  ['mall', '🏙️ Masuk Mall', 'Buka Mall KL', () => state.level >= 16, 300],
+  ['resort', '🏝️ Ke Langkawi', 'Buka Resort Langkawi', () => state.level >= 31, 600],
+  ['seleb', '🌟 Studio Seleb', 'Buka Studio Seleb', () => state.level >= 46, 1000],
+  ['team', '👥 Satu Pasukan', 'Upah Aiman & Lina', () => upg('helper1') && upg('helper2'), 500],
+  ['gold', '🥇 Salon Emas', 'Semua peralatan tier Emas', () => ['wash', 'cut', 'style', 'color'].every(k => upg(k) >= 2), 1200],
+  ['decor', '🖼️ Pereka Dalaman', 'Beli semua dekorasi', () => UP.filter(u => u.cat === 'dekor').every(u => upg(u.key) >= 1), 800],
+];
+function renderGoals() {
+  const D = dailyToday();
+  $('dailyList').innerHTML = D.goals.map((q, i) => {
+    const P = DAILY_POOL.find(x => x.id === q.id), done = q.prog >= q.n, r = Math.round(q.reward);
+    return `<div class="goal-row ${q.claimed ? 'claimed' : ''}"><div class="goal-txt"><b>${P.t(q.n)}</b><div class="goal-bar"><i style="width:${Math.min(100, q.prog / q.n * 100)}%"></i></div><small>${Math.min(q.prog, q.n)} / ${q.n}</small></div><button class="claim-btn" data-daily="${i}" ${done && !q.claimed ? '' : 'disabled'}>${q.claimed ? '✓' : '🪙 ' + r}</button></div>`;
+  }).join('');
+  const got = ACH.filter(a => state.ach[a[0]]).length;
+  $('achCount').textContent = got + ' / ' + ACH.length;
+  $('achList').innerHTML = ACH.map(a => {
+    const ok = a[3](), claimed = state.ach[a[0]];
+    return `<div class="goal-row ${claimed ? 'claimed' : ok ? '' : 'locked'}"><div class="goal-txt"><b>${a[1]}</b><small>${a[2]}</small></div><button class="claim-btn" data-ach="${a[0]}" ${ok && !claimed ? '' : 'disabled'}>${claimed ? '✓' : '🪙 ' + a[4]}</button></div>`;
+  }).join('');
+  const ready = D.goals.filter(q => q.prog >= q.n && !q.claimed).length + ACH.filter(a => a[3]() && !state.ach[a[0]]).length;
+  $('goalBadge').textContent = ready ? ready + ' ganjaran sedia!' : '';
 }
 
 // ---------- level design ----------
@@ -166,16 +273,17 @@ function pickType(n) {
 
 // ---------- layout ----------
 function buildSlots() {
-  const s = [];
-  s.push({ id: 'wash1', kind: 'wash', x: 120, y: 360 });
-  if (upg('wash2')) s.push({ id: 'wash2', kind: 'wash', x: 120, y: 590 });
-  s.push({ id: 'cut1', kind: 'cut', x: 330, y: 360 });
-  if (upg('chair')) s.push({ id: 'cut2', kind: 'cut', x: 540, y: 360 });
-  if (game.level >= 3) s.push({ id: 'style1', kind: 'style', x: 540, y: upg('chair') ? 590 : 360 });
-  if (game.level >= 5) s.push({ id: 'color1', kind: 'color', x: 330, y: 590 });
-  s.push({ id: 'pay1', kind: 'pay', x: 600, y: 790 });
-  // fix overlap: if chair upgrade & style both exist, style moves down (already handled). If no style and chair, fine.
-  return s.map(o => ({ ...o, guestId: null, state: 'empty', t: 0, dur: 0, queued: false }));
+  const L = [{ id: 'wash1', kind: 'wash' }, { id: 'cut1', kind: 'cut' }];
+  if (upg('chair')) L.push({ id: 'cut2', kind: 'cut' });
+  if (game.level >= 3) L.push({ id: 'style1', kind: 'style' });
+  if (game.level >= 5) L.push({ id: 'color1', kind: 'color' });
+  if (upg('wash2')) L.push({ id: 'wash2', kind: 'wash' });
+  if (upg('style2') && game.level >= 3) L.push({ id: 'style2', kind: 'style' });
+  if (upg('color2') && game.level >= 5) L.push({ id: 'color2', kind: 'color' });
+  const cols = L.length <= 6 ? 3 : 4, xs = cols === 3 ? [120, 330, 540] : [92, 262, 432, 602], sc = cols === 3 ? 1 : .8;
+  L.forEach((o, i) => { o.x = xs[i % cols]; o.y = i < cols ? 360 : 590; o.sc = sc; });
+  L.push({ id: 'pay1', kind: 'pay', x: 600, y: 790, sc: 1 });
+  return L.map(o => ({ ...o, guestId: null, state: 'empty', t: 0, dur: 0, queued: false }));
 }
 function buildSeats() {
   const n = 4 + upg('sofa'), seats = [];
@@ -220,6 +328,10 @@ function spawnGuest() {
     steps: orderFor(game.level), step: 0, status: 'walk', x: DOOR.x, y: DOOR.y, tx: seat.x, ty: seat.y, at: { k: 'seat', o: seat },
     patience: base, max: base, tip: 0, bounce: 0, sparkle: 0, coffee: 0, done: [] };
   if (type === 'makcik') g.style = -1; // tudung
+  if (game.level >= 6 && ((type === 'vip' || type === 'seleb') ? Math.random() < .7 : Math.random() < .15)) {
+    const canPerfect = g.steps.some(k => k === 'cut' || k === 'color');
+    g.wish = canPerfect && Math.random() < .55 ? 'perfect' : 'cepat';
+  }
   if (type === 'remaja' && Math.random() < .6) g.style = 5;
   seat.guestId = g.id; game.guests.push(g); game.spawned++; hud();
   sound('door'); return true;
@@ -261,7 +373,7 @@ function giveCoffee(g) {
 
 function staffPoint(task) {
   if (task.k === 'coffee') return { x: COFFEE.x - 50, y: COFFEE.y + 20 };
-  const s = task.slot; return s.kind === 'pay' ? { x: s.x, y: s.y - 70 } : { x: s.x + 62, y: s.y + 25 };
+  const s = task.slot; return s.kind === 'pay' ? { x: s.x, y: s.y - 70 } : { x: s.x + 62 * s.sc, y: s.y + 25 };
 }
 
 function finishService(s, who) {
@@ -269,19 +381,26 @@ function finishService(s, who) {
   const kind = s.kind;
   // combo
   if (kind !== 'pay') {
-    game.combo = game.lastKind === kind ? game.combo + 1 : 1; game.lastKind = kind; game.comboT = 3;
-    if (game.combo >= 2) { g.tip += 4 * game.combo; fx('COMBO x' + game.combo + '!', s.x, s.y - 110, '#e56b93', 30); sound('combo'); game.bestCombo = Math.max(game.bestCombo, game.combo); }
+    game.combo = game.lastKind === kind ? game.combo + 1 : 1; game.lastKind = kind; game.comboT = 3 + upg('d_jukebox') * 1.5;
+    if (game.combo >= 2) { g.tip += 4 * game.combo; fx('COMBO x' + game.combo + '!', s.x, s.y - 110, '#e56b93', 30); sound('combo'); game.bestCombo = Math.max(game.bestCombo, game.combo); stat('combo', game.combo, true); }
   }
   // hair transformation
   if (kind === 'wash') { g.sparkle = 1.2; sound('water'); }
   if (kind === 'cut') { if (g.style >= 0) { let n; do { n = Math.floor(Math.random() * STYLES.length); } while (n === g.style); g.style = n; } else g.tudung = (g.tudung || 0) + 1; g.sparkle = 1.5; }
   if (kind === 'color') { let n; do { n = Math.floor(Math.random() * HAIR.length); } while (n === g.hair); g.hair = n; g.sparkle = 1.5; }
   if (kind === 'style') { g.sparkle = 2; g.shine = 1; }
+  if (kind !== 'pay') g.tip += 5 * upg(kind);
   g.done.push(kind); g.step++;
   g.tip += Math.round(4 * (g.patience / g.max));
   if (kind === 'pay') {
     const T = GUESTS[g.type], mood = g.patience / g.max;
-    const pay = Math.round((18 + (g.steps.length - 1) * 9 + g.tip) * T.tip * game.loc.tipX * (0.75 + mood * .5));
+    let pay = Math.round((18 + (g.steps.length - 1) * 9 + g.tip) * T.tip * game.loc.tipX * (0.75 + mood * .5) * tipMult());
+    if (g.wish) {
+      const ok = g.wish === 'perfect' ? g.perfect : mood >= .6;
+      if (ok) { const b = Math.round(30 * game.loc.tipX); pay += b; fx('⭐ Hajat tercapai! +' + b, s.x - 40, s.y - 140, '#e56b93', 24); stat('wish', 1); sound('perfect'); }
+      else fx('Hajat tak tercapai…', s.x - 40, s.y - 140, '#9a7f8f', 18);
+    }
+    stat('served', 1); stat('earned', pay); if (g.type === 'makcik') stat('makcik', 1); if (g.type === 'vip') stat('vip', 1);
     game.earned += pay; game.served++; game.moodSum += mood;
     fx('+🪙' + pay, s.x, s.y - 90, '#d39a1c', 28);
     for (let i = 0; i < 6; i++) game.fx.push({ coin: true, x: s.x, y: s.y - 40, vx: (Math.random() - .5) * 220, vy: -200 - Math.random() * 150, life: 1 });
@@ -304,7 +423,7 @@ function update(dt) {
     if (spawnGuest()) game.nextArrival = game.t + Math.max(3.4, 8 - game.level * .08) * (0.8 + Math.random() * .4);
     else game.nextArrival = game.t + 1;
   }
-  const decay = 1 - upg('comfort') * .12;
+  const decay = (1 - upg('comfort') * .12) * (1 - upg('d_aquarium') * .08);
   for (const g of game.guests.slice()) {
     // move
     const dx = g.tx - g.x, dy = g.ty - g.y, d = Math.hypot(dx, dy), sp = (g.status === 'leave' ? 260 : 230) * dt;
@@ -325,7 +444,7 @@ function update(dt) {
     if (g.coffee > 0) g.coffee -= dt;
     // patience
     if (g.status === 'wait' || g.status === 'ready' || (g.status === 'walk' && g.at && g.at.k === 'seat')) {
-      const rate = (g.status === 'ready' ? .55 : 1) * decay * (g.coffee > 0 ? .3 : 1);
+      const rate = (g.status === 'ready' ? .55 : 1) * decay * (g.coffee > 0 ? .3 : 1) * (g.at && g.at.k === 'seat' && upg('d_tv') ? .85 : 1);
       g.patience -= dt * rate;
       if (g.patience <= 0) {
         game.lost++; release(g); g.status = 'leave'; g.tx = DOOR.x; g.ty = DOOR.y; g.angry = true;
@@ -367,10 +486,10 @@ function updateStaff(m, dt) {
       const s = c.slot, g = G(s.guestId);
       if (!g) { s.queued = false; m.cur = null; }
       else if (m.phase === 'go') {
-        if (g.status === 'ready') { m.phase = 'do'; s.state = 'working'; g.status = 'serve'; s.t = 0; s.dur = TYPES[s.kind].time * Math.pow(.82, upg(s.kind)); m.face = -1; m.act = 0; }
+        if (g.status === 'ready') { m.phase = 'do'; s.state = 'working'; g.status = 'serve'; s.t = 0; s.dur = TYPES[s.kind].time * Math.pow(.82, upg(s.kind)); m.face = -1; m.act = 0; s.qte = (s.kind === 'cut' || s.kind === 'color' || (s.kind === 'wash' && m.id === 'mira')) ? { t: 0, res: null, c: .3 + Math.random() * .4, sp: .75 + Math.min(.6, game.level * .012) } : null; }
         // else: guest still walking — wait here
       } else {
-        s.t += dt; m.act += dt;
+        s.t += dt; m.act += dt; if (s.qte) s.qte.t += dt;
         if (s.kind === 'cut' && Math.floor(m.act * 2.2) !== Math.floor((m.act - dt) * 2.2)) sound('snip');
         if (s.kind === 'wash' && Math.floor(m.act * .8) !== Math.floor((m.act - dt) * .8)) sound('water');
         if (s.t >= s.dur) { s.queued = false; m.cur = null; finishService(s, m); }
@@ -380,7 +499,7 @@ function updateStaff(m, dt) {
       m.act += dt;
       if (m.act >= 1.3) {
         const g = c.g;
-        if (game.guests.includes(g) && g.status !== 'leave') { g.patience = Math.min(g.max, g.patience + g.max * (.35 + upg('coffee') * .1)); g.coffee = 6; g.bounce = 1; fx('☕ Sedapnya!', g.x, g.y - 120, '#8a5434', 22); sound('coin'); }
+        if (game.guests.includes(g) && g.status !== 'leave') { g.patience = Math.min(g.max, g.patience + g.max * (.35 + upg('coffee') * .1)); g.coffee = 6; g.bounce = 1; fx('☕ Sedapnya!', g.x, g.y - 120, '#8a5434', 22); sound('coin'); stat('coffee', 1); }
         m.cur = null;
       }
     }
@@ -397,6 +516,7 @@ function endLevel() {
   const n = game.level, prevLoc = locOf(state.level);
   state.coins += payout;
   if (won) { state.stars[n] = Math.max(state.stars[n] || 0, stars); state.level = Math.min(LIMIT, Math.max(state.level, n + 1)); }
+  if (stars === 3) stat('stars3', 1);
   save(); mode = 'result';
   const newLoc = locOf(state.level);
   const extra = won && newLoc !== prevLoc ? '\n\n🎉 Lokasi baru dibuka: ' + newLoc.icon + ' ' + newLoc.name + '!' : '';
@@ -470,7 +590,14 @@ function drawRoom(L) {
 
 const STATION_COL = { wash: '#8fd3e8', cut: '#f4a7c0', color: '#c3a6e8', style: '#ffd08a', pay: '#f2c46d' };
 function drawStation(s) {
-  const T = TYPES[s.kind], sp = img('st_' + s.kind);
+  ctx.save(); ctx.translate(s.x, s.y); ctx.scale(s.sc, s.sc); ctx.translate(-s.x, -s.y);
+  drawStationInner(s);
+  ctx.restore();
+  drawQTE(s);
+}
+function drawStationInner(s) {
+  const tier = TYPES[s.kind].staff !== undefined && s.kind !== 'pay' ? upg(s.kind) : 0;
+  const T = TYPES[s.kind], sp = (tier === 2 && img('st_' + s.kind + '_gold')) || (tier >= 1 && img('st_' + s.kind + '_pro')) || img('st_' + s.kind);
   const glow = selected != null && canMove(G(selected)) && need(G(selected)) === s.kind && s.guestId == null;
   if (glow) { ctx.save(); ctx.globalAlpha = .45 + Math.sin(performance.now() / 180) * .2; ell(s.x, s.y + 40, 95, 40, '#fff6a8'); ctx.restore(); }
   ell(s.x, s.y + 48, 80, 22, '#00000022');
@@ -528,6 +655,7 @@ function drawGuest(g) {
     ctx.beginPath(); ctx.moveTo(bx - 14, by + 24); ctx.lineTo(bx - 24, by + 38); ctx.lineTo(bx - 2, by + 24); ctx.fillStyle = g.status === 'ready' ? '#e8f8ee' : '#fff'; ctx.fill();
     emoji(g.status === 'ready' ? '⏳' : TYPES[n].icon, bx, by - 3, 28);
     ctx.restore();
+    if (g.wish) { emoji('⭐', bx + 30, by - 24, 20); }
     // hearts
     const hearts = Math.ceil(mood * 5);
     for (let i = 0; i < 5; i++) { ctx.globalAlpha = i < hearts ? 1 : .22; emoji(mood < .3 ? '💔' : '❤️', x - 34 + i * 17, y - 156, 14); }
@@ -628,6 +756,22 @@ function drawCoffee() {
   if (on && g && canMove(g) && !(g.coffee > 0)) { ctx.globalAlpha = .4 + Math.sin(performance.now() / 180) * .2; ell(COFFEE.x, COFFEE.y, 52, 52, null, '#ffe36e', 6); ctx.globalAlpha = 1; }
 }
 
+const DECOR = [
+  { k: 'd_chandelier', sp: 'deco_chandelier', e: '💡', x: 360, y: 0, w: 120, h: 120, top: true },
+  { k: 'd_tv', sp: 'deco_tv', e: '📺', x: 300, y: 120, w: 120, h: 100, top: true },
+  { k: 'd_neon', sp: 'deco_neon', e: '💖', x: 430, y: 120, w: 90, h: 90, top: true },
+  { k: 'd_aquarium', sp: 'deco_aquarium', e: '🐠', x: 55, y: 700, w: 110, h: 110 },
+  { k: 'd_flowers', sp: 'deco_flowers', e: '💐', x: 235, y: 715, w: 90, h: 90 },
+  { k: 'd_jukebox', sp: 'deco_jukebox', e: '📻', x: 672, y: 845, w: 90, h: 90 },
+];
+function drawDecor(top) {
+  for (const d of DECOR) {
+    if (!!d.top !== top || !upg(d.k)) continue;
+    const im = img(d.sp);
+    if (im) ctx.drawImage(im, d.x - d.w / 2, d.y, d.w, d.h);
+    else { if (!top) ell(d.x, d.y + d.h - 6, d.w * .4, 10, '#00000022'); emoji(d.e, d.x, d.y + d.h / 2, d.h * .6); }
+  }
+}
 function drawSofa() {
   const n = game.seats.length, x0 = game.seats[0].x - 50, w = game.seats[n - 1].x - game.seats[0].x + 100;
   const so = img('sofa_' + game.loc.key), mg = img('deco_magazine'), pl = img('deco_plant');
@@ -649,6 +793,8 @@ function draw() {
   ctx.clearRect(0, 0, W, H);
   drawRoom(game.loc);
   drawSofa();
+  drawDecor(true);
+  drawDecor(false);
   drawCoffee();
   // depth sort
   const items = [];
@@ -667,7 +813,8 @@ function draw() {
   if (drag && drag.moved) { const g = G(drag.id); if (g) { ctx.globalAlpha = .75; chibi(drag.x, drag.y, { skin: SKIN[g.skin], hair: HAIR[g.hair], style: g.style, outfit: OUTFIT[g.outfit], mood: g.patience / g.max, tudung: g.tudung || 0 }); ctx.globalAlpha = 1; } }
   // hint
   const sg = G(selected);
-  $('gameHint').textContent = sg && canMove(sg) ? sg.name + ' dipilih → tap ' + TYPES[need(sg)].icon + ' ' + TYPES[need(sg)].name + (upg('coffee') ? ' (atau ☕ kopi)' : '') : 'Tap pelanggan, lepas tu tap station. Susun kerja Mira laju-laju!';
+  const anyQ = game.slots.some(s => s.qte && s.qte.res == null && s.state === 'working');
+  $('gameHint').textContent = anyQ ? '✂ Tap stesen bila jarum dalam zon HIJAU untuk PERFECT!' : sg && canMove(sg) ? sg.name + ' dipilih → tap ' + TYPES[need(sg)].icon + ' ' + TYPES[need(sg)].name + (upg('coffee') ? ' (atau ☕ kopi)' : '') + (sg.wish ? ' · ⭐ Hajat: ' + (sg.wish === 'perfect' ? 'nak PERFECT' : 'nak cepat & happy') : '') : 'Tap pelanggan, lepas tu tap station. Susun kerja Mira laju-laju!';
 }
 
 // ---------- input ----------
@@ -678,11 +825,33 @@ function guestAt(p) {
   for (const g of game.guests) { if (g.status === 'leave') continue; const d = Math.hypot(p.x - g.x, (p.y - (g.y - 40)) * .8); if (d < 62 && d < bd) { bd = d; best = g; } }
   return best;
 }
-function slotAt(p) { return game.slots.find(s => p.x > s.x - 90 && p.x < s.x + 90 && p.y > s.y - 150 && p.y < s.y + 90); }
+function slotAt(p) { return game.slots.find(s => p.x > s.x - 90 * s.sc && p.x < s.x + 90 * s.sc && p.y > s.y - 150 * s.sc && p.y < s.y + 90 * s.sc); }
 const coffeeAt = p => Math.hypot(p.x - COFFEE.x, p.y - COFFEE.y) < 55;
 
+function qtePos(q) { const x = (q.t * q.sp) % 2; return x < 1 ? x : 2 - x; }
+function resolveQTE(s) {
+  const q = s.qte, g = G(s.guestId); if (!q || q.res != null || !g) return false;
+  const d = Math.abs(qtePos(q) - q.c);
+  if (d <= .08) { q.res = 'perfect'; s.t += (s.dur - s.t) * .5; g.tip += 10; g.perfect = true; fx('PERFECT! ✨', s.x, s.y - 175, '#e56b93', 30); sound('perfect'); stat('perfect', 1); }
+  else if (d <= .17) { q.res = 'good'; g.tip += 4; s.t += (s.dur - s.t) * .2; fx('Bagus!', s.x, s.y - 175, '#4f9d8c', 24); sound('tap'); }
+  else { q.res = 'miss'; fx('Alamak…', s.x, s.y - 175, '#9a7f8f', 20); sound('bad'); }
+  return true;
+}
+function drawQTE(s) {
+  const q = s.qte; if (!q || s.state !== 'working') return;
+  if (q.res != null) return;
+  const w = 130, x0 = s.x - w / 2, y0 = s.y - 172;
+  rr(x0 - 6, y0 - 6, w + 12, 26, 13); ctx.fillStyle = '#fffffff2'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = '#e56b93'; ctx.stroke();
+  rr(x0, y0, w, 14, 7); ctx.fillStyle = '#f3dde6'; ctx.fill();
+  rr(x0 + (q.c - .17) * w, y0, .34 * w, 14, 7); ctx.fillStyle = '#bfe8c9'; ctx.fill();
+  rr(x0 + (q.c - .08) * w, y0, .16 * w, 14, 7); ctx.fillStyle = '#5fc48f'; ctx.fill();
+  const px = x0 + qtePos(q) * w;
+  ctx.fillStyle = '#6a4877'; ctx.beginPath(); ctx.moveTo(px - 8, y0 - 10); ctx.lineTo(px + 8, y0 - 10); ctx.lineTo(px, y0 + 4); ctx.fill();
+  text('TAP!', s.x, y0 - 22, 18, '#e56b93');
+}
 function tapAt(p) {
   const g = guestAt(p), s = slotAt(p), sg = G(selected);
+  { const qs = s && s.qte && s.qte.res == null && s.state === 'working' ? s : g && g.at?.k === 'slot' && g.at.o.qte && g.at.o.qte.res == null && g.at.o.state === 'working' ? g.at.o : null; if (qs && resolveQTE(qs)) return; }
   // tapping a station while a guest is selected takes priority if guest belongs elsewhere
   if (sg && canMove(sg) && s && s.guestId !== sg.id && (!g || g === G(s.guestId))) { assign(sg, s); return; }
   if (sg && canMove(sg) && coffeeAt(p)) { giveCoffee(sg); return; }
@@ -737,16 +906,20 @@ function home() {
   $('missionDesc').textContent = 'Layan ' + goalGuests(state.level) + ' daripada ' + totalGuests(state.level) + ' pelanggan.' + (GUESTS.remaja.from === state.level ? ' Pelanggan baru: Remaja ⚡ (cepat bosan)!' : GUESTS.vip.from === state.level ? ' Pelanggan baru: VIP 👑 (tip besar)!' : GUESTS.seleb.from === state.level ? ' Pelanggan baru: Influencer 📸!' : state.level === 3 ? ' Station baru: Hair Dryer 💨!' : state.level === 5 ? ' Station baru: Warna 🎨!' : '');
   artProgress();
   $('soundBtn').textContent = state.muted ? '🔇' : '🔊';
+  $('musicBtn').textContent = state.music ? '🎵' : '🔕';
   $('locationRow').innerHTML = LOCS.map(l => {
     const open = state.level >= l.from, cur = l === L;
     const st = Array.from({ length: 15 }, (_, i) => state.stars[l.from + i] || 0).reduce((a, b) => a + b, 0);
     return `<div class="loc ${open ? '' : 'locked'} ${cur ? 'current' : ''}" style="background:${l.wall}"><span class="loc-ic">${open ? l.icon : '🔒'}</span>${l.name}<small>${open ? '⭐ ' + st + '/45' : 'Level ' + l.from}</small></div>`;
   }).join('');
-  $('upgradeGrid').innerHTML = UP.map(u => {
-    const lv = upg(u.key), price = Math.round(u.base * Math.pow(1.8, lv)), locked = state.level < u.unlock, maxed = lv >= u.max, dis = locked || maxed || state.coins < price;
+  $('upgradeGrid').innerHTML = CATS.map(([c, title]) => `<h3 class="cat-head">${title}</h3>` + UP.filter(u => u.cat === c).map(u => {
+    const lv = upg(u.key), price = priceOf(u), locked = state.level < u.unlock, maxed = lv >= u.max, dis = locked || maxed || state.coins < price;
     const pips = Array.from({ length: u.max }, (_, i) => `<i class="${i < lv ? 'on' : ''}"></i>`).join('');
-    return `<article class="upgrade"><div class="upgrade-icon">${u.icon}</div><h3>${u.name}</h3><p>${u.info}</p><div class="upgrade-level">LEVEL<span class="pips">${pips}</span></div><button class="buy-btn" data-upgrade="${u.key}" ${dis ? 'disabled' : ''}>${locked ? '🔒 Level ' + u.unlock : maxed ? 'MAX ✓' : '🪙 ' + price}</button></article>`;
-  }).join('');
+    const lvTxt = u.tier ? `<span class="tier t${lv}">${TIER[lv]}</span>` : `LEVEL<span class="pips">${pips}</span>`;
+    const btn = locked ? '🔒 Level ' + u.unlock : maxed ? 'MAX ✓' : (u.tier ? '⬆ ' + TIER[lv + 1] + ' · ' : '') + '🪙 ' + price;
+    return `<article class="upgrade"><div class="upgrade-icon">${u.icon}</div><h3>${u.name}</h3><p>${u.info}</p><div class="upgrade-level">${lvTxt}</div><button class="buy-btn" data-upgrade="${u.key}" ${dis ? 'disabled' : ''}>${btn}</button></article>`;
+  }).join('')).join('');
+  renderGoals();
   $('versionNote').textContent = 'Versi ' + SALON_VERSION + ' · ' + SALON_DATE + ' · Progress disimpan dalam device ni.';
 }
 // little animated hero on home screen
@@ -765,24 +938,33 @@ function drawHero() {
 function swapCtx(c, fn) { const old = ctx; ctx = c; try { fn(); } finally { ctx = old; } }
 
 // ---------- buttons ----------
+$('goalsBox').addEventListener('click', e => {
+  const b = e.target.closest('.claim-btn'); if (!b || b.disabled) return;
+  if (b.dataset.daily != null) { const q = dailyToday().goals[+b.dataset.daily]; if (!q || q.claimed || q.prog < q.n) return; q.claimed = true; state.coins += Math.round(q.reward); toast('Misi siap! +🪙' + Math.round(q.reward)); }
+  if (b.dataset.ach) { const a = ACH.find(x => x[0] === b.dataset.ach); if (!a || state.ach[a[0]] || !a[3]()) return; state.ach[a[0]] = 1; state.coins += a[4]; toast(a[1] + '! +🪙' + a[4]); }
+  save(); sound('win'); home();
+});
 $('playBtn').addEventListener('click', () => { if (ART_READY) begin(state.level); });
+addEventListener('pointerdown', () => musicUpdate(), { once: false, passive: true });
+$('musicBtn').addEventListener('click', () => { state.music = !state.music; save(); $('musicBtn').textContent = state.music ? '🎵' : '🔕'; musicUpdate(); });
 $('pauseBtn').addEventListener('click', pause);
 $('soundBtn').addEventListener('click', () => { state.muted = !state.muted; save(); $('soundBtn').textContent = state.muted ? '🔇' : '🔊'; if (!state.muted) sound('tap'); });
 $('upgradeGrid').addEventListener('click', e => {
   const b = e.target.closest('[data-upgrade]'); if (!b || mode !== 'home') return;
   const u = UP.find(x => x.key === b.dataset.upgrade); if (!u || state.level < u.unlock) return;
-  const lv = upg(u.key), price = Math.round(u.base * Math.pow(1.8, lv)); if (lv >= u.max || state.coins < price) return;
+  const lv = upg(u.key), price = priceOf(u); if (lv >= u.max || state.coins < price) return;
   state.coins -= price; state.upgrades[u.key]++; save(); home(); sound('coin'); toast('Upgrade: ' + u.name + '!');
 });
-function pause() { if (mode !== 'play') return; mode = 'pause'; modal('☕', 'Rehat Jap', 'Pelanggan tunggu dengan sabar. Sambung bila dah ready.', [['▶ SAMBUNG', 'resume'], ['↻ ULANG LEVEL', 'restart'], ['🏠 KELUAR', 'home']]); }
+function pause() { if (mode !== 'play') return; mode = 'pause'; musicUpdate(); modal('☕', 'Rehat Jap', 'Pelanggan tunggu dengan sabar. Sambung bila dah ready.', [['▶ SAMBUNG', 'resume'], [state.music ? '🎵 Muzik: ON' : '🔕 Muzik: OFF', 'music'], ['↻ ULANG LEVEL', 'restart'], ['🏠 KELUAR', 'home']]); }
 $('modalActions').addEventListener('click', e => {
   const b = e.target.closest('[data-action]'); if (!b) return; const a = b.dataset.action;
-  if (a === 'resume' && mode === 'pause') { mode = 'play'; $('overlay').hidden = true; last = performance.now(); }
+  if (a === 'music') { state.music = !state.music; save(); b.textContent = state.music ? '🎵 Muzik: ON' : '🔕 Muzik: OFF'; return; }
+  if (a === 'resume' && mode === 'pause') { mode = 'play'; $('overlay').hidden = true; last = performance.now(); musicUpdate(); }
   else if (a === 'home') { home(); window.scrollTo(0, 0); }
   else if (a === 'retry' || a === 'restart') { if (game) begin(game.level); }
   else if (a === 'next') begin(state.level);
 });
-document.addEventListener('visibilitychange', () => { if (document.hidden && mode === 'play') pause(); });
+document.addEventListener('visibilitychange', () => { if (document.hidden && mode === 'play') pause(); musicUpdate(); });
 addEventListener('resize', () => { if (game) resize(); });
 
 // ---------- loop ----------

@@ -16,7 +16,7 @@
   <header class="topbar">
     <a class="hub-link" href="../" aria-label="Back to game hub">‹ <span>GAMES</span></a>
     <div class="branding"><span class="brand-mark">✂</span><div><span class="brand-caption">MYCOZYWORLD</span><strong>Cozy Salon</strong></div></div>
-    <button id="soundBtn" class="icon-btn" type="button" aria-label="Toggle sound">🔊</button>
+    <div class="top-btns"><button id="musicBtn" class="icon-btn" type="button" aria-label="Toggle music">🎵</button><button id="soundBtn" class="icon-btn" type="button" aria-label="Toggle sound">🔊</button></div>
   </header>
 
   <main id="homeView" class="view">
@@ -52,12 +52,19 @@
         <li>Kerja jenis sama berturut-turut = <b>COMBO</b> dan tip lebih besar.</li>
         <li>Hair dryer jalan sendiri, Mira tak perlu tunggu.</li>
         <li>Habis service, hantar ke <b>kaunter 💰</b> untuk bayar.</li>
+        <li>Masa Mira gunting/warna, keluar <b>bar timing</b>. Tap stesen bila jarum dalam zon hijau = <b>PERFECT</b> (tip + laju).</li>
+        <li>Pelanggan ada <b>⭐ hajat</b>: nak PERFECT atau nak dilayan cepat. Tunaikan untuk bonus!</li>
         <li>Pelanggan marah? Tap dia → tap <b>mesin kopi ☕</b>.</li>
         <li>Level 8 boleh upah <b>Aiman</b> (shampoo + kopi), level 14 <b>Lina</b> (kaunter). Kerja mereka masuk queue sendiri.</li>
       </ol>
     </details>
 
-    <div class="section-heading"><div><span class="eyebrow">UPGRADE</span><h2>Kedai Kau</h2></div><span class="upgrade-tag">KEKAL</span></div>
+    <div id="goalsBox">
+      <div class="section-heading"><div><span class="eyebrow">SETIAP HARI</span><h2>Misi Harian 📅</h2></div><span class="upgrade-tag" id="goalBadge"></span></div>
+      <div id="dailyList" class="goal-list"></div>
+      <details class="ach-box"><summary>🏆 Pencapaian <span id="achCount"></span></summary><div id="achList" class="goal-list"></div></details>
+    </div>
+    <div class="section-heading"><div><span class="eyebrow">KEDAI</span><h2>Peralatan & Salon</h2></div><span class="upgrade-tag">KEKAL</span></div>
     <div id="upgradeGrid" class="upgrade-grid"></div>
     <p class="footer-note" id="versionNote"></p>
   </main>

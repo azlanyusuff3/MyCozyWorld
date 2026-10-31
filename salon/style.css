@@ -86,3 +86,17 @@ h1,h2,h3{font-family:"Lilita One",system-ui,sans-serif;font-weight:normal;margin
   .game-hud{gap:5px}.game-hud b{font-size:13px}
 }
 .salon-logo{display:block;width:100%;max-width:260px;margin:0 0 6px}
+.top-btns{display:flex;gap:6px}
+.cat-head{grid-column:1/-1;font-size:18px;margin:10px 2px 0;color:#8e6aa0}
+.tier{display:inline-block;padding:2px 8px;border-radius:99px;font-size:10px;letter-spacing:1px;background:#efe3ea;color:#6a4877}
+.tier.t1{background:#d8e7ff;color:#3f62a8}.tier.t2{background:linear-gradient(90deg,#ffe08a,#f2b84b);color:#7a4f00}
+.goal-list{display:grid;gap:8px}
+.goal-row{display:flex;align-items:center;gap:10px;background:#fff;border-radius:16px;padding:10px 12px;box-shadow:0 3px 0 #ebd1dc}
+.goal-row.claimed{opacity:.55}.goal-row.locked{opacity:.6}
+.goal-txt{flex:1;min-width:0}.goal-txt b{display:block;font-size:13px}.goal-txt small{font-size:10px;color:#a48a99;font-weight:800}
+.goal-bar{height:8px;border-radius:99px;background:#f3e3ea;margin:4px 0 2px;overflow:hidden}.goal-bar i{display:block;height:100%;background:linear-gradient(90deg,#f6a6c1,#e56b93)}
+.claim-btn{border:0;border-radius:12px;padding:8px 10px;min-width:74px;background:#e56b93;color:#fff;font-weight:900;font-size:12px;box-shadow:0 3px 0 #ba4d76}
+.claim-btn:disabled{background:#d9cbd3;box-shadow:0 3px 0 #bfaeb8}
+.ach-box{margin-top:10px;background:#fff9fb;border-radius:16px;padding:10px 12px;box-shadow:0 3px 0 #efdbe4}
+.ach-box summary{font-weight:900;cursor:pointer;margin-bottom:6px}
+#goalBadge:empty{display:none}
