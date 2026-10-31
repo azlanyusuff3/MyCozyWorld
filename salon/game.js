@@ -2,7 +2,7 @@
 // Sprite hooks: letak gambar dalam salon/sprites/ (lihat SPRITES di bawah). Kalau tiada, game lukis placeholder sendiri.
 (() => {
 'use strict';
-const SALON_VERSION = 3, SALON_DATE = '31 Okt 2026';
+const SALON_VERSION = 4, SALON_DATE = '31 Okt 2026';
 const $ = id => document.getElementById(id);
 const KEY = 'mycozyworld_cozy_salon_v2', OLD_KEY = 'mycozyworld_cozy_salon_v1', LIMIT = 60;
 const W = 720, H = 960;   // logical canvas size (portrait)
@@ -57,7 +57,7 @@ const UP = [
 // Nama fail: salon/sprites/<nama>.webp  (contoh mira_idle.webp, guest_makcik_sit.webp, bg_kampung.webp, st_wash.webp)
 const IMG = {};
 let SPRITE_LIST = new Set();
-fetch('sprites/list.json', { cache: 'no-cache' }).then(r => r.ok ? r.json() : []).then(a => { SPRITE_LIST = new Set(a); }).catch(() => {});
+fetch('sprites/list.json', { cache: 'no-cache' }).then(r => r.ok ? r.json() : []).then(a => { SPRITE_LIST = new Set(a); if (mode === 'home') home(); }).catch(() => {});
 function img(name) {
   if (!SPRITE_LIST.has(name)) return null;
   if (!(name in IMG)) {
@@ -412,7 +412,13 @@ function text(t, x, y, size, color, align = 'center', stroke = '#fff') {
   if (stroke) { ctx.lineWidth = size / 5; ctx.strokeStyle = stroke; ctx.lineJoin = 'round'; ctx.strokeText(t, x, y); }
   ctx.fillStyle = color; ctx.fillText(t, x, y);
 }
-function emoji(e, x, y, size) { ctx.font = `${size}px system-ui, "Apple Color Emoji", "Segoe UI Emoji", sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(e, x, y); }
+const ICON = { '🫧': 'wash', '✂️': 'cut', '🎨': 'color', '💨': 'style', '💰': 'pay', '☕': 'coffee', '🪙': 'coin', '⭐': 'star', '❤️': 'heart', '💔': 'heartbroken', '⏳': 'wait', '👑': 'crown', '📸': 'camera', '⚡': 'bolt', '🔒': 'lock', '✨': 'sparkle', '💢': 'angry', '💖': 'love' };
+function emoji(e, x, y, size) {
+  const ic = ICON[e] && img('ic_' + ICON[e]);
+  if (ic) { const s = size * 1.25; ctx.drawImage(ic, x - s / 2, y - s / 2, s, s); return; }
+  emojiText(e, x, y, size);
+}
+function emojiText(e, x, y, size) { ctx.font = `${size}px system-ui, "Apple Color Emoji", "Segoe UI Emoji", sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(e, x, y); }
 
 function drawRoom(L) {
   const bg = img('bg_' + L.key);
@@ -584,8 +590,10 @@ function drawCoffee() {
   const on = upg('coffee') > 0;
   ctx.globalAlpha = on ? 1 : .35;
   ell(COFFEE.x, COFFEE.y + 30, 40, 12, '#00000022');
+  const cs = img('st_coffee');
+  if (cs) ctx.drawImage(cs, COFFEE.x - 70, COFFEE.y - 105, 140, 140); else {
   rr(COFFEE.x - 34, COFFEE.y - 40, 68, 76, 14); ctx.fillStyle = '#8a5434'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = '#5c3720'; ctx.stroke();
-  emoji('☕', COFFEE.x, COFFEE.y - 2, 32);
+  emoji('☕', COFFEE.x, COFFEE.y - 2, 32); }
   ctx.globalAlpha = 1;
   if (!on) emoji('🔒', COFFEE.x + 28, COFFEE.y - 40, 18);
   const g = G(selected);
@@ -681,6 +689,7 @@ cv.addEventListener('pointercancel', () => { drag = null; });
 
 // ---------- home ----------
 function home() {
+  if (SPRITE_LIST.has('logo') && !$('salonLogo')) { const l = new Image(); l.id = 'salonLogo'; l.className = 'salon-logo'; l.alt = 'Cozy Salon'; l.src = 'sprites/logo.webp'; $('homeView').querySelector('.hero-copy').prepend(l); }
   mode = 'home'; game = null; selected = null;
   $('homeView').hidden = false; $('gameView').hidden = true; $('overlay').hidden = true;
   $('walletStat').textContent = state.coins;

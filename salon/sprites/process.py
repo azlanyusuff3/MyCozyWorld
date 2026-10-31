@@ -12,6 +12,9 @@ OUT = 256  # output square size
 WALK = [['front_idle', 'front_walk1', 'front_walk2'], ['back_idle', 'back_walk1', 'back_walk2']]
 MIRA_SIDE = [['side_idle', 'side_walk1', 'side_walk2'], ['cut', 'wash', 'happy']]
 GUEST_POSE = [['side_walk1', 'side_walk2', 'after'], ['sit', 'angry', 'chair']]
+ICONS = {'icons_a': [['ic_wash', 'ic_cut', 'ic_color'], ['ic_style', 'ic_pay', 'ic_coffee']],
+         'icons_b': [['ic_coin', 'ic_star', 'ic_heart'], ['ic_heartbroken', 'ic_wait', 'ic_crown']],
+         'icons_c': [['ic_camera', 'ic_bolt', 'ic_lock'], ['ic_sparkle', 'ic_angry', 'ic_love']]}
 STATIONS = [['st_wash', 'st_cut', 'st_color'], ['st_style', 'st_pay', 'st_coffee']]
 
 
@@ -79,6 +82,16 @@ def main():
     if os.path.exists(p('stations')):
         for n, im in cells(p('stations'), STATIONS).items():
             save_group('', {n: im}, names)
+    for sh, grid in ICONS.items():
+        if os.path.exists(p(sh)):
+            for n, im in cells(p(sh), grid).items():
+                save_group('', {n: im}, names)
+    if os.path.exists(p('logo')):
+        im = key(Image.open(p('logo')))
+        im = im.crop(im.getbbox())
+        im.thumbnail((800, 400), Image.LANCZOS)
+        im.save(os.path.join(HERE, 'logo.webp'), 'WEBP', quality=90)
+        names.add('logo')
     for loc in ['kampung', 'mall', 'resort', 'seleb']:
         if os.path.exists(p('bg_' + loc)):
             Image.open(p('bg_' + loc)).convert('RGB').resize((720, 960), Image.LANCZOS).save(os.path.join(HERE, 'bg_' + loc + '.webp'), 'WEBP', quality=85)

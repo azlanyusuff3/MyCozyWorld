@@ -1,5 +1,7 @@
 # Cozy Salon — Art Prompts for ChatGPT (batch by batch)
 
+> **ChatGPT: the current to-do list is in `salon/sprites/NEXT.md`. Read it and do those tasks.**
+
 Do ONE batch per message. Never redesign a character between batches: always look at the
 reference sheet already committed in `salon/sprites/sheets/` and match it exactly.
 
