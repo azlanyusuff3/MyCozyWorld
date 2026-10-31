@@ -1,0 +1,150 @@
+[
+  {
+    "file": "C:\\Users\\User\\Documents\\ChatGPT\\MyCozyWorld\\output\\bramble-sheets\\assets\\heroes\\sheets\\archer_back_sheet.png",
+    "size": [
+      1536,
+      1024
+    ],
+    "mode": "RGB",
+    "background": "#FF00FF",
+    "idle_height": 404.91585127201563,
+    "bytes": 1059420,
+    "git_blob_sha1": "45241bd1a4cbee41e5abd305b817858abe8500eb",
+    "sprites": [
+      {
+        "pose": "Idle",
+        "bbox": [
+          60,
+          66,
+          452,
+          471
+        ],
+        "baseline": 470
+      },
+      {
+        "pose": "Walk1",
+        "bbox": [
+          579,
+          65,
+          956,
+          471
+        ],
+        "baseline": 470
+      },
+      {
+        "pose": "Walk2",
+        "bbox": [
+          1088,
+          63,
+          1472,
+          471
+        ],
+        "baseline": 470
+      },
+      {
+        "pose": "Windup",
+        "bbox": [
+          45,
+          577,
+          467,
+          983
+        ],
+        "baseline": 982
+      },
+      {
+        "pose": "Attack",
+        "bbox": [
+          524,
+          571,
+          1012,
+          983
+        ],
+        "baseline": 982
+      },
+      {
+        "pose": "Hurt",
+        "bbox": [
+          1078,
+          614,
+          1481,
+          983
+        ],
+        "baseline": 982
+      }
+    ]
+  },
+  {
+    "file": "C:\\Users\\User\\Documents\\ChatGPT\\MyCozyWorld\\output\\bramble-sheets\\assets\\heroes\\sheets\\archer_side_sheet.png",
+    "size": [
+      1536,
+      1024
+    ],
+    "mode": "RGB",
+    "background": "#FF00FF",
+    "idle_height": 393.4202920983095,
+    "bytes": 964802,
+    "git_blob_sha1": "738f96934b60721ded180ede9303dde9ae519561",
+    "sprites": [
+      {
+        "pose": "Idle",
+        "bbox": [
+          79,
+          78,
+          432,
+          471
+        ],
+        "baseline": 470
+      },
+      {
+        "pose": "Walk1",
+        "bbox": [
+          594,
+          74,
+          941,
+          471
+        ],
+        "baseline": 470
+      },
+      {
+        "pose": "Walk2",
+        "bbox": [
+          1109,
+          72,
+          1450,
+          471
+        ],
+        "baseline": 470
+      },
+      {
+        "pose": "Windup",
+        "bbox": [
+          41,
+          592,
+          470,
+          983
+        ],
+        "baseline": 982
+      },
+      {
+        "pose": "Attack",
+        "bbox": [
+          524,
+          597,
+          1012,
+          983
+        ],
+        "baseline": 982
+      },
+      {
+        "pose": "Hurt",
+        "bbox": [
+          1101,
+          632,
+          1458,
+          983
+        ],
+        "baseline": 982
+      }
+    ]
+  }
+]

@@ -1,0 +1,13 @@
+{
+  "triangles": 14928,
+  "method": "code / trimesh",
+  "animations": [
+    "Idle",
+    "Walk",
+    "Attack",
+    "Cast",
+    "Hurt",
+    "Victory",
+    "Death"
+  ]
+}

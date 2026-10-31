@@ -1,0 +1,77 @@
+Bulwark sprite sheet generation
+
+Tool: built-in imagegen.
+Reference: azlanyusuff3/MyCozyWorld main assets/heroes/sheets/knight_sheet.png and assets/heroes/opt/knight_idle.webp.
+Postprocessing: Python/Pillow chroma-key cleanup and grid/baseline registration, explicitly authorized by the user. No coded artwork repainting.
+Commit: 88e44c7ea4e14fd675b0c98aea179b5a9ad1e9be
+Remote changes: only assets/heroes/sheets/knight_back_sheet.png and assets/heroes/sheets/knight_side_sheet.png.
+
+Back sheet: initial generation
+
+Use case: stylized-concept. Asset: a finished production 2D painted character sprite sheet for Cozy Arena.
+Reference image 1 (knight_sheet.png) is the EXACT authoritative art/style/proportion/size reference. Reference image 2 (knight_idle.webp) is the exact clean character identity reference. Keep THIS SAME Bulwark knight: original neutral SILVER armor with white painted highlights and dark gray joints, thick clean black outlines identical to reference, warm golden trim and diamond ornaments, huge swept red feather plume, deep red cape edged gold, short stocky chibi body, giant helmet, short armored legs, same round red shield with gold rim and raised GOLD SUN emblem, same broad silver sword with angular gold guard and small red diamond. Match the original painted mobile-game sprite style precisely. Do not use the rounded 3D blue-steel character from earlier conversation. No redesign, no simplified flat-vector look, no 3D render.
+OUTPUT: exactly 1536x1024 PNG, one 3-column x 2-row sprite sheet. Each cell exactly 512x512. No visible grid. Exactly ONE full-body sprite in each of the SIX cells. Flat perfectly uniform PURE RGB MAGENTA #FF00FF background, exact RGB(255,0,255), opaque. All blank areas and gaps pure magenta. No gradient, no noise, no shadow, no contact shadow, no floor, no scenery, no ground line. No transparency. No text, no pose labels, no letters, no watermarks, no borders.
+REGISTRATION: the SAME character scale across all six poses and matching source knight_sheet.png: each character including plume/boots fits inside roughly 420 pixels of height, with approximately 50 pixels top margin and boots on local cell baseline y=470. All boots planted on the same baseline per cell: absolute y=470 for top row and y=982 for bottom row. Keep the body/head/limb size identical between cells; don't resize a pose to fill its cell. Body centered at local x=256. Entire character, plume, cape, sword and shield must stay strictly within its own cell with at least 24 pixels clearance from every cell edge. No character/weapon/plume crosses a cell boundary. No effects, motion streaks, afterimages, extra limbs or extra weapons.
+EXACT REQUIRED POSE ORDER (position only; DO NOT WRITE LABELS):
+Cell 1 top-left x0..511,y0..511: IDLE, neutral ready stance.
+Cell 2 top-middle x512..1023,y0..511: WALK1, anatomical LEFT foot forward, right foot back.
+Cell 3 top-right x1024..1535,y0..511: WALK2, anatomical RIGHT foot forward, left foot back.
+Cell 4 bottom-left x0..511,y512..1023: WINDUP, sword pulled back behind the sword shoulder, preparing a strike.
+Cell 5 bottom-middle x512..1023,y512..1023: ATTACK, sword slashing FORWARD, strong clear forward sword-arm extension, while keeping all geometry inside the cell.
+Cell 6 bottom-right x1024..1535,y512..1023: HURT, clear recoil, torso leaning backward with feet on baseline, shield arm reacting.
+The change between cells is the pose only. Preserve identity, camera angle, facing direction, relative head size and actual armor construction in every cell.
+THIS SHEET IS EXCLUSIVELY 3/4 BACK VIEW in every cell. Camera behind Bulwark and slightly to the side; he faces AWAY, toward the TOP-RIGHT. His back and large red gold-edged CAPE are the main visible shapes. Show the BACK of the silver helmet and the original huge red plume. Do not show his face or the front visor. Sword is in his anatomical RIGHT hand, visible to the right as he faces diagonally away toward upper-right. Shield remains on his anatomical LEFT arm, visible on the left from behind: show the shield's inward/back surface, leather arm straps and handle, golden outer rim and red edge. Do NOT paint the sun emblem on the inside/back of the shield; the sun is only on its outward face. A small edge of the outward shield face can appear only if geometrically correct. Keep this exact rear camera angle in idle, both walk frames, windup, attack and hurt; never switch to a front-facing view. Paint the cape folds, helmet plates, gold borders and plume strands with the same line weight, shading and highlights as the supplied sprite sheet.
+
+---
+
+Back sheet: rear-view pose correction
+
+Edit this existing 3/4 BACK Bulwark sprite sheet, preserving the original painted artwork, thick black linework, exact silver/gold/red palette, helmet, huge red plume, gold-edged cape, right-hand sword and LEFT-arm shield with visible inside straps. Keep the 3/4 BACK camera looking at his back, character facing AWAY toward the upper-right, in ALL six cells.
+Targeted corrections only:
+1) Make the two TOP walking sprites show a clear ALTERNATING gait: TOP MIDDLE is WALK1, anatomical LEFT leg/foot steps forward toward upper-right, anatomical RIGHT leg trails behind toward lower-left. TOP RIGHT is WALK2, anatomical RIGHT leg/foot steps forward toward upper-right, anatomical LEFT leg trails behind lower-left. Do not repeat the same leg pose. The lifted knee and greave belonging to the forward leg must exchange between frames; equipment and camera never swap sides.
+2) BOTTOM MIDDLE attack sword arm should extend/slash more clearly FORWARD toward upper-right; fit the ENTIRE blade inside that cell.
+3) Keep every sprite strictly within its 512x512 cell with 24px clear magenta margin, no crossing boundaries. Same body/head scale, painted detail and proportions across all six poses. Boots lowest sole local y=470 in each cell.
+Final exact format 1536x1024 PNG, 3 columns x2 rows, fully flat pure RGB(255,0,255) background, no gradient, shadow, ground, effects, text or labels. Pose order stays top idle/walk-left/walk-right, bottom windup/attack/hurt. Keep the other four pose identities intact.
+
+---
+
+Back sheet: final WALK1 correction
+
+Edit ONLY the leg pose of this EXACT 3/4-back Bulwark sprite. Keep cape, head, plume, helmet, sword, arms, shield straps and all painting ABOVE THE LEGS unchanged. Same silver/gold/red painted style and same rear camera, facing AWAY toward upper-right.
+The current leg pose is WRONG for the desired gait. It has the near right boot forward at IMAGE RIGHT and the far left boot trailing at IMAGE LEFT. REVERSE THEIR POSITIONS COMPLETELY.
+Draw a CROSSOVER WALKING STEP, with the two lower legs CROSSING IN PROJECTION under the cape, NOT the current wide stance. The near/right leg (the leg attached under the sword-side hip on image right) extends BACK and LEFT; its boot is planted near the bottom CENTER-LEFT of the sprite. The far/left leg (attached under the shield/cape side) extends FORWARD toward UPPER-RIGHT, mostly hidden behind the cape and crossing leg; its smaller forward boot peeks out to the RIGHT of the near boot and HIGHER in the image. Thus the near/right foot is now the LEFTMOST and LOWEST visible boot; the far/left foot is now the RIGHTMOST and HIGHER boot. This must be visibly opposite to the input. Do not merely tilt the existing left heel or retain the current boot positions. Bring the stride narrower and crossed.
+All toes still point along the same forward upper-right direction. Do not flip the character or swap equipment. One exact same complete full-body hero centered on pure magenta #FF00FF, no floor, shadow, effects, labels or text.
+
+---
+
+Side sheet: correct single-pose camera master
+
+Create ONE single 2D game sprite of the EXACT Bulwark knight from the supplied reference, but rotate him to a STRICT PURE RIGHT-FACING SIDE PROFILE. This is a side-scrolling platform-game profile sprite, NOT an isometric or three-quarter camera.
+The camera is exactly on his ANATOMICAL RIGHT SIDE, looking horizontally along his shoulder axis. Both shoulders overlap in projection, both hip joints overlap in projection, both ears overlap in projection. You see the RIGHT lateral side of his torso and helmet only. The front plane of his chest is PERPENDICULAR to the picture plane. The FRONT CHEST PLATE'S GOLD V, BELT BUCKLE, FRONT TABARD FACE and FULL SHIELD FACE MUST NOT BE VISIBLE. Only one eye visible, looking straight RIGHT at the rightmost edge of the helmet's face opening. The large circular gold ear ornament is centered on the visible helmet side; helmet visor projects to the RIGHT. Shield stays on his FAR LEFT arm, hidden behind his torso except a very thin upright edge of gold/red rim ahead to the right. Do not show the sun emblem in this edge-on side view. Sword is in his NEAR RIGHT hand in front toward image right; silver blade angled upward-right, wholly clear of the torso. Red cape and huge red plume flow backward to image LEFT. Neutral idle ready stance, both boots point RIGHT, feet on common baseline.
+Identity invariants: same huge original red plume, same silver plate armor with gold trim, red gold-edged cape, same chunky chibi proportions and giant helmet, same sword design gold guard/red diamond. Match original 2D hand-painted shading, crisp thick black outline weight, detail density, silver painted highlights and red/gold palette EXACTLY. NO 3D render, no blue armor, no new design.
+One character centered, entire full body and all equipment inside a square canvas with 35px margins, solid flat pure magenta #FF00FF background, no text, no labels, no ground, no shadows, no border, no effects.
+
+---
+
+Side sheet: final six-pose generation
+
+Use the supplied SINGLE RIGHT-SIDE PROFILE Bulwark sprite as the exact master character/camera/style reference. Make a new SIX-FRAME ANIMATION SPRITE SHEET of THAT SAME SIDE-VIEW CHARACTER. The supplied image is already the correct camera. Every one of the six sprites must retain this IDENTICAL STRICT RIGHT-FACING SIDE PROFILE. Do not rotate any head or torso toward the viewer. Only one eye visible; near gold circular ear on side helmet; chest shown edge-on/side, not frontal; shield on FAR arm is only a thin vertical gold/red edge partly visible behind torso; never show full sun shield face. Both shoulder joints overlap in profile. Cape and huge red plume always trail LEFT; toes always point RIGHT. Match this exact painted silver armor, golden borders, deep red gold-edged cape, big swept red plume, original chibi proportions, broad silver sword/gold guard/red gem, and crisp thick black outlines. Do not redesign, change colors, use 3D render, or simplify the painted shading.
+Output one exact 1536x1024 PNG, 3 columns x2 rows, 512x512 per cell. Flat PURE MAGENTA #FF00FF, no gradient, texture, ground, shadows, grid lines, text, labels or motion trails. Exactly one complete full-body sprite per cell. Same body/head/limb scale across all frames, matching roughly 420px full character height in a 512px cell. Lowest boot sole local y=470 in ALL cells (absolute y470 top row, y982 bottom row). Keep every plume/cape/weapon/boot strictly INSIDE its cell with >=24px margin. Character/prop silhouette centered as a whole in each cell. Do not crop. Never let the attack sword cross the middle cell right edge at x1024.
+Pose order:
+TOP LEFT = IDLE: same neutral ready side-profile pose as master, sword held ahead diagonally up-right, short legs standing.
+TOP MIDDLE = WALK1: LEFT/FAR foot steps forward RIGHT; RIGHT/NEAR leg behind LEFT, near heel lifted. Alternate gait clearly visible. Arms make small matching walk swing.
+TOP RIGHT = WALK2: RIGHT/NEAR foot steps forward RIGHT; LEFT/FAR leg behind LEFT. Reverse which knee/boot is forward from the previous cell. Do not copy the same leg pose.
+BOTTOM LEFT = WINDUP: from the same strict right-side camera, torso twists only within the side silhouette, near/right sword arm pulled backward LEFT, sword drawn up/back over the rear shoulder, knees bent to prepare a strike. Face remains strict right-facing profile with ONE eye.
+BOTTOM MIDDLE = ATTACK: strong forward sword slash toward RIGHT, near/right arm reaches ahead, blade angled diagonally UP-RIGHT so the entire sword fits inside the 512px cell. Keep elbow slightly bent and torso a little left in its cell: sword tip no farther than local x=470, cape no farther left than local x=25. Do NOT extend a horizontal sword across into the adjacent cell.
+BOTTOM RIGHT = HURT: recoils backward LEFT from a hit arriving from RIGHT, torso/head lean back, eye closed with recoil. Keep HEAD and TORSO in the exact same right-facing SIDE PROFILE; do NOT turn toward viewer or reveal the chest front. Sword and thin far shield edge react, feet maintain the shared ground baseline.
+All six must look like the same original Bulwark hero at the same scale, same camera, same material rendering and outline thickness.
+
+---
+
+Side sheet: final WALK1 correction
+
+Edit this exact SINGLE Bulwark sprite. Preserve the exact original painted style, thick black linework, all colors, all armor design, original huge red plume, cape, helmet, sword and shield. Preserve ALL artwork ABOVE THE WAIST as closely as possible: same head, expression, upper body, arm/weapon position, proportions and camera. Change ONLY the walking leg pose BELOW THE WAIST to the OPPOSITE phase of the gait. Do not mirror the whole character, do not swap the sword/shield arms, do not change facing direction.
+The existing prominent RIGHT/NEAR leg is forward on IMAGE RIGHT; it must now be BACK on IMAGE LEFT. Its large bright silver knee guard and shin move behind the hip toward IMAGE LEFT, near boot lifted back with toe pointing RIGHT. The other LEFT/FAR leg must now reach FORWARD to IMAGE RIGHT, partly behind the near leg, its boot planted toward the right. In the final silhouette the near bright knee guard is LEFT of the hip; the far knee/boot is RIGHT of the hip. This is the opposite of the input. Make this alternation unmistakable. Do NOT leave the prominent bright near knee on the right in front. Both toes still point in the character's original forward direction.
+One full-body sprite centered, all equipment inside canvas, same relative character size, fully flat pure #FF00FF background, no shadow, ground, effects, text or labels. No extra limbs.
+Keep the STRICT PURE RIGHT-FACING SIDE PROFILE of the input: one eye, side of helmet, side torso, far shield only a thin edge. RIGHT/NEAR thigh, shin and knee bend BACK LEFT; LEFT/FAR foot strides forward RIGHT. Near knee should be behind the pelvis around local x=220 if canvas 512px, far knee ahead around x=300. Do not turn the chest toward viewer.
+
