@@ -1,0 +1,150 @@
+[
+  {
+    "file": "C:\\Users\\User\\Documents\\ChatGPT\\MyCozyWorld\\output\\kage-sheets\\assets\\heroes\\sheets\\assassin_back_sheet.png",
+    "size": [
+      1536,
+      1024
+    ],
+    "mode": "RGB",
+    "background": "#FF00FF",
+    "uniform_scale": 0.9216589861751152,
+    "bytes": 953885,
+    "git_blob_sha1": "d3e6643d63b53ce991338ac9b76e02ce818204b1",
+    "sprites": [
+      {
+        "pose": "Idle",
+        "bbox": [
+          59,
+          71,
+          453,
+          471
+        ],
+        "baseline": 470
+      },
+      {
+        "pose": "Walk1",
+        "bbox": [
+          553,
+          67,
+          982,
+          471
+        ],
+        "baseline": 470
+      },
+      {
+        "pose": "Walk2",
+        "bbox": [
+          1087,
+          76,
+          1472,
+          471
+        ],
+        "baseline": 470
+      },
+      {
+        "pose": "Windup",
+        "bbox": [
+          40,
+          616,
+          472,
+          983
+        ],
+        "baseline": 982
+      },
+      {
+        "pose": "Attack",
+        "bbox": [
+          528,
+          605,
+          1008,
+          983
+        ],
+        "baseline": 982
+      },
+      {
+        "pose": "Hurt",
+        "bbox": [
+          1102,
+          601,
+          1457,
+          983
+        ],
+        "baseline": 982
+      }
+    ]
+  },
+  {
+    "file": "C:\\Users\\User\\Documents\\ChatGPT\\MyCozyWorld\\output\\kage-sheets\\assets\\heroes\\sheets\\assassin_side_sheet.png",
+    "size": [
+      1536,
+      1024
+    ],
+    "mode": "RGB",
+    "background": "#FF00FF",
+    "uniform_scale": 0.9009009009009009,
+    "bytes": 949042,
+    "git_blob_sha1": "1c5dddb0076a85707fc2da0e6f2e18257257d4e0",
+    "sprites": [
+      {
+        "pose": "Idle",
+        "bbox": [
+          63,
+          71,
+          448,
+          471
+        ],
+        "baseline": 470
+      },
+      {
+        "pose": "Walk1",
+        "bbox": [
+          575,
+          68,
+          960,
+          471
+        ],
+        "baseline": 470
+      },
+      {
+        "pose": "Walk2",
+        "bbox": [
+          1097,
+          74,
+          1462,
+          471
+        ],
+        "baseline": 470
+      },
+      {
+        "pose": "Windup",
+        "bbox": [
+          62,
+          603,
+          450,
+          983
+        ],
+        "baseline": 982
+      },
+      {
+        "pose": "Attack",
+        "bbox": [
+          531,
+          615,
+          1005,
+          983
+        ],
+        "baseline": 982
+      },
+      {
+        "pose": "Hurt",
+        "bbox": [
+          1099,
+          601,
+          1461,
+          983
+        ],
+        "baseline": 982
+      }
+    ]
+  }
+]
