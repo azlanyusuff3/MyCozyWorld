@@ -2,7 +2,7 @@
 // Sprite hooks: letak gambar dalam salon/sprites/ (lihat SPRITES di bawah). Kalau tiada, game lukis placeholder sendiri.
 (() => {
 'use strict';
-const SALON_VERSION = 4, SALON_DATE = '31 Okt 2026';
+const SALON_VERSION = 5, SALON_DATE = '31 Okt 2026';
 const $ = id => document.getElementById(id);
 const KEY = 'mycozyworld_cozy_salon_v2', OLD_KEY = 'mycozyworld_cozy_salon_v1', LIMIT = 60;
 const W = 720, H = 960;   // logical canvas size (portrait)
@@ -168,7 +168,7 @@ function buildSeats() {
   for (let i = 0; i < n; i++) seats.push({ x: 70 + i * 92, y: 880, guestId: null });
   return seats;
 }
-const COFFEE = { x: 450, y: 735 };
+const COFFEE = { x: 455, y: 790 };
 const DOOR = { x: -40, y: 900 };
 
 // ---------- game state ----------
@@ -591,7 +591,7 @@ function drawCoffee() {
   ctx.globalAlpha = on ? 1 : .35;
   ell(COFFEE.x, COFFEE.y + 30, 40, 12, '#00000022');
   const cs = img('st_coffee');
-  if (cs) ctx.drawImage(cs, COFFEE.x - 70, COFFEE.y - 105, 140, 140); else {
+  if (cs) ctx.drawImage(cs, COFFEE.x - 60, COFFEE.y - 88, 120, 120); else {
   rr(COFFEE.x - 34, COFFEE.y - 40, 68, 76, 14); ctx.fillStyle = '#8a5434'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = '#5c3720'; ctx.stroke();
   emoji('☕', COFFEE.x, COFFEE.y - 2, 32); }
   ctx.globalAlpha = 1;

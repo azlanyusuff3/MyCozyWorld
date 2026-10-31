@@ -1,5 +1,5 @@
 // Tukar VERSION setiap kali update game supaya phone ambil versi baru.
-const VERSION = 'mycozyworld-v21';
+const VERSION = 'mycozyworld-v22';
 const ASSETS = [
   './', 'index.html', 'game.js', 'manifest.json', 'salon/index.html', 'salon/style.css', 'salon/game.js', 'salon/sprites/list.json', 'cozy-chess/', 'cozy-chess/index.html', 'cozy-chess/style.css', 'cozy-chess/game.js', 'cozy-chess/sprites/list.json',
   'assets/icons/icon-192.png', 'assets/icons/icon-512.png', 'assets/icons/apple-touch-icon.png',
