@@ -2,7 +2,7 @@
 // Sprite hooks: letak gambar dalam salon/sprites/ (lihat SPRITES di bawah). Kalau tiada, game lukis placeholder sendiri.
 (() => {
 'use strict';
-const SALON_VERSION = 11, SALON_DATE = '31 Okt 2026';
+const SALON_VERSION = 12, SALON_DATE = '31 Okt 2026';
 const $ = id => document.getElementById(id);
 const KEY = 'mycozyworld_cozy_salon_v2', OLD_KEY = 'mycozyworld_cozy_salon_v1', LIMIT = 60;
 const W = 720, H = 960;   // logical canvas size (portrait)
@@ -913,7 +913,7 @@ function home() {
     const open = state.level >= l.from, cur = l === L;
     const st = Array.from({ length: 15 }, (_, i) => state.stars[l.from + i] || 0).reduce((a, b) => a + b, 0);
     const pic = SPRITE_LIST.has('loc_' + l.key) ? 'sprites/loc_' + l.key + '.webp' : SPRITE_LIST.has('bg_' + l.key) ? 'sprites/bg_' + l.key + '.webp' : '';
-    return `<div class="loc-card ${open ? '' : 'locked'} ${cur ? 'current' : ''}" style="background-color:${l.wall};${pic ? `background-image:url(${pic})` : ''}"><div class="loc-info"><b>${l.icon} ${l.name}</b><small>${open ? '⭐ ' + st + ' / 45 · Level ' + l.from + '–' + (l.from + 14) : 'Buka di Level ' + l.from}</small></div></div>`;
+    return `<div class="loc-card ${open ? '' : 'locked'} ${cur ? 'current' : ''}" style="background-color:${l.wall};${pic ? `background-image:url(${pic});${SPRITE_LIST.has('loc_' + l.key) ? 'background-size:auto 112%;background-position:right -10px center;background-repeat:no-repeat' : ''}` : ''}"><div class="loc-info"><b>${l.icon} ${l.name}</b><small>${open ? '⭐ ' + st + ' / 45 · Level ' + l.from + '–' + (l.from + 14) : 'Buka di Level ' + l.from}</small></div></div>`;
   }).join('');
   $('upgradeGrid').innerHTML = CATS.map(([c, title]) => `<h3 class="cat-head">${title}</h3>` + UP.filter(u => u.cat === c).map(u => {
     const lv = upg(u.key), price = priceOf(u), locked = state.level < u.unlock, maxed = lv >= u.max, dis = locked || maxed || state.coins < price;
