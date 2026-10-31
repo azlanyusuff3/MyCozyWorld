@@ -1,6 +1,6 @@
 'use strict';
 // Cozy Chess — chess biasa dengan character chibi + cinematic bertarung bila makan.
-const GAME_VERSION = '1.0';
+const GAME_VERSION = '1.1';
 const $ = s => document.querySelector(s);
 const NAMES = { k: 'King', q: 'Queen', r: 'Rook', b: 'Bishop', n: 'Knight', p: 'Pawn' };
 const SKILL = { k: 'Royal Slam!', q: 'Starfall!', r: 'Tower Smash!', b: 'Holy Orb!', n: 'Gallop Charge!', p: 'Brave Poke!' };
@@ -260,7 +260,7 @@ function render(hopTo = -1) {
     d.classList.toggle('last', !!lastMove && (i === lastMove.from || i === lastMove.to));
     d.classList.toggle('check', i === chk);
     let h = '';
-    if (p) h += `<img class="piece${i === hopTo ? ' hop' : ''}" src="${art(p.c, p.t)}" alt="${p.c === 'w' ? 'White' : 'Black'} ${NAMES[p.t]}">`;
+    if (p) h += `<span class="base ${p.c}"></span><img class="piece${i === hopTo ? ' hop' : ''}" src="${art(p.c, p.t)}" alt="${p.c === 'w' ? 'White' : 'Black'} ${NAMES[p.t]}">`;
     if (targets.has(i)) h += targets.get(i).cap ? '<span class="ring"></span>' : '<span class="dot"></span>';
     if (vf === 0) h += `<span class="coord r">${8 - r}</span>`;
     if (vr === 7) h += `<span class="coord f">${'abcdefgh'[f]}</span>`;
@@ -460,7 +460,7 @@ function refreshMenu() {
 $('#ver').textContent = `Versi ${GAME_VERSION}`;
 setSound(soundOn); $('#animToggle').checked = animOn;
 fetch('sprites/list.json', { cache: 'no-cache' }).then(r => r.ok ? r.json() : []).catch(() => [])
-  .then(list => { SPRITES = new Set(Array.isArray(list) ? list : []); refreshMenu(); });
+  .then(list => { SPRITES = new Set(Array.isArray(list) ? list : []); for (const k in artCache) delete artCache[k]; refreshMenu(); if (S && !$('#game').classList.contains('hidden')) render(); });
 refreshMenu();
 
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('../sw.js').catch(() => {});
