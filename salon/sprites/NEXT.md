@@ -15,7 +15,7 @@ Status: Mira, makcik, remaja, vip, seleb are DONE and look great — don't redo 
 
 ---
 
-## [ ] Task A — Redo guest "biasa" (she looks too much like Mira)
+## [x] Task A — Redo guest "biasa" (she looks too much like Mira)
 Mira has long brown wavy hair, so biasa must look clearly different.
 New design: young woman ~25, SHORT straight black bob with straight bangs, mint-green blouse, beige skirt, white flats, small tote bag.
 Replace these three files with the same layouts as in PROMPTS.md (BATCH 2–6):
