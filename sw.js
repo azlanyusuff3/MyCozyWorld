@@ -1,7 +1,7 @@
 // Tukar VERSION setiap kali update game supaya phone ambil versi baru.
-const VERSION = 'cozy-arena-v17';
+const VERSION = 'mycozyworld-v18';
 const ASSETS = [
-  './', 'index.html', 'game.js', 'manifest.json',
+  './', 'index.html', 'game.js', 'manifest.json', 'salon/index.html', 'salon/style.css', 'salon/game.js',
   'assets/icons/icon-192.png', 'assets/icons/icon-512.png', 'assets/icons/apple-touch-icon.png',
   ...['knight', 'archer', 'mage', 'healer'].flatMap(t => [`assets/heroes/opt/${t}_idle.webp`, `assets/heroes/opt/${t}_attack.webp`]),
   ...['knight', 'archer', 'healer'].flatMap(t => ['windup', 'hurt', 'walk1', 'walk2', 'victory', 'cast'].map(n => `assets/heroes/opt/${t}_${n}.webp`)),
@@ -30,7 +30,7 @@ self.addEventListener('fetch', e => {
     e.respondWith(fetch(new Request(e.request, { cache: 'no-cache' })).then(res => {
       if (res.ok) { const copy = res.clone(); caches.open(VERSION).then(c => c.put(e.request, copy)); }
       return res;
-    }).catch(() => caches.match(e.request).then(hit => hit || caches.match('index.html'))));
+    }).catch(() => caches.match(e.request).then(hit => hit || (url.pathname.endsWith('/salon/') ? caches.match('salon/index.html') : caches.match('index.html')))));
     return;
   }
   // images & sounds: cache first
