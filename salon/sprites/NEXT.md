@@ -93,7 +93,7 @@ Normal RULES, props only, no people, same style. Each cell one item:
 - pay: white marble-top counter with a tablet POS and a small orchid.
 - coffee: silver espresso machine on a white round table with two cups.
 
-## [ ] Task L — Cozy Salon MAIN MENU art
+## [x] Task L — Cozy Salon MAIN MENU art
 The home screen is now a game-style menu (big scene + logo + PLAY button + 4 round dock buttons). Make it gorgeous:
 1. `menu_bg.png` — **PORTRAIT 1024x1280, NOT magenta, no grid, no text, no people.** Cozy pastel **storefront exterior** of the Cozy Salon on a sunny Malaysian street: pink-and-cream shop front with a striped awning, big glass window showing salon chairs and mirrors inside, potted plants, a little bench, bunting flags, soft sky with clouds at the top. Keep the top 30% fairly simple (sky/awning — the logo goes there) and the bottom 30% simple pavement (UI goes there). Characters stand in the middle, so leave the middle-front floor area open.
 2. `dock.png` — normal RULES (magenta, 3x2). Chunky glossy mobile-game menu icons, no badge circle, thick plum outline: Row 1: **shop** (cute pink shopping bag with a bow), **missions** (clipboard with checkmarks and a star), **map** (folded treasure-style map with a heart pin). Row 2: **help** (open storybook with a sparkle), **music** (pink music note), **sound** (cute speaker).
