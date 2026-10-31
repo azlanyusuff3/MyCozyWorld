@@ -72,7 +72,7 @@ They work with Mira, so they wear the SAME salon uniform style as Mira (same apr
 - `lina_walk.png` — same layout as Aiman's walk.
 - `lina_side.png` — Row 1: side_idle, side_walk1, side_walk2 (facing right). Row 2: **pay** (side view facing right, typing on a small handheld card machine, smiling), **wave** (front, waving goodbye), **happy** (front, jumping, arms up).
 
-## [ ] Task J — Station tiers (Pro & Emas) → `stations_pro.png`, `stations_gold.png`
+## [x] Task J — Station tiers (Pro & Emas) → `stations_pro.png`, `stations_gold.png`
 The game now lets players upgrade each station: Biasa (current `stations.png`) → **Pro** → **Emas**.
 Use EXACTLY the same 3x2 layout, camera angle, size and position per cell as `stations.png`, so they swap in place:
 Row 1: wash, cut, color. Row 2: style (hood dryer), pay (counter), coffee machine.
