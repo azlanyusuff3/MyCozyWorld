@@ -66,7 +66,16 @@ def save_group(prefix, imgs, out_names):
 
 def main():
     names = set()
-    p = lambda f: os.path.join(SHEETS, f + '.png')
+    def p(f):
+        # terima .png / .jpg / .jpeg / .webp (ChatGPT kadang-kadang kena guna format kecil)
+        for ext in ('.png', '.jpg', '.jpeg', '.webp'):
+            fp = os.path.join(SHEETS, f + ext)
+            if os.path.exists(fp):
+                try:
+                    Image.open(fp).load(); return fp
+                except Exception:
+                    print('SKIP rosak:', fp)
+        return os.path.join(SHEETS, f + '.__none__')
     if os.path.exists(p('mira_walk')):
         g = cells(p('mira_walk'), WALK)
         if os.path.exists(p('mira_side')):

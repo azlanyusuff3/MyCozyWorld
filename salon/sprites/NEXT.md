@@ -106,5 +106,17 @@ The hub page shows 3 game cards. Make one **square 1024x1024 key-art background*
 - `assets/hub/sheets/card_chess.png` — a pastel fantasy chessboard on a castle balcony at golden hour, chibi chess pieces in the style of `cozy-chess/sprites/white_king_idle.webp` and `black_knight_idle.webp` facing off at the bottom.
 - `assets/hub/sheets/logo_chess.png` — 1536x1024 flat magenta background, big chunky cute game logo text **"Cozy Chess"** (spelled exactly) in cream and royal purple with gold outline, a small crown and a knight piece, sparkles. Same logo style as `salon/sprites/sheets/logo.png` and `assets/ui/logo.png`.
 
+## [ ] Task N — RE-UPLOAD broken files (IMPORTANT)
+These 6 files arrived **corrupted/truncated** in the repo (every one is cut at exactly 786,444 bytes — the upload is too big):
+`salon/sprites/sheets/menu_bg.png`, `salon/sprites/sheets/dock.png`, `salon/sprites/sheets/locs.png`,
+`assets/hub/sheets/card_arena.png`, `assets/hub/sheets/card_salon.png`, `assets/hub/sheets/card_chess.png`.
+(`logo_chess.png` is fine — don't touch it.)
+
+Re-commit the SAME artwork (you can regenerate if you no longer have it) but **every file must be under 600 KB**:
+- **menu_bg, card_arena, card_salon, card_chess** (no magenta) → save as **JPEG quality ~85** with the same name but `.jpg` extension, e.g. `salon/sprites/sheets/menu_bg.jpg`, `assets/hub/sheets/card_arena.jpg`.
+- **dock, locs** (magenta sheets) → keep `.png` but **reduce to a 256-colour palette PNG** (e.g. Python Pillow: `img.convert('RGB').quantize(256).save('dock.png', optimize=True)`). Keep the exact 1536x1024 size and pure #FF00FF background.
+- Then **delete** the 6 broken files listed above (the `.png` versions of menu_bg and the 3 cards) so only the good ones remain.
+- After committing, re-download each file from GitHub and check it opens. If any file is ≥ 768 KB, compress more.
+
 ---
 After you finish, tell the user "Cozy Salon art round done" so Claude can process the sheets.
