@@ -59,5 +59,18 @@ Each sofa is a LONG 4-seat waiting sofa, very wide and low (about 4x wider than 
 - Row 2: **sofa_seleb** — glamorous deep-pink tufted velvet sofa with gold legs; **magazine** — small wooden magazine rack with colourful magazines; **plant** — potted monstera plant in a cream pot.
 Commit as `salon/sprites/sheets/sofas.png`.
 
+## [ ] Task I — Salon helpers Aiman & Lina (same layouts as Mira in PROMPTS.md BATCH 1)
+They work with Mira, so they wear the SAME salon uniform style as Mira (same apron design with the scissors pocket) but in their own colour, and must look clearly different from Mira and all guests. Same chibi proportions as `mira_ref.png`.
+
+**Aiman** — cheerful young man ~20, the shampoo boy. Short neat black hair with a small side part, tan skin, mint-teal t-shirt, white apron, dark grey trousers, white sneakers, small towel over one shoulder.
+- `aiman_ref.png` — Row 1: front, side (right), back idle. Row 2: 3/4 front, thumbs-up front, close-up head.
+- `aiman_walk.png` — Row 1: front_idle, front_walk1, front_walk2. Row 2: back_idle, back_walk1, back_walk2.
+- `aiman_side.png` — Row 1: side_idle, side_walk1, side_walk2 (facing right). Row 2: **wash** (side view facing right, both hands forward with shampoo foam), **coffee** (side view facing right, carrying a small tray with a steaming cup), **happy** (front, jumping, arms up).
+
+**Lina** — friendly cashier ~28, auburn hair in a neat low bun with a pen tucked in it, light skin, peach-orange blouse, white apron, brown skirt, flats, small name badge.
+- `lina_ref.png` — same layout as Aiman's ref.
+- `lina_walk.png` — same layout as Aiman's walk.
+- `lina_side.png` — Row 1: side_idle, side_walk1, side_walk2 (facing right). Row 2: **pay** (side view facing right, typing on a small handheld card machine, smiling), **wave** (front, waving goodbye), **happy** (front, jumping, arms up).
+
 ---
 After you finish, tell the user "Cozy Salon art round done" so Claude can process the sheets.

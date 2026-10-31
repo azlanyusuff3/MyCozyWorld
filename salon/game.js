@@ -2,7 +2,7 @@
 // Sprite hooks: letak gambar dalam salon/sprites/ (lihat SPRITES di bawah). Kalau tiada, game lukis placeholder sendiri.
 (() => {
 'use strict';
-const SALON_VERSION = 5, SALON_DATE = '31 Okt 2026';
+const SALON_VERSION = 6, SALON_DATE = '31 Okt 2026';
 const $ = id => document.getElementById(id);
 const KEY = 'mycozyworld_cozy_salon_v2', OLD_KEY = 'mycozyworld_cozy_salon_v1', LIMIT = 60;
 const W = 720, H = 960;   // logical canvas size (portrait)
@@ -50,6 +50,8 @@ const UP = [
   { key: 'color',  name: 'Color Bar Premium', icon: '🎨', info: 'Warna 18% lebih laju.',           base: 170, max: 3, unlock: 5 },
   { key: 'chair',  name: 'Kerusi Gunting #2', icon: '🪑', info: 'Tambah satu lagi station gunting.', base: 300, max: 1, unlock: 6 },
   { key: 'sofa',   name: 'Sofa Extra',      icon: '🛋️', info: 'Tambah 1 tempat duduk menunggu.',    base: 220, max: 1, unlock: 7 },
+  { key: 'helper1', name: 'Pembantu Aiman', icon: '🧑‍🔧', info: 'Aiman buat semua shampoo & hantar kopi. Mira fokus gunting.', base: 450, max: 1, unlock: 8 },
+  { key: 'helper2', name: 'Juruwang Lina', icon: '👩‍💼', info: 'Lina jaga kaunter bayar. Mira tak perlu ke kaunter lagi.', base: 700, max: 1, unlock: 14 },
   { key: 'wash2',  name: 'Sinki #2',        icon: '🚿', info: 'Tambah satu lagi sinki shampoo.',    base: 380, max: 1, unlock: 10 },
 ];
 
@@ -168,6 +170,11 @@ function buildSeats() {
   for (let i = 0; i < n; i++) seats.push({ x: 70 + i * 92, y: 880, guestId: null });
   return seats;
 }
+const STAFF = {
+  mira:  { name: 'Mira',  roles: null, col: '#7759a8', label: '#e56b93', hair: '#6b3f2a', style: 0, outfit: '#e56b93', speed: 300 },
+  aiman: { name: 'Aiman', roles: ['wash', 'coffee'], col: '#2f9c8f', label: '#2f9c8f', hair: '#2d2a33', style: 5, outfit: '#5fc3b2', speed: 280, home: { x: 250, y: 470 }, up: 'helper1' },
+  lina:  { name: 'Lina',  roles: ['pay'], col: '#e08a2e', label: '#e08a2e', hair: '#c76b3c', style: 3, outfit: '#f2b775', speed: 280, home: { x: 680, y: 705 }, up: 'helper2' },
+};
 const COFFEE = { x: 455, y: 790 };
 const DOOR = { x: -40, y: 900 };
 
@@ -182,7 +189,11 @@ function begin(n) {
   game = { level: n, loc: locOf(n), total: totalGuests(n), goal: goalGuests(n), spawned: 0, served: 0, lost: 0, earned: 0, t: 0,
     nextArrival: 1.2, guests: [], fx: [], moodSum: 0, combo: 0, lastKind: null, comboT: 0, bestCombo: 0 };
   game.slots = buildSlots(); game.seats = buildSeats();
-  game.mira = { x: 420, y: 640, tx: 420, ty: 640, queue: [], cur: null, act: 0, face: 1, walk: 0, happy: 0 };
+  const mk = (id, x, y) => ({ id, ...STAFF[id], x, y, tx: x, ty: y, queue: [], cur: null, act: 0, face: 1, walk: 0, happy: 0 });
+  game.staff = [mk('mira', 420, 640)];
+  if (upg('helper1')) game.staff.push(mk('aiman', STAFF.aiman.home.x, STAFF.aiman.home.y));
+  if (upg('helper2')) game.staff.push(mk('lina', STAFF.lina.home.x, STAFF.lina.home.y));
+  game.mira = game.staff[0];
   $('homeView').hidden = true; $('gameView').hidden = false; $('overlay').hidden = true;
   $('playingLevel').textContent = 'LEVEL ' + n; $('hudLoc').textContent = game.loc.name.toUpperCase();
   resize(); hud(); window.scrollTo(0, 0); sound('door');
@@ -208,7 +219,7 @@ const canMove = g => g && (g.status === 'wait');
 function release(g) {
   if (!g.at) return;
   if (g.at.k === 'seat') g.at.o.guestId = null;
-  else { const s = g.at.o; s.guestId = null; s.state = 'empty'; s.t = 0; s.queued = false; game.mira.queue = game.mira.queue.filter(q => q.slot !== s); }
+  else { const s = g.at.o; s.guestId = null; s.state = 'empty'; s.t = 0; s.queued = false; game.staff.forEach(m => m.queue = m.queue.filter(q => q.slot !== s)); }
   g.at = null;
 }
 
@@ -223,15 +234,16 @@ function assign(g, s) {
   selected = null; sound('tap'); return true;
 }
 function enqueue(task) {
-  const m = game.mira, max = 5;
-  if (m.queue.length + (m.cur ? 1 : 0) >= max + 1) { toast('Queue Mira penuh! (max 5)'); return false; }
+  const kind = task.k === 'coffee' ? 'coffee' : task.slot.kind, max = 5;
+  const m = game.staff.find(x => x.roles && x.roles.includes(kind)) || game.mira;
+  if (m.queue.length + (m.cur ? 1 : 0) >= max + 1) { toast('Queue ' + m.name + ' penuh! (max 5)'); return false; }
   if (task.slot) task.slot.queued = true;
   m.queue.push(task); return true;
 }
 function giveCoffee(g) {
   if (!upg('coffee')) { toast('Beli upgrade Mesin Kopi dulu ☕'); return; }
   if (g.coffee > 0) { toast(g.name + ' dah dapat kopi'); return; }
-  if (game.mira.queue.some(q => q.k === 'coffee' && q.g === g)) return;
+  if (game.staff.some(m => m.queue.some(q => q.k === 'coffee' && q.g === g) || (m.cur && m.cur.k === 'coffee' && m.cur.g === g))) return;
   if (enqueue({ k: 'coffee', g })) { selected = null; sound('tap'); }
 }
 
@@ -240,7 +252,7 @@ function staffPoint(task) {
   const s = task.slot; return s.kind === 'pay' ? { x: s.x, y: s.y - 70 } : { x: s.x + 62, y: s.y + 25 };
 }
 
-function finishService(s) {
+function finishService(s, who) {
   const g = G(s.guestId); if (!g) return;
   const kind = s.kind;
   // combo
@@ -261,7 +273,7 @@ function finishService(s) {
     game.earned += pay; game.served++; game.moodSum += mood;
     fx('+🪙' + pay, s.x, s.y - 90, '#d39a1c', 28);
     for (let i = 0; i < 6; i++) game.fx.push({ coin: true, x: s.x, y: s.y - 40, vx: (Math.random() - .5) * 220, vy: -200 - Math.random() * 150, life: 1 });
-    sound('coin'); game.mira.happy = 1;
+    sound('coin'); (who || game.mira).happy = 1;
     release(g); g.status = 'leave'; g.tx = DOOR.x; g.ty = DOOR.y; g.happyLeave = true;
   } else {
     g.status = 'wait'; s.state = 'done'; g.bounce = 1;
@@ -315,8 +327,18 @@ function update(dt) {
     if (s.state !== 'working') continue;
     if (!TYPES[s.kind].staff) { s.t += dt; if (s.t >= s.dur) finishService(s); }
   }
-  // Mira
-  const m = game.mira, speed = 300 * (1 + upg('shoes') * .2);
+  for (const m of game.staff) updateStaff(m, dt);
+  // fx
+  for (const f of game.fx) {
+    f.life -= dt * (f.coin ? 1.4 : .9);
+    if (f.coin) { f.vy += 600 * dt; f.x += f.vx * dt; f.y += f.vy * dt; } else f.y -= 40 * dt;
+  }
+  game.fx = game.fx.filter(f => f.life > 0);
+  // end
+  if (game.spawned >= game.total && !game.guests.length) endLevel();
+}
+function updateStaff(m, dt) {
+  const speed = m.speed * (1 + upg('shoes') * .2);
   if (m.happy > 0) m.happy -= dt;
   if (!m.cur && m.queue.length) {
     m.cur = m.queue.shift();
@@ -339,7 +361,7 @@ function update(dt) {
         s.t += dt; m.act += dt;
         if (s.kind === 'cut' && Math.floor(m.act * 2.2) !== Math.floor((m.act - dt) * 2.2)) sound('snip');
         if (s.kind === 'wash' && Math.floor(m.act * .8) !== Math.floor((m.act - dt) * .8)) sound('water');
-        if (s.t >= s.dur) { s.queued = false; m.cur = null; finishService(s); }
+        if (s.t >= s.dur) { s.queued = false; m.cur = null; finishService(s, m); }
       }
     } else if (c.k === 'coffee') {
       if (m.phase === 'go') { m.phase = 'do'; m.act = 0; }
@@ -350,15 +372,7 @@ function update(dt) {
         m.cur = null;
       }
     }
-  } else if (!m.queue.length) { m.tx = m.tx; }
-  // fx
-  for (const f of game.fx) {
-    f.life -= dt * (f.coin ? 1.4 : .9);
-    if (f.coin) { f.vy += 600 * dt; f.x += f.vx * dt; f.y += f.vy * dt; } else f.y -= 40 * dt;
-  }
-  game.fx = game.fx.filter(f => f.life > 0);
-  // end
-  if (game.spawned >= game.total && !game.guests.length) endLevel();
+  } else if (!m.queue.length && m.home) { m.tx = m.home.x; m.ty = m.home.y; }
 }
 function fx(text, x, y, color, size) { game.fx.push({ text, x, y, color, size, life: 1.4 }); }
 
@@ -556,33 +570,35 @@ function chibi(x, y, o) {
   ctx.restore();
 }
 
-function drawMira() {
-  const m = game.mira, moving = Math.hypot(m.tx - m.x, m.ty - m.y) > 2;
+function drawStaff(m) {
+  const moving = Math.hypot(m.tx - m.x, m.ty - m.y) > 2;
   const working = m.cur && m.phase === 'do';
   const kind = m.cur?.k === 'work' ? m.cur.slot.kind : m.cur?.k;
   if (moving) m.dir = dirOf(m.tx - m.x, m.ty - m.y);
   const md = m.dir || 'front';
-  const pose = moving ? md + '_' + (Math.sin(m.walk) > 0 ? 'walk1' : 'walk2') : working ? (kind === 'cut' || kind === 'color' ? 'cut' : kind === 'wash' ? 'wash' : md + '_idle') : m.happy > 0 ? 'happy' : 'front_idle';
+  const wpose = kind === 'cut' || kind === 'color' ? 'cut' : kind;
+  let pose = moving ? md + '_' + (Math.sin(m.walk) > 0 ? 'walk1' : 'walk2') : working ? wpose : m.happy > 0 ? 'happy' : 'front_idle';
+  if (!img(m.id + '_' + pose) && working) pose = 'side_idle';
   const bob = moving ? Math.abs(Math.sin(m.walk)) * 7 : working ? Math.sin(performance.now() / 90) * 2 : 0;
   ell(m.x, m.y + 36, 42, 12, '#00000030');
-  const sp = img('mira_' + pose);
+  const sp = img(m.id + '_' + pose);
   ctx.save(); ctx.translate(m.x, m.y - bob); if (m.face < 0 && (!sp || md === 'side' || working)) ctx.scale(-1, 1);
   if (sp) ctx.drawImage(sp, -80, -135, 160, 160);
   else {
-    chibi(0, 0, { skin: '#f6cdb1', hair: '#7a3b52', style: 3, outfit: '#e56b93', mood: m.happy > 0 ? 1 : .7, apron: true, walking: moving });
+    chibi(0, 0, { skin: m.id === 'aiman' ? '#d9a07a' : '#f6cdb1', hair: m.hair, style: m.style, outfit: m.outfit, mood: m.happy > 0 ? 1 : .7, apron: true, walking: moving });
     if (working) emoji(kind === 'cut' ? '✂️' : kind === 'color' ? '🖌️' : kind === 'wash' ? '🧴' : kind === 'pay' ? '🧾' : '☕', 34, -10 + Math.sin(performance.now() / 70) * 6, 26);
   }
   ctx.restore();
-  text('Mira', m.x, m.y + 56, 16, '#e56b93');
+  text(m.name, m.x, m.y + 56, 16, m.label);
   // queue badge
   const q = m.queue.length + (m.cur ? 1 : 0);
-  if (q) { ell(m.x + 40, m.y - 110, 16, 16, '#7759a8', '#fff', 3); text(String(q), m.x + 40, m.y - 109, 18, '#fff', 'center', null); }
+  if (q) { ell(m.x + 40, m.y - 110, 16, 16, m.col, '#fff', 3); text(String(q), m.x + 40, m.y - 109, 18, '#fff', 'center', null); }
 }
 
 function drawQueueMarkers() {
-  game.mira.queue.forEach((q, i) => {
+  for (const m of game.staff) m.queue.forEach((q, i) => {
     const p = q.k === 'coffee' ? { x: COFFEE.x, y: COFFEE.y - 70 } : { x: q.slot.x - 62, y: q.slot.y - 120 };
-    ell(p.x, p.y, 15, 15, '#7759a8', '#fff', 3); text(String(i + 1 + (game.mira.cur ? 1 : 0)), p.x, p.y + 1, 16, '#fff', 'center', null);
+    ell(p.x, p.y, 15, 15, m.col, '#fff', 3); text(String(i + 1 + (m.cur ? 1 : 0)), p.x, p.y + 1, 16, '#fff', 'center', null);
   });
 }
 
@@ -626,7 +642,7 @@ function draw() {
   const items = [];
   game.slots.forEach(s => items.push({ y: s.y - 1, f: () => drawStation(s) }));
   game.guests.forEach(g => items.push({ y: g.y, f: () => drawGuest(g) }));
-  items.push({ y: game.mira.y, f: drawMira });
+  game.staff.forEach(m => items.push({ y: m.y, f: () => drawStaff(m) }));
   items.sort((a, b) => a.y - b.y).forEach(i => i.f());
   drawQueueMarkers();
   // combo meter

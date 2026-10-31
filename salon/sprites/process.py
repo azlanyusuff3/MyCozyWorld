@@ -72,6 +72,12 @@ def main():
         if os.path.exists(p('mira_side')):
             g.update(cells(p('mira_side'), MIRA_SIDE))
         save_group('mira_', g, names)
+    for who, row2 in [('aiman', ['wash', 'coffee', 'happy']), ('lina', ['pay', 'wave', 'happy'])]:
+        if os.path.exists(p(who + '_walk')):
+            g = cells(p(who + '_walk'), WALK)
+            if os.path.exists(p(who + '_side')):
+                g.update(cells(p(who + '_side'), [['side_idle', 'side_walk1', 'side_walk2'], row2]))
+            save_group(who + '_', g, names)
     for t in ['biasa', 'makcik', 'remaja', 'vip', 'seleb']:
         if not os.path.exists(p(f'guest_{t}_walk')):
             continue
