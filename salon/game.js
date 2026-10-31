@@ -2,7 +2,7 @@
 // Sprite hooks: letak gambar dalam salon/sprites/ (lihat SPRITES di bawah). Kalau tiada, game lukis placeholder sendiri.
 (() => {
 'use strict';
-const SALON_VERSION = 9, SALON_DATE = '31 Okt 2026';
+const SALON_VERSION = 10, SALON_DATE = '31 Okt 2026';
 const $ = id => document.getElementById(id);
 const KEY = 'mycozyworld_cozy_salon_v2', OLD_KEY = 'mycozyworld_cozy_salon_v1', LIMIT = 60;
 const W = 720, H = 960;   // logical canvas size (portrait)
@@ -758,7 +758,7 @@ function drawCoffee() {
 
 const DECOR = [
   { k: 'd_chandelier', sp: 'deco_chandelier', e: '💡', x: 360, y: 0, w: 120, h: 120, top: true },
-  { k: 'd_tv', sp: 'deco_tv', e: '📺', x: 300, y: 120, w: 120, h: 100, top: true },
+  { k: 'd_tv', sp: 'deco_tv', e: '📺', x: 290, y: 95, w: 130, h: 130, top: true },
   { k: 'd_neon', sp: 'deco_neon', e: '💖', x: 430, y: 120, w: 90, h: 90, top: true },
   { k: 'd_aquarium', sp: 'deco_aquarium', e: '🐠', x: 55, y: 700, w: 110, h: 110 },
   { k: 'd_flowers', sp: 'deco_flowers', e: '💐', x: 235, y: 715, w: 90, h: 90 },
@@ -840,7 +840,7 @@ function resolveQTE(s) {
 function drawQTE(s) {
   const q = s.qte; if (!q || s.state !== 'working') return;
   if (q.res != null) return;
-  const w = 130, x0 = s.x - w / 2, y0 = s.y - 172;
+  const w = 130, x0 = s.x - w / 2, y0 = s.y > 500 ? s.y - 128 : s.y - 172;
   rr(x0 - 6, y0 - 6, w + 12, 26, 13); ctx.fillStyle = '#fffffff2'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = '#e56b93'; ctx.stroke();
   rr(x0, y0, w, 14, 7); ctx.fillStyle = '#f3dde6'; ctx.fill();
   rr(x0 + (q.c - .17) * w, y0, .34 * w, 14, 7); ctx.fillStyle = '#bfe8c9'; ctx.fill();

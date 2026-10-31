@@ -1,5 +1,5 @@
 // Tukar VERSION setiap kali update game supaya phone ambil versi baru.
-const VERSION = 'mycozyworld-v27';
+const VERSION = 'mycozyworld-v28';
 const ASSETS = [
   './', 'index.html', 'game.js', 'manifest.json', 'salon/index.html', 'salon/style.css', 'salon/game.js', 'salon/sprites/list.json', 'cozy-chess/', 'cozy-chess/index.html', 'cozy-chess/style.css', 'cozy-chess/game.js', 'cozy-chess/sprites/list.json',
   ...['white', 'black'].flatMap(c => ['king', 'queen', 'rook', 'bishop', 'knight', 'pawn'].flatMap(t => ['idle', 'attack', 'hurt'].map(n => `cozy-chess/sprites/${c}_${t}_${n}.webp`))),
