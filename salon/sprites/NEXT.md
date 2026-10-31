@@ -84,7 +84,7 @@ Normal RULES, props only, no people, same style. Each cell one item:
 - Row 1: **aquarium** (small rounded fish tank on a wooden stand, colourful tropical fish, bubbles), **tv** (wall-mounted flat TV showing a cute hair-style show, seen from the front), **chandelier** (hanging crystal chandelier with a short chain at the top, glowing softly).
 - Row 2: **jukebox** (cute retro pastel jukebox with lights), **flowers** (tall flower stand with a big bouquet of pink and white flowers), **neon** (pink neon heart sign with a little pair of scissors, glowing, wall-mounted, NO text).
 
-## [ ] Task J2 — Redo `stations_pro.png` (too similar to Biasa)
+## [x] Task J2 — Redo `stations_pro.png` (too similar to Biasa)
 `stations_pro.png` currently looks almost identical to `stations.png`, so players can't see the upgrade. Redraw it so Pro is OBVIOUSLY different at a glance (but still less fancy than `stations_gold.png`). Same layout/angle/size per cell as `stations.png`. Make Pro a **modern silver/chrome + white** style:
 - wash: white glossy sink with chrome taps, chair in deeper sky-blue leather with chrome base and a rolled towel.
 - cut: hot-pink leather chair with chrome frame, big **rectangular** mirror with a glowing LED border, small shelf with spray bottle.
