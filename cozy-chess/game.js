@@ -460,7 +460,13 @@ function refreshMenu() {
 $('#ver').textContent = `Versi ${GAME_VERSION}`;
 setSound(soundOn); $('#animToggle').checked = animOn;
 fetch('sprites/list.json', { cache: 'no-cache' }).then(r => r.ok ? r.json() : []).catch(() => [])
-  .then(list => { SPRITES = new Set(Array.isArray(list) ? list : []); refreshMenu(); });
+  .then(list => {
+    SPRITES = new Set(Array.isArray(list) ? list : []);
+    // Discard placeholders cached while the sprite manifest was loading.
+    for (const key of Object.keys(artCache)) delete artCache[key];
+    refreshMenu();
+    if (S) render();
+  });
 refreshMenu();
 
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('../sw.js').catch(() => {});
