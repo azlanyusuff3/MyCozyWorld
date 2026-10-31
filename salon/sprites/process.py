@@ -92,6 +92,15 @@ def main():
         im.thumbnail((800, 400), Image.LANCZOS)
         im.save(os.path.join(HERE, 'logo.webp'), 'WEBP', quality=90)
         names.add('logo')
+    if os.path.exists(p('sofas')):
+        grid = [['sofa_kampung', 'sofa_mall', 'sofa_resort'], ['sofa_seleb', 'deco_magazine', 'deco_plant']]
+        for n, im in cells(p('sofas'), grid).items():
+            if n.startswith('sofa_'):
+                im.thumbnail((640, 640), Image.LANCZOS)
+                im.save(os.path.join(HERE, n + '.webp'), 'WEBP', quality=88)
+                names.add(n)
+            else:
+                save_group('', {n: im}, names)
     for loc in ['kampung', 'mall', 'resort', 'seleb']:
         if os.path.exists(p('bg_' + loc)):
             Image.open(p('bg_' + loc)).convert('RGB').resize((720, 960), Image.LANCZOS).save(os.path.join(HERE, 'bg_' + loc + '.webp'), 'WEBP', quality=85)

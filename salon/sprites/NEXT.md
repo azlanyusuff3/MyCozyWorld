@@ -52,5 +52,12 @@ Each one is an **EMPTY** salon seen from a slightly-raised front view: the back 
 - `bg_resort.png` — Langkawi resort salon: mint walls with rattan trim, sandy-cream tiles, windows showing the sea.
 - `bg_seleb.png` — celebrity studio: pink walls with gold trim and spotlights, deep plum floor.
 
+## [ ] Task H — Lounge sofas + deco → `sofas.png`
+Normal RULES (1536x1024, magenta, 3x2 grid, 40 px padding, same style as `mira_ref.png`). Front view (facing the viewer, slightly from above), no people.
+Each sofa is a LONG 4-seat waiting sofa, very wide and low (about 4x wider than tall), filling the cell width minus padding, with 4 visible seat cushions of equal size.
+- Row 1: **sofa_kampung** — rattan/wood frame with peach floral cushions; **sofa_mall** — modern lavender velvet sofa with slim metal legs; **sofa_resort** — light rattan sofa with mint and white striped cushions.
+- Row 2: **sofa_seleb** — glamorous deep-pink tufted velvet sofa with gold legs; **magazine** — small wooden magazine rack with colourful magazines; **plant** — potted monstera plant in a cream pot.
+Commit as `salon/sprites/sheets/sofas.png`.
+
 ---
 After you finish, tell the user "Cozy Salon art round done" so Claude can process the sheets.

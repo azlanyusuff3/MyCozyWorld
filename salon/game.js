@@ -602,6 +602,14 @@ function drawCoffee() {
 
 function drawSofa() {
   const n = game.seats.length, x0 = game.seats[0].x - 50, w = game.seats[n - 1].x - game.seats[0].x + 100;
+  const so = img('sofa_' + game.loc.key), mg = img('deco_magazine'), pl = img('deco_plant');
+  if (pl) ctx.drawImage(pl, 4, 560, 90, 90);
+  if (so) {
+    const sw = w + 30, sh = sw * so.height / so.width;
+    ctx.drawImage(so, x0 - 15, 935 - sh, sw, sh);
+    if (mg) ctx.drawImage(mg, x0 + w + 8, 845, 80, 80);
+    return;
+  }
   rr(x0, 856, w, 60, 22); ctx.fillStyle = '#c49ad4'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = '#8e6aa0'; ctx.stroke();
   rr(x0 - 10, 900, w + 20, 40, 18); ctx.fillStyle = '#d5b0e2'; ctx.fill(); ctx.stroke();
   text('Lounge', x0 + w / 2, 950, 15, '#8e6aa0');
