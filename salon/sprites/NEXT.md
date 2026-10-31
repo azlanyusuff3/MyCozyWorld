@@ -27,7 +27,7 @@ Props only, no people, 3/4 view facing slightly right, the same size as each oth
 - Row 1: **wash** — white shampoo sink with a reclining sky-blue chair; **cut** — pink styling chair with a round wall mirror behind it and a small shelf with combs; **color** — lavender styling chair with a little trolley of dye bowls, brushes and colour bottles.
 - Row 2: **style** — butter-yellow chair under a big hood hair dryer on a stand; **pay** — cute wooden cashier counter with a pastel register, a receipt and a flower vase; **coffee** — small brown espresso machine on a little round side table with two cups.
 
-## [ ] Task C — Need icons → `icons_a.png`
+## [x] Task C — Need icons → `icons_a.png`
 Chunky round game icons (like mobile game UI), one per cell, each on a soft circular badge with a thick plum outline, filling about 70% of the cell:
 - Row 1: wash (bubbles + shampoo bottle), cut (scissors), color (paint palette / dye brush)
 - Row 2: style (blow dryer with wind), pay (coin pouch), coffee (steaming cup)
