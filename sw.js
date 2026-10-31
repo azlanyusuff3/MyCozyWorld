@@ -1,7 +1,7 @@
 // Tukar VERSION setiap kali update game supaya phone ambil versi baru.
-const VERSION = 'mycozyworld-v18';
+const VERSION = 'mycozyworld-v19';
 const ASSETS = [
-  './', 'index.html', 'game.js', 'manifest.json', 'salon/index.html', 'salon/style.css', 'salon/game.js',
+  './', 'index.html', 'game.js', 'manifest.json', 'salon/index.html', 'salon/style.css', 'salon/game.js', 'salon/sprites/list.json',
   'assets/icons/icon-192.png', 'assets/icons/icon-512.png', 'assets/icons/apple-touch-icon.png',
   ...['knight', 'archer', 'mage', 'healer'].flatMap(t => [`assets/heroes/opt/${t}_idle.webp`, `assets/heroes/opt/${t}_attack.webp`]),
   ...['knight', 'archer', 'healer'].flatMap(t => ['windup', 'hurt', 'walk1', 'walk2', 'victory', 'cast'].map(n => `assets/heroes/opt/${t}_${n}.webp`)),
