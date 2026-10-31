@@ -37,7 +37,7 @@ Same badge style as Task C but **no badge circle** (just the object, thick outli
 - Row 1: gold coin, yellow star, red heart
 - Row 2: broken heart, hourglass, small gold crown
 
-## [ ] Task E — Small icons → `icons_c.png`
+## [x] Task E — Small icons → `icons_c.png`
 Same style as Task D (no badge):
 - Row 1: phone camera (influencer), lightning bolt (impatient), padlock
 - Row 2: sparkle cluster, red anger mark (manga 💢 style), pink heart with sparkles (happy)
