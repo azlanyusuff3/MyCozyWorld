@@ -22,7 +22,7 @@ Replace these three files with the same layouts as in PROMPTS.md (BATCH 2–6):
 `guest_biasa_ref.png`, `guest_biasa_walk.png`, `guest_biasa_pose.png`
 (`pose` = Row 1: side_walk1, side_walk2 facing right, after (front, super happy, NEW hairstyle: wavy shoulder-length with a hair clip, sparkles). Row 2: sit, angry, chair.)
 
-## [ ] Task B — Salon stations → `stations.png`
+## [x] Task B — Salon stations → `stations.png`
 Props only, no people, 3/4 view facing slightly right, the same size as each other, chair seats at about the same height. Each prop is roughly as tall as Mira.
 - Row 1: **wash** — white shampoo sink with a reclining sky-blue chair; **cut** — pink styling chair with a round wall mirror behind it and a small shelf with combs; **color** — lavender styling chair with a little trolley of dye bowls, brushes and colour bottles.
 - Row 2: **style** — butter-yellow chair under a big hood hair dryer on a stand; **pay** — cute wooden cashier counter with a pastel register, a receipt and a flower vase; **coffee** — small brown espresso machine on a little round side table with two cups.
