@@ -79,7 +79,7 @@ Row 1: wash, cut, color. Row 2: style (hood dryer), pay (counter), coffee machin
 - `stations_pro.png` — the same pieces but clearly nicer/modern: chrome details, plusher leather, LED ring mirror, sleeker dryer, tidier trolley, better register, bigger espresso machine. Keep each station's colour (blue sink chair, pink cut chair, lavender colour chair, yellow dryer chair).
 - `stations_gold.png` — luxury version: gold frames and trims, velvet upholstery in the same colours, ornate gold mirror with tiny bulbs, crystal details, small sparkles. Clearly the fanciest.
 
-## [ ] Task K — Decorations → `decor.png`
+## [x] Task K — Decorations → `decor.png`
 Normal RULES, props only, no people, same style. Each cell one item:
 - Row 1: **aquarium** (small rounded fish tank on a wooden stand, colourful tropical fish, bubbles), **tv** (wall-mounted flat TV showing a cute hair-style show, seen from the front), **chandelier** (hanging crystal chandelier with a short chain at the top, glowing softly).
 - Row 2: **jukebox** (cute retro pastel jukebox with lights), **flowers** (tall flower stand with a big bouquet of pink and white flowers), **neon** (pink neon heart sign with a little pair of scissors, glowing, wall-mounted, NO text).
