@@ -99,7 +99,7 @@ The home screen is now a game-style menu (big scene + logo + PLAY button + 4 rou
 2. `dock.png` — normal RULES (magenta, 3x2). Chunky glossy mobile-game menu icons, no badge circle, thick plum outline: Row 1: **shop** (cute pink shopping bag with a bow), **missions** (clipboard with checkmarks and a star), **map** (folded treasure-style map with a heart pin). Row 2: **help** (open storybook with a sparkle), **music** (pink music note), **sound** (cute speaker).
 3. `locs.png` — normal RULES (magenta, 3x2). Small **storefront exterior** illustrations of each salon location, same style, front view: Row 1: **kampung** (wooden kampung shop house with zinc roof, coconut tree, flower pots), **mall** (shiny shop inside a mall, glass front, KL-tower-ish skyline hint), **resort** (beachside rattan hut salon with palm trees and sea). Row 2: **seleb** (glamorous celebrity studio front with gold trim, red carpet, spotlights), and leave the last 2 cells empty magenta.
 
-## [ ] Task M — MyCozyWorld HUB game cards (commit to `assets/hub/sheets/`, NOT the salon folder)
+## [x] Task M — MyCozyWorld HUB game cards (commit to `assets/hub/sheets/`, NOT the salon folder)
 The hub page shows 3 game cards. Make one **square 1024x1024 key-art background** per game (**NOT magenta, no text, no logo** — the logo is placed on top later, so keep the top-centre area calm):
 - `assets/hub/sheets/card_arena.png` — cozy fantasy battle arena at dusk, grassy board with soft glowing tiles, a few chibi heroes in the style of `assets/heroes/opt/knight_idle.webp` (knight, fox archer, mage) at the bottom.
 - `assets/hub/sheets/card_salon.png` — inside the cozy pastel salon with Mira (`salon/sprites/sheets/mira_ref.png`) at the bottom-left styling a happy customer, sparkles.
