@@ -1,142 +1,11 @@
 'use strict';
 // Cozy Chess — chess biasa dengan character chibi + cinematic bertarung bila makan.
-const GAME_VERSION = '1.1';
+const GAME_VERSION = '1.2.0';
 const $ = s => document.querySelector(s);
 const NAMES = { k: 'King', q: 'Queen', r: 'Rook', b: 'Bishop', n: 'Knight', p: 'Pawn' };
 const SKILL = { k: 'Royal Slam!', q: 'Starfall!', r: 'Tower Smash!', b: 'Holy Orb!', n: 'Gallop Charge!', p: 'Brave Poke!' };
 const RANGED = { b: 1, q: 1 };
-const VAL = { p: 100, n: 320, b: 330, r: 500, q: 900, k: 0 };
 const SAVE_KEY = 'cozychess-save-v1';
-
-/* ================= ENGINE ================= */
-// index 0 = a8 (atas kiri), 63 = h1. Putih bergerak ke atas (-8).
-const KD = [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
-const ND = [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]];
-const DIAG = KD.filter(d => d[0] && d[1]), ORTH = KD.filter(d => !d[0] || !d[1]);
-const on = (r, f) => r >= 0 && r < 8 && f >= 0 && f < 8;
-const opp = c => c === 'w' ? 'b' : 'w';
-
-function initState() {
-  const b = Array(64).fill(null), back = 'rnbqkbnr';
-  for (let i = 0; i < 8; i++) {
-    b[i] = { t: back[i], c: 'b' }; b[8 + i] = { t: 'p', c: 'b' };
-    b[48 + i] = { t: 'p', c: 'w' }; b[56 + i] = { t: back[i], c: 'w' };
-  }
-  return { b, turn: 'w', cr: { K: 1, Q: 1, k: 1, q: 1 }, ep: -1, half: 0, full: 1 };
-}
-
-function attacked(b, sq, by) {
-  const r = sq >> 3, f = sq & 7, pd = by === 'w' ? 1 : -1;
-  for (const df of [-1, 1]) { const rr = r + pd, ff = f + df; if (on(rr, ff)) { const p = b[rr * 8 + ff]; if (p && p.c === by && p.t === 'p') return true; } }
-  for (const [dr, df] of ND) { const rr = r + dr, ff = f + df; if (on(rr, ff)) { const p = b[rr * 8 + ff]; if (p && p.c === by && p.t === 'n') return true; } }
-  for (const [dr, df] of KD) {
-    let rr = r + dr, ff = f + df, first = true; const diag = dr && df;
-    while (on(rr, ff)) {
-      const p = b[rr * 8 + ff];
-      if (p) { if (p.c === by && (p.t === 'q' || (diag ? p.t === 'b' : p.t === 'r') || (first && p.t === 'k'))) return true; break; }
-      rr += dr; ff += df; first = false;
-    }
-  }
-  return false;
-}
-
-function pseudo(s) {
-  const b = s.b, c = s.turn, o = opp(c), out = [];
-  for (let i = 0; i < 64; i++) {
-    const p = b[i]; if (!p || p.c !== c) continue;
-    const r = i >> 3, f = i & 7;
-    const add = (to, x) => out.push(Object.assign({ from: i, to, cap: b[to] }, x));
-    if (p.t === 'p') {
-      const d = c === 'w' ? -1 : 1, start = c === 'w' ? 6 : 1, last = c === 'w' ? 0 : 7;
-      const pushP = (to, x) => { if ((to >> 3) === last) for (const pr of 'qrbn') add(to, Object.assign({ promo: pr }, x)); else add(to, x); };
-      const r1 = r + d;
-      if (on(r1, f) && !b[r1 * 8 + f]) { pushP(r1 * 8 + f); if (r === start && !b[(r + 2 * d) * 8 + f]) add((r + 2 * d) * 8 + f, { dbl: 1 }); }
-      for (const df of [-1, 1]) {
-        const ff = f + df; if (!on(r1, ff)) continue; const t = r1 * 8 + ff;
-        if (b[t] && b[t].c === o) pushP(t);
-        else if (t === s.ep) add(t, { epCap: r * 8 + ff, cap: b[r * 8 + ff] });
-      }
-    } else if (p.t === 'n' || p.t === 'k') {
-      for (const [dr, df] of (p.t === 'n' ? ND : KD)) { const rr = r + dr, ff = f + df; if (!on(rr, ff)) continue; const t = rr * 8 + ff; if (!b[t] || b[t].c === o) add(t); }
-      if (p.t === 'k' && i === (c === 'w' ? 60 : 4) && !attacked(b, i, o)) {
-        const K = c === 'w' ? 'K' : 'k', Q = c === 'w' ? 'Q' : 'q', rk = x => x && x.t === 'r' && x.c === c;
-        if (s.cr[K] && !b[i + 1] && !b[i + 2] && rk(b[i + 3]) && !attacked(b, i + 1, o)) add(i + 2, { castle: 'K' });
-        if (s.cr[Q] && !b[i - 1] && !b[i - 2] && !b[i - 3] && rk(b[i - 4]) && !attacked(b, i - 1, o)) add(i - 2, { castle: 'Q' });
-      }
-    } else {
-      for (const [dr, df] of (p.t === 'b' ? DIAG : p.t === 'r' ? ORTH : KD)) {
-        let rr = r + dr, ff = f + df;
-        while (on(rr, ff)) { const t = rr * 8 + ff; if (b[t]) { if (b[t].c === o) add(t); break; } add(t); rr += dr; ff += df; }
-      }
-    }
-  }
-  return out;
-}
-
-function apply(s, m) {
-  const b = s.b.slice(), p = b[m.from], c = s.turn, cr = Object.assign({}, s.cr);
-  b[m.to] = m.promo ? { t: m.promo, c } : p; b[m.from] = null;
-  if (m.epCap != null) b[m.epCap] = null;
-  if (m.castle === 'K') { b[m.to - 1] = b[m.to + 1]; b[m.to + 1] = null; }
-  if (m.castle === 'Q') { b[m.to + 1] = b[m.to - 2]; b[m.to - 2] = null; }
-  if (p.t === 'k') { if (c === 'w') cr.K = cr.Q = 0; else cr.k = cr.q = 0; }
-  for (const sq of [m.from, m.to]) { if (sq === 63) cr.K = 0; if (sq === 56) cr.Q = 0; if (sq === 7) cr.k = 0; if (sq === 0) cr.q = 0; }
-  return { b, turn: opp(c), cr, ep: m.dbl ? (m.from + m.to) / 2 : -1, half: (p.t === 'p' || m.cap) ? 0 : s.half + 1, full: s.full + (c === 'b' ? 1 : 0) };
-}
-const kingSq = (b, c) => b.findIndex(p => p && p.t === 'k' && p.c === c);
-const inCheck = (s, c = s.turn) => attacked(s.b, kingSq(s.b, c), opp(c));
-const legal = s => pseudo(s).filter(m => { const n = apply(s, m); return !attacked(n.b, kingSq(n.b, s.turn), n.turn); });
-function insufficient(b) {
-  const rest = b.filter(p => p && p.t !== 'k');
-  return rest.length === 0 || (rest.length === 1 && (rest[0].t === 'n' || rest[0].t === 'b'));
-}
-const posKey = s => s.b.map(p => p ? (p.c === 'w' ? p.t.toUpperCase() : p.t) : '.').join('') + s.turn + JSON.stringify(s.cr) + s.ep;
-
-/* ================= AI ================= */
-function evalS(s) {
-  let sc = 0;
-  for (let i = 0; i < 64; i++) {
-    const p = s.b[i]; if (!p) continue;
-    const r = i >> 3, f = i & 7, cen = (3.5 - Math.abs(f - 3.5)) + (3.5 - Math.abs(r - 3.5));
-    let v = VAL[p.t];
-    if (p.t === 'n' || p.t === 'b') v += cen * 7;
-    else if (p.t === 'q') v += cen * 2;
-    else if (p.t === 'p') { const adv = p.c === 'w' ? 6 - r : r - 1; v += adv * adv * 3 + (f >= 2 && f <= 5 ? cen * 3 : 0); }
-    else if (p.t === 'k') v += (p.c === 'w' ? r === 7 : r === 0) ? 18 : -12;
-    sc += p.c === 'w' ? v : -v;
-  }
-  return sc;
-}
-const score = m => (m.cap ? VAL[m.cap.t] * 10 + 1000 : 0) + (m.promo === 'q' ? 9000 : 0);
-const order = ms => ms.sort((a, b) => score(b) - score(a));
-let nodes = 0;
-function qs(s, a, bt, qd) {
-  nodes++;
-  const stand = (s.turn === 'w' ? 1 : -1) * evalS(s);
-  if (stand >= bt) return stand; if (stand > a) a = stand; if (qd <= 0) return a;
-  for (const m of order(pseudo(s).filter(m => m.cap))) {
-    const n = apply(s, m); if (attacked(n.b, kingSq(n.b, s.turn), n.turn)) continue;
-    const v = -qs(n, -bt, -a, qd - 1); if (v >= bt) return v; if (v > a) a = v;
-  }
-  return a;
-}
-function nega(s, d, a, bt, ply) {
-  if (d === 0) return qs(s, a, bt, 4);
-  const ms = order(legal(s));
-  if (!ms.length) return inCheck(s) ? -100000 + ply : 0;
-  for (const m of ms) { const v = -nega(apply(s, m), d - 1, -bt, -a, ply + 1); if (v >= bt) return v; if (v > a) a = v; }
-  return a;
-}
-function bestMove(s, level) {
-  const depth = [1, 2, 4][level], noise = [90, 18, 0][level];
-  let best = null, bv = -Infinity;
-  for (const m of order(legal(s))) {
-    let v = -nega(apply(s, m), depth - 1, -Infinity, level === 2 ? -bv : Infinity, 1);
-    v += Math.random() * noise;
-    if (v > bv) { bv = v; best = m; }
-  }
-  return best;
-}
 
 /* ================= ART ================= */
 // Kalau ChatGPT dah letak sprite dalam sprites/ dan tulis nama dalam list.json, game guna sprite tu.
@@ -237,14 +106,16 @@ const SFX = {
 let S, hist = [], sel = -1, moves = [], busy = false, over = false;
 let mode = 'ai', human = 'w', level = 1, lastMove = null, caps = { w: [], b: [] }, reps = {};
 let animOn = localStorage.getItem('cozychess-anim') !== '0';
+let boardFlip = null, aiJob = 0, thinkWorker = null, aiTimer = null, aiPending = false;
 
-const flipped = () => mode === 'ai' && human === 'b';
+const flipped = () => (mode === 'ai' && human === 'b') || (mode === 'pvp' && S && S.turn === 'b');
 const sqEl = i => document.querySelector(`.sq[data-i="${i}"]`);
 
 function buildBoard() {
   const el = $('#board'); el.innerHTML = '';
+  boardFlip = flipped();
   for (let v = 0; v < 64; v++) {
-    const i = flipped() ? 63 - v : v, r = i >> 3, f = i & 7;
+    const i = boardFlip ? 63 - v : v, r = i >> 3, f = i & 7;
     const d = document.createElement('div');
     d.className = 'sq ' + ((r + f) % 2 ? 'd' : 'l'); d.dataset.i = i;
     d.addEventListener('pointerdown', () => tap(i));
@@ -252,6 +123,7 @@ function buildBoard() {
   }
 }
 function render(hopTo = -1) {
+  if (boardFlip !== flipped()) buildBoard();
   const chk = inCheck(S) ? kingSq(S.b, S.turn) : -1;
   const targets = new Map(moves.filter(m => m.from === sel).map(m => [m.to, m]));
   document.querySelectorAll('.sq').forEach(d => {
@@ -281,6 +153,8 @@ function render(hopTo = -1) {
   }
   $('#status').textContent = st;
   $('#animBtn').textContent = `🎬 Animasi: ${animOn ? 'ON' : 'OFF'}`;
+  const canClaim = !over && (mode !== 'ai' || S.turn === human) && (S.half >= 100 || (reps[posKey(S)] || 0) >= 3);
+  $('#drawBtn').classList.toggle('hidden', !canClaim);
 }
 
 function tap(i) {
@@ -325,14 +199,53 @@ async function play(m) {
   if (mode === 'ai' && S.turn !== human) aiTurn();
 }
 
+function cancelAi() {
+  ++aiJob;
+  aiPending = false;
+  if (thinkWorker) { thinkWorker.terminate(); thinkWorker = null; }
+  if (aiTimer !== null) { clearTimeout(aiTimer); aiTimer = null; }
+}
 function aiTurn() {
-  busy = true; render();
-  setTimeout(() => {
-    const t0 = performance.now();
-    const m = bestMove(S, level);
-    const wait = Math.max(0, 450 - (performance.now() - t0));
-    setTimeout(() => { busy = false; if (m) play(m); }, wait);
-  }, 60);
+  cancelAi();
+  const job = aiJob, started = performance.now();
+  busy = true; aiPending = true; render();
+  const finish = candidate => {
+    if (job !== aiJob || !aiPending || over || S.turn === human) return;
+    if (thinkWorker) { thinkWorker.terminate(); thinkWorker = null; }
+    aiTimer = setTimeout(() => {
+      aiTimer = null;
+      if (job !== aiJob || over || S.turn === human) return;
+      aiPending = false; busy = false;
+      const chosen = candidate && moves.find(m => m.from === candidate.from && m.to === candidate.to && (m.promo || '') === (candidate.promo || ''));
+      if (chosen) play(chosen);
+      else {
+        // A failed worker may never return a move; recover using a bounded fallback.
+        const fallback = bestMove(S, Math.min(level, 1));
+        if (fallback) play(fallback); else toast('AI tiada move sah.');
+      }
+    }, Math.max(0, 350 - (performance.now() - started)));
+  };
+  const fallback = () => {
+    if (job !== aiJob || !aiPending) return;
+    if (thinkWorker) { thinkWorker.terminate(); thinkWorker = null; }
+    aiTimer = setTimeout(() => {
+      aiTimer = null;
+      if (job !== aiJob) return;
+      try { finish(bestMove(S, Math.min(level, 1))); }
+      catch (e) { aiPending = false; busy = false; toast('AI tidak dapat bergerak.'); }
+    }, 0);
+  };
+  try {
+    if (typeof Worker === 'undefined') throw Error('Web Workers unavailable');
+    thinkWorker = new Worker('ai-worker.js');
+    thinkWorker.onmessage = e => {
+      if (e.data?.job !== job) return;
+      if (e.data.error) fallback();
+      else finish(e.data.move);
+    };
+    thinkWorker.onerror = () => fallback();
+    thinkWorker.postMessage({ job, state: S, level });
+  } catch (e) { fallback(); }
 }
 
 function checkEnd(k) {
@@ -340,11 +253,11 @@ function checkEnd(k) {
   if (!moves.length) {
     if (inCheck(S)) { winner = opp(S.turn); title = 'CHECKMATE!'; }
     else { title = 'Stalemate'; text = 'Tak ada move sah — seri!'; }
-  } else if (S.half >= 100) { title = 'Seri'; text = 'Peraturan 50 move.'; }
-  else if (reps[k] >= 3) { title = 'Seri'; text = 'Kedudukan sama berulang 3 kali.'; }
+  } else if (S.half >= 150) { title = 'Seri'; text = 'Peraturan automatik 75 move.'; }
+  else if ((reps[k] || 0) >= 5) { title = 'Seri'; text = 'Kedudukan sama berulang 5 kali.'; }
   else if (insufficient(S.b)) { title = 'Seri'; text = 'Piece tak cukup untuk checkmate.'; }
   else return false;
-  over = true; localStorage.removeItem(SAVE_KEY);
+  cancelAi(); over = true; localStorage.removeItem(SAVE_KEY);
   if (winner) {
     if (mode === 'ai') { text = winner === human ? 'Tahniah, kau kalahkan AI! 🎉' : 'AI menang kali ni. Cuba lagi!'; (winner === human ? SFX.win : SFX.lose)(); }
     else { text = `${winner === 'w' ? 'Putih' : 'Hitam'} menang! 🎉`; SFX.win(); }
@@ -356,6 +269,17 @@ function checkEnd(k) {
     $('#result').classList.remove('hidden');
   }, 700);
   return true;
+}
+
+function claimDraw() {
+  if (busy || over || (mode === 'ai' && S.turn !== human)) return;
+  const reason = S.half >= 100 ? '50-move rule' : (reps[posKey(S)] || 0) >= 3 ? 'threefold repetition' : '';
+  if (!reason) return;
+  cancelAi(); over = true; localStorage.removeItem(SAVE_KEY); render();
+  $('#resTitle').textContent = 'Seri';
+  $('#resText').textContent = 'Draw dituntut — ' + reason + '.';
+  $('#resArt').innerHTML = `<img src="${art('w', 'k')}" alt=""><img src="${art('b', 'k')}" alt="">`;
+  $('#result').classList.remove('hidden');
 }
 
 /* ================= CINEMATIC ================= */
@@ -407,24 +331,33 @@ async function cinematic(m, attacker, victim) {
 /* ================= UI ================= */
 function toast(t) { const el = $('#toast'); el.textContent = t; el.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('show'), 1100); }
 function show(v) { $('#menu').classList.toggle('hidden', v !== 'menu'); $('#game').classList.toggle('hidden', v !== 'game'); }
-function save() { try { localStorage.setItem(SAVE_KEY, JSON.stringify({ S, mode, human, level, lastMove, caps, reps })); } catch (e) {} }
+function save() { try { localStorage.setItem(SAVE_KEY, JSON.stringify({ S, mode, human, level, lastMove, caps, reps, hist })); } catch (e) {} }
 
 function start(m, h, lv) {
+  cancelAi();
   mode = m; human = h; level = lv; S = initState(); hist = []; sel = -1; lastMove = null; caps = { w: [], b: [] }; reps = {}; over = false; busy = false;
+  reps[posKey(S)] = 1;
   moves = legal(S); show('game'); buildBoard(); render(); save();
   if (mode === 'ai' && human === 'b') aiTurn();
 }
 function resume() {
   try {
-    const d = JSON.parse(localStorage.getItem(SAVE_KEY)); if (!d) return;
-    ({ S, mode, human, level, lastMove, caps, reps } = d); reps = reps || {};
-    hist = []; sel = -1; over = false; busy = false; moves = legal(S); show('game'); buildBoard(); render();
+    const d = JSON.parse(localStorage.getItem(SAVE_KEY));
+    if (!d || !d.S || !Array.isArray(d.S.b) || d.S.b.length !== 64) return;
+    cancelAi();
+    ({ S, mode, human, level, lastMove, caps } = d);
+    hist = Array.isArray(d.hist) ? d.hist : [];
+    reps = d.reps || {};
+    const key = posKey(S);
+    reps[key] = Math.max(1, reps[key] || 0);
+    sel = -1; over = false; busy = false; moves = legal(S); show('game'); buildBoard(); render();
     if (mode === 'ai' && S.turn !== human) aiTurn();
   } catch (e) { localStorage.removeItem(SAVE_KEY); }
 }
 function undo() {
-  if (busy || !hist.length) return;
-  const pop = () => { const h = hist.pop(); S = h.S; caps = h.caps; lastMove = h.lastMove; reps = h.reps; };
+  if ((busy && !aiPending) || !hist.length) return;
+  cancelAi(); busy = false;
+  const pop = () => { const h = hist.pop(); S = h.S; caps = h.caps; lastMove = h.lastMove; reps = h.reps || {}; };
   pop();
   if (mode === 'ai') while (S.turn !== human && hist.length) pop();
   over = false; sel = -1; moves = legal(S); render(); save();
@@ -443,7 +376,8 @@ $('#aiBtn').onclick = () => start('ai', pickColor === 'r' ? (Math.random() < .5 
 $('#pvpBtn').onclick = () => start('pvp', 'w', 1);
 $('#resumeBtn').onclick = resume;
 $('#undoBtn').onclick = undo;
-$('#menuBtn').onclick = () => { if (busy) return; refreshMenu(); show('menu'); };
+$('#drawBtn').onclick = claimDraw;
+$('#menuBtn').onclick = () => { if (busy && !aiPending) return; cancelAi(); busy = false; refreshMenu(); show('menu'); };
 $('#againBtn').onclick = () => { $('#result').classList.add('hidden'); start(mode, human, level); };
 $('#resMenuBtn').onclick = () => { $('#result').classList.add('hidden'); refreshMenu(); show('menu'); };
 const setAnim = v => { animOn = v; localStorage.setItem('cozychess-anim', v ? '1' : '0'); $('#animToggle').checked = v; if (S) render(); };
