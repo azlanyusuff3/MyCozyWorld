@@ -2,7 +2,7 @@
 // Sprite hooks: letak gambar dalam salon/sprites/ (lihat SPRITES di bawah). Kalau tiada, game lukis placeholder sendiri.
 (() => {
 'use strict';
-const SALON_VERSION = 12, SALON_DATE = '31 Okt 2026';
+const SALON_VERSION = 13, SALON_DATE = '31 Okt 2026';
 const $ = id => document.getElementById(id);
 const KEY = 'mycozyworld_cozy_salon_v2', OLD_KEY = 'mycozyworld_cozy_salon_v1', LIMIT = 60;
 const W = 720, H = 960;   // logical canvas size (portrait)
@@ -102,7 +102,7 @@ function img(name) {
 // ---------- save ----------
 let state = load();
 function load() {
-  const s = { level: 1, coins: 100, stars: {}, upgrades: {}, muted: false, music: true, stats: {}, daily: null, ach: {} };
+  const s = { level: 1, coins: 100, stars: {}, upgrades: {}, muted: false, music: true, stats: {}, daily: null, ach: {}, roles: null, layout: {} };
   try {
     const x = JSON.parse(localStorage.getItem(KEY) || localStorage.getItem(OLD_KEY) || 'null');
     if (x && typeof x === 'object') {
@@ -114,6 +114,8 @@ function load() {
       s.stats = x.stats && typeof x.stats === 'object' ? x.stats : {};
       s.daily = x.daily && typeof x.daily === 'object' ? x.daily : null;
       s.ach = x.ach && typeof x.ach === 'object' ? x.ach : {};
+      s.roles = x.roles && typeof x.roles === 'object' ? x.roles : null;
+      s.layout = x.layout && typeof x.layout === 'object' ? x.layout : {};
     }
   } catch (e) {}
   UP.forEach(u => s.upgrades[u.key] = Math.min(u.max, Math.max(0, Number(s.upgrades[u.key]) || 0)));
@@ -236,6 +238,28 @@ const ACH = [
   ['gold', '🥇 Salon Emas', 'Semua peralatan tier Emas', () => ['wash', 'cut', 'style', 'color'].every(k => upg(k) >= 2), 1200],
   ['decor', '🖼️ Pereka Dalaman', 'Beli semua dekorasi', () => UP.filter(u => u.cat === 'dekor').every(u => upg(u.key) >= 1), 800],
 ];
+function renderStaff() {
+  const pics = { mira: 'mira_front_idle', aiman: 'aiman_front_idle', lina: 'lina_front_idle' };
+  const all = ['mira', 'aiman', 'lina'];
+  $('staffList').innerHTML = all.map(id => {
+    const hired = hiredStaff().includes(id), r = roleOf(id), S = STAFF[id];
+    const pic = SPRITE_LIST.has(pics[id]) ? `<img src="sprites/${pics[id]}.webp" alt="">` : '🙂';
+    const jobs = JOBS.filter(j => state.level >= j[3] && (j[0] !== 'coffee' || upg('coffee'))).map(j => `<button class="job ${r.includes(j[0]) ? 'on' : ''}" data-staff="${id}" data-job="${j[0]}" ${hired ? '' : 'disabled'}>${j[1]} ${j[2]}</button>`).join('');
+    return `<div class="staff-row ${hired ? '' : 'locked'}"><div class="staff-pic">${pic}</div><div class="staff-info"><b>${S.name}</b><small>${hired ? 'Tap kerja untuk hidup/matikan' : '🔒 Upah dulu dalam Kedai'}</small><div class="jobs">${jobs}</div></div></div>`;
+  }).join('');
+}
+$('staffList').addEventListener('click', e => {
+  const b = e.target.closest('[data-job]'); if (!b || b.disabled) return;
+  const id = b.dataset.staff, job = b.dataset.job;
+  const roles = state.roles ? JSON.parse(JSON.stringify(state.roles)) : {};
+  hiredStaff().forEach(h => { if (!roles[h]) roles[h] = roleOf(h).slice(); });
+  const cur = roles[id];
+  if (cur.includes(job)) {
+    if (!hiredStaff().some(h => h !== id && roles[h].includes(job))) { toast('Mesti ada sekurang-kurangnya seorang buat ' + JOBS.find(j => j[0] === job)[2] + '!'); sound('bad'); return; }
+    roles[id] = cur.filter(x => x !== job);
+  } else roles[id] = cur.concat(job);
+  state.roles = roles; save(); renderStaff(); sound('tap');
+});
 function renderGoals() {
   const D = dailyToday();
   $('dailyList').innerHTML = D.goals.map((q, i) => {
@@ -283,11 +307,13 @@ function buildSlots() {
   const cols = L.length <= 6 ? 3 : 4, xs = cols === 3 ? [120, 330, 540] : [92, 262, 432, 602], sc = cols === 3 ? 1 : .8;
   L.forEach((o, i) => { o.x = xs[i % cols]; o.y = i < cols ? 360 : 590; o.sc = sc; });
   L.push({ id: 'pay1', kind: 'pay', x: 600, y: 790, sc: 1 });
+  L.forEach(o => { const v = LAY()[o.id]; if (v) { o.x = v[0]; o.y = v[1]; } });
   return L.map(o => ({ ...o, guestId: null, state: 'empty', t: 0, dur: 0, queued: false }));
 }
 function buildSeats() {
   const n = 4 + upg('sofa'), seats = [];
-  for (let i = 0; i < n; i++) seats.push({ x: 70 + i * 92, y: 880, guestId: null });
+  const o = lp('sofa', { x: 70, y: 880 });
+  for (let i = 0; i < n; i++) seats.push({ x: o.x + i * 92, y: o.y, guestId: null });
   return seats;
 }
 const STAFF = {
@@ -295,7 +321,15 @@ const STAFF = {
   aiman: { name: 'Aiman', roles: ['wash', 'coffee'], col: '#2f9c8f', label: '#2f9c8f', hair: '#2d2a33', style: 5, outfit: '#5fc3b2', speed: 280, home: { x: 250, y: 470 }, up: 'helper1' },
   lina:  { name: 'Lina',  roles: ['pay'], col: '#e08a2e', label: '#e08a2e', hair: '#c76b3c', style: 3, outfit: '#f2b775', speed: 280, home: { x: 680, y: 705 }, up: 'helper2' },
 };
-const COFFEE = { x: 455, y: 790 };
+const COFFEE_DEF = { x: 455, y: 790 }, COFFEE = { ...COFFEE_DEF };
+const JOBS = [['wash', '🫧', 'Shampoo', 1], ['cut', '✂️', 'Gunting', 1], ['color', '🎨', 'Warna', 5], ['pay', '💰', 'Kaunter', 1], ['coffee', '☕', 'Kopi', 1]];
+const ROLE_DEF = { mira: ['wash', 'cut', 'color', 'pay', 'coffee'], aiman: ['wash', 'coffee'], lina: ['pay'] };
+function roleOf(id) { return (state.roles && state.roles[id]) || ROLE_DEF[id]; }
+function hiredStaff() { return ['mira'].concat(upg('helper1') ? ['aiman'] : [], upg('helper2') ? ['lina'] : []); }
+// ---- susun atur kedai
+let editLayout = null;
+const LAY = () => (mode === 'edit' && editLayout) ? editLayout : state.layout;
+const lp = (id, def) => { const v = LAY()[id]; return v ? { x: v[0], y: v[1] } : def; };
 const DOOR = { x: -40, y: 900 };
 
 // ---------- game state ----------
@@ -308,13 +342,13 @@ function begin(n) {
   mode = 'play'; selected = null;
   game = { level: n, loc: locOf(n), total: totalGuests(n), goal: goalGuests(n), spawned: 0, served: 0, lost: 0, earned: 0, t: 0,
     nextArrival: 1.2, guests: [], fx: [], moodSum: 0, combo: 0, lastKind: null, comboT: 0, bestCombo: 0 };
-  game.slots = buildSlots(); game.seats = buildSeats();
+  game.slots = buildSlots(); game.seats = buildSeats(); Object.assign(COFFEE, lp('coffee', COFFEE_DEF));
   const mk = (id, x, y) => ({ id, ...STAFF[id], x, y, tx: x, ty: y, queue: [], cur: null, act: 0, face: 1, walk: 0, happy: 0 });
   game.staff = [mk('mira', 420, 640)];
   if (upg('helper1')) game.staff.push(mk('aiman', STAFF.aiman.home.x, STAFF.aiman.home.y));
   if (upg('helper2')) game.staff.push(mk('lina', STAFF.lina.home.x, STAFF.lina.home.y));
   game.mira = game.staff[0];
-  $('homeView').hidden = true; $('gameView').hidden = false; $('overlay').hidden = true; document.querySelectorAll('.sheet').forEach(x => x.hidden = true);
+  $('homeView').hidden = true; $('gameView').hidden = false; $('gameView').classList.remove('editing'); $('overlay').hidden = true; document.querySelectorAll('.sheet').forEach(x => x.hidden = true);
   $('playingLevel').textContent = 'LEVEL ' + n; $('hudLoc').textContent = game.loc.name.toUpperCase();
   resize(); hud(); window.scrollTo(0, 0); sound('door');
 }
@@ -359,7 +393,8 @@ function assign(g, s) {
 }
 function enqueue(task) {
   const kind = task.k === 'coffee' ? 'coffee' : task.slot.kind, max = 5;
-  const m = game.staff.find(x => x.roles && x.roles.includes(kind)) || game.mira;
+  const cand = game.staff.filter(x => roleOf(x.id).includes(kind));
+  const m = (cand.length ? cand : [game.mira]).slice().sort((a, b) => (a.queue.length + (a.cur ? 1 : 0)) - (b.queue.length + (b.cur ? 1 : 0)))[0];
   if (m.queue.length + (m.cur ? 1 : 0) >= max + 1) { toast('Queue ' + m.name + ' penuh! (max 5)'); return false; }
   if (task.slot) task.slot.queued = true;
   m.queue.push(task); return true;
@@ -718,12 +753,13 @@ function drawStaff(m) {
   const md = m.dir || 'front';
   const wpose = kind === 'cut' || kind === 'color' ? 'cut' : kind;
   let pose = moving ? md + '_' + (Math.sin(m.walk) > 0 ? 'walk1' : 'walk2') : working ? wpose : m.happy > 0 ? 'happy' : 'front_idle';
-  if (!img(m.id + '_' + pose) && working) pose = 'side_idle';
+  const noPose = working && !img(m.id + '_' + pose);
+  if (noPose) pose = 'side_idle';
   const bob = moving ? Math.abs(Math.sin(m.walk)) * 7 : working ? Math.sin(performance.now() / 90) * 2 : 0;
   ell(m.x, m.y + 36, 42, 12, '#00000030');
   const sp = img(m.id + '_' + pose);
   ctx.save(); ctx.translate(m.x, m.y - bob); if (m.face < 0 && (!sp || md === 'side' || working)) ctx.scale(-1, 1);
-  if (sp) ctx.drawImage(sp, -80, -135, 160, 160);
+  if (sp) { ctx.drawImage(sp, -80, -135, 160, 160); if (noPose) emoji(kind === 'cut' ? '✂️' : kind === 'color' ? '🖌️' : kind === 'wash' ? '🧴' : kind === 'pay' ? '🧾' : '☕', 40, -60 + Math.sin(performance.now() / 70) * 6, 30); }
   else {
     chibi(0, 0, { skin: m.id === 'aiman' ? '#d9a07a' : '#f6cdb1', hair: m.hair, style: m.style, outfit: m.outfit, mood: m.happy > 0 ? 1 : .7, apron: true, walking: moving });
     if (working) emoji(kind === 'cut' ? '✂️' : kind === 'color' ? '🖌️' : kind === 'wash' ? '🧴' : kind === 'pay' ? '🧾' : '☕', 34, -10 + Math.sin(performance.now() / 70) * 6, 26);
@@ -765,8 +801,9 @@ const DECOR = [
   { k: 'd_jukebox', sp: 'deco_jukebox', e: '📻', x: 672, y: 845, w: 90, h: 90 },
 ];
 function drawDecor(top) {
-  for (const d of DECOR) {
-    if (!!d.top !== top || !upg(d.k)) continue;
+  for (const d0 of DECOR) {
+    if (!!d0.top !== top || !upg(d0.k)) continue;
+    const d = { ...d0, ...lp(d0.k, d0) };
     const im = img(d.sp);
     if (im) ctx.drawImage(im, d.x - d.w / 2, d.y, d.w, d.h);
     else { if (!top) ell(d.x, d.y + d.h - 6, d.w * .4, 10, '#00000022'); emoji(d.e, d.x, d.y + d.h / 2, d.h * .6); }
@@ -778,8 +815,9 @@ function drawSofa() {
   if (pl) ctx.drawImage(pl, 4, 560, 90, 90);
   if (so) {
     const sw = w + 30, sh = sw * so.height / so.width;
-    ctx.drawImage(so, x0 - 15, 935 - sh, sw, sh);
-    if (mg) ctx.drawImage(mg, x0 + w + 8, 845, 80, 80);
+    const by = game.seats[0].y + 55;
+    ctx.drawImage(so, x0 - 15, by - sh, sw, sh);
+    if (mg) ctx.drawImage(mg, x0 + w + 8, by - 90, 80, 80);
     return;
   }
   rr(x0, 856, w, 60, 22); ctx.fillStyle = '#c49ad4'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = '#8e6aa0'; ctx.stroke();
@@ -803,6 +841,7 @@ function draw() {
   game.staff.forEach(m => items.push({ y: m.y, f: () => drawStaff(m) }));
   items.sort((a, b) => a.y - b.y).forEach(i => i.f());
   drawQueueMarkers();
+  if (mode === 'edit') drawEditOverlay();
   // combo meter
   if (game.combo >= 2) { rr(W - 170, 268, 150, 40, 20); ctx.fillStyle = '#e56b93'; ctx.fill(); text('🔥 COMBO x' + game.combo, W - 95, 289, 20, '#fff', 'center', null); }
   for (const f of game.fx) {
@@ -813,6 +852,7 @@ function draw() {
   if (drag && drag.moved) { const g = G(drag.id); if (g) { ctx.globalAlpha = .75; chibi(drag.x, drag.y, { skin: SKIN[g.skin], hair: HAIR[g.hair], style: g.style, outfit: OUTFIT[g.outfit], mood: g.patience / g.max, tudung: g.tudung || 0 }); ctx.globalAlpha = 1; } }
   // hint
   const sg = G(selected);
+  if (mode === 'edit') { $('gameHint').textContent = 'Drag barang ke tempat baru. Merah = bertindih. Tekan SIMPAN bila siap.'; return; }
   const anyQ = game.slots.some(s => s.qte && s.qte.res == null && s.state === 'working');
   $('gameHint').textContent = anyQ ? '✂ Tap stesen bila jarum dalam zon HIJAU untuk PERFECT!' : sg && canMove(sg) ? sg.name + ' dipilih → tap ' + TYPES[need(sg)].icon + ' ' + TYPES[need(sg)].name + (upg('coffee') ? ' (atau ☕ kopi)' : '') + (sg.wish ? ' · ⭐ Hajat: ' + (sg.wish === 'perfect' ? 'nak PERFECT' : 'nak cepat & happy') : '') : 'Tap pelanggan, lepas tu tap station. Susun kerja Mira laju-laju!';
 }
@@ -870,18 +910,85 @@ function tapAt(p) {
   }
   selected = null;
 }
+// ===== Mod Susun Kedai =====
+let edrag = null;
+function startEdit() {
+  mode = 'edit'; selected = null; editLayout = JSON.parse(JSON.stringify(state.layout || {}));
+  const n = Math.max(5, state.level);
+  game = { level: n, loc: locOf(state.level), guests: [], fx: [], staff: [], combo: 0, slots: [], seats: [] };
+  rebuildEdit();
+  $('homeView').hidden = true; $('gameView').hidden = false; $('gameView').classList.add('editing');
+  document.querySelectorAll('.sheet').forEach(x => x.hidden = true);
+  resize(); window.scrollTo(0, 0);
+}
+function rebuildEdit() { game.slots = buildSlots(); game.seats = buildSeats(); Object.assign(COFFEE, lp('coffee', COFFEE_DEF)); }
+function editItems() {
+  const it = game.slots.map(s => ({ id: s.id, x: s.x, y: s.y, sc: s.sc, fp: [75 * s.sc, 40 * s.sc, 60 * s.sc], hit: [90 * s.sc, 150 * s.sc, 90 * s.sc], ry: [330, 810] }));
+  it.push({ id: 'coffee', x: COFFEE.x, y: COFFEE.y, fp: [45, 30, 40], hit: [60, 90, 40], ry: [330, 860] });
+  const n = game.seats.length, sx = game.seats[0].x, sy = game.seats[0].y, hw = ((n - 1) * 92 + 130) / 2;
+  it.push({ id: 'sofa', x: sx, y: sy, cx: sx + (n - 1) * 46, fp: [hw, 40, 55], hit: [hw, 70, 60], ry: [700, 885], sofa: true });
+  for (const d0 of DECOR) if (upg(d0.k)) { const d = { ...d0, ...lp(d0.k, d0) }; it.push({ id: d0.k, x: d.x, y: d.y, cx: d.x, cy: d.y + d.h / 2, fp: d0.top ? [d.w / 2, 0, d.h] : [d.w * .4, -d.h * .5, d.h], hit: [d.w / 2, 0, d.h], ry: d0.top ? [-10, 150] : [300, 860], top: !!d0.top, deco: true }); }
+  return it;
+}
+function rectOf(o) { const cx = o.sofa ? o.cx : o.x; return { x1: cx - o.fp[0], x2: cx + o.fp[0], y1: o.y - o.fp[1], y2: o.y + o.fp[2] }; }
+function hitOf(o) { const cx = o.sofa ? o.cx : o.x; return o.deco ? { x1: cx - o.hit[0], x2: cx + o.hit[0], y1: o.y, y2: o.y + o.hit[2] } : { x1: cx - o.hit[0], x2: cx + o.hit[0], y1: o.y - o.hit[1], y2: o.y + o.hit[2] }; }
+const overlaps = (a, b) => a.x1 < b.x2 && a.x2 > b.x1 && a.y1 < b.y2 && a.y2 > b.y1;
+function editBad(id) {
+  const its = editItems(), me = its.find(o => o.id === id); if (!me) return false;
+  const r = rectOf(me);
+  return its.some(o => o.id !== id && o.top === me.top && overlaps(r, rectOf(o)));
+}
+function drawEditOverlay() {
+  for (const o of editItems()) {
+    const r = hitOf(o), act = edrag && edrag.id === o.id;
+    ctx.save(); ctx.setLineDash([8, 6]); ctx.lineWidth = act ? 4 : 2;
+    ctx.strokeStyle = act ? (edrag.bad ? '#e5484d' : '#5fc48f') : '#ffffffcc';
+    rr(r.x1, r.y1, r.x2 - r.x1, r.y2 - r.y1, 14); ctx.stroke();
+    if (act && edrag.bad) { ctx.fillStyle = '#e5484d33'; ctx.fill(); }
+    ctx.restore();
+  }
+}
+function editDown(p) {
+  const its = editItems().reverse();
+  const o = its.find(o => { const r = hitOf(o); return p.x > r.x1 && p.x < r.x2 && p.y > r.y1 && p.y < r.y2; });
+  if (!o) return;
+  edrag = { id: o.id, ox: o.x, oy: o.y, sx: p.x, sy: p.y, ry: o.ry, bad: false, orig: editLayout[o.id] ? editLayout[o.id].slice() : null };
+}
+function editMove(p) {
+  if (!edrag) return;
+  const snap = v => Math.round(v / 5) * 5;
+  const x = Math.max(40, Math.min(680, snap(edrag.ox + p.x - edrag.sx))), y = Math.max(edrag.ry[0], Math.min(edrag.ry[1], snap(edrag.oy + p.y - edrag.sy)));
+  editLayout[edrag.id] = [x, y]; rebuildEdit(); edrag.bad = editBad(edrag.id);
+}
+function editUp() {
+  if (!edrag) return;
+  if (edrag.bad) { if (edrag.orig) editLayout[edrag.id] = edrag.orig; else delete editLayout[edrag.id]; rebuildEdit(); toast('Tak muat situ, bertindih dengan barang lain!'); sound('bad'); }
+  else sound('tap');
+  edrag = null;
+}
+$('editBar').addEventListener('click', e => {
+  const b = e.target.closest('[data-edit]'); if (!b) return;
+  const a = b.dataset.edit;
+  if (a === 'save') { state.layout = editLayout; save(); toast('Susun atur disimpan! ✨'); sound('win'); }
+  if (a === 'reset') { editLayout = {}; rebuildEdit(); toast('Susun atur asal'); return; }
+  if (a === 'save' || a === 'exit') { $('gameView').classList.remove('editing'); editLayout = null; Object.assign(COFFEE, COFFEE_DEF); home(); window.scrollTo(0, 0); }
+});
+
 cv.addEventListener('pointerdown', e => {
+  if (mode === 'edit') { editDown(pos(e)); cv.setPointerCapture?.(e.pointerId); return; }
   if (mode !== 'play') return; ac();
   const p = pos(e), g = guestAt(p);
   drag = { id: g && canMove(g) ? g.id : null, sx: p.x, sy: p.y, x: p.x, y: p.y, moved: false, pid: e.pointerId };
   cv.setPointerCapture?.(e.pointerId);
 });
 cv.addEventListener('pointermove', e => {
+  if (mode === 'edit') { editMove(pos(e)); return; }
   if (!drag || e.pointerId !== drag.pid) return;
   const p = pos(e); drag.x = p.x; drag.y = p.y;
   if (drag.id != null && !drag.moved && Math.hypot(p.x - drag.sx, p.y - drag.sy) > 18) { drag.moved = true; selected = drag.id; }
 });
 cv.addEventListener('pointerup', e => {
+  if (mode === 'edit') { editUp(); return; }
   if (!drag || e.pointerId !== drag.pid) return;
   const p = pos(e), d = drag; drag = null;
   if (mode !== 'play') return;
@@ -922,7 +1029,7 @@ function home() {
     const btn = locked ? '🔒 Level ' + u.unlock : maxed ? 'MAX ✓' : (u.tier ? '⬆ ' + TIER[lv + 1] + ' · ' : '') + '🪙 ' + price;
     return `<article class="upgrade"><div class="upgrade-icon">${u.icon}</div><h3>${u.name}</h3><p>${u.info}</p><div class="upgrade-level">${lvTxt}</div><button class="buy-btn" data-upgrade="${u.key}" ${dis ? 'disabled' : ''}>${btn}</button></article>`;
   }).join('')).join('');
-  renderGoals();
+  renderGoals(); renderStaff();
   [['sheetShop', 'dock_shop'], ['sheetGoals', 'dock_missions'], ['sheetMap', 'dock_map'], ['sheetHow', 'dock_help']].forEach(([k, n]) => { const b = document.querySelector(`[data-sheet=${k}] .dock-ic`); if (b && SPRITE_LIST.has(n) && !b.querySelector('img')) b.innerHTML = `<img src="sprites/${n}.webp" alt="">`; });
   $('versionNote').textContent = 'Versi ' + SALON_VERSION + ' · ' + SALON_DATE + ' · Progress disimpan dalam device ni.';
 }
@@ -957,6 +1064,7 @@ function drawHero() {
 function sizeHero() { const r = hc.getBoundingClientRect(), d = Math.min(2, devicePixelRatio || 1); if (r.width) { hc.width = Math.round(r.width * d); hc.height = Math.round(r.height * d); } }
 addEventListener('resize', sizeHero); setTimeout(sizeHero, 0);
 // bottom sheets
+$('editBtn').addEventListener('click', () => { if (ART_READY) { sound('tap'); startEdit(); } });
 document.querySelectorAll('[data-sheet]').forEach(b => b.addEventListener('click', () => { home(); $(b.dataset.sheet).hidden = false; sound('tap'); }));
 document.querySelectorAll('.sheet').forEach(sh => sh.addEventListener('click', e => { if (e.target === sh || e.target.closest('.sheet-close')) { sh.hidden = true; } }));
 function swapCtx(c, fn) { const old = ctx; ctx = c; try { fn(); } finally { ctx = old; } }

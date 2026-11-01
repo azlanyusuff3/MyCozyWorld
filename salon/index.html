@@ -42,6 +42,8 @@
       <button class="dock-btn" data-sheet="sheetShop"><span class="dock-ic">🛒</span><small>Kedai</small><i class="badge" id="shopBadge"></i></button>
       <button class="dock-btn" data-sheet="sheetGoals"><span class="dock-ic">📅</span><small>Misi</small><i class="badge" id="goalBadge"></i></button>
       <button class="dock-btn" data-sheet="sheetMap"><span class="dock-ic">🗺️</span><small>Peta</small></button>
+      <button class="dock-btn" data-sheet="sheetStaff"><span class="dock-ic">👥</span><small>Staf</small></button>
+      <button class="dock-btn" id="editBtn" type="button"><span class="dock-ic">🛠️</span><small>Susun Kedai</small></button>
       <button class="dock-btn" data-sheet="sheetHow"><span class="dock-ic">📖</span><small>Cara Main</small></button>
     </nav>
     <p class="footer-note" id="versionNote"></p>
@@ -62,6 +64,12 @@
   <div id="sheetMap" class="sheet" hidden><div class="sheet-card">
     <div class="sheet-head"><h2>🗺️ Perjalanan Salon</h2><button class="sheet-close" type="button">✕</button></div>
     <div id="locationRow" class="location-row"></div>
+  </div></div>
+
+  <div id="sheetStaff" class="sheet" hidden><div class="sheet-card">
+    <div class="sheet-head"><h2>👥 Tugas Staf</h2><button class="sheet-close" type="button">✕</button></div>
+    <p class="sheet-note">Pilih siapa buat kerja apa. Kalau ramai boleh buat kerja sama, kerja pergi ke staf yang paling lapang.</p>
+    <div id="staffList" class="goal-list"></div>
   </div></div>
 
   <div id="sheetHow" class="sheet" hidden><div class="sheet-card">
@@ -87,6 +95,7 @@
     </section>
     <div class="goal-track"><div id="goalFill"></div><span id="goalCaption"></span></div>
     <div class="stage"><canvas id="salonCanvas"></canvas></div>
+    <div id="editBar" class="edit-bar"><button data-edit="exit" class="secondary">✕ Batal</button><button data-edit="reset" class="secondary">↺ Asal</button><button data-edit="save">💾 SIMPAN</button></div>
     <p id="gameHint" class="game-hint" aria-live="polite"></p>
   </main>
 </div>

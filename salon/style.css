@@ -143,3 +143,20 @@ h1,h2,h3{font-family:"Lilita One",system-ui,sans-serif;font-weight:normal;margin
 .loc-card.current{outline:4px solid #e56b93;outline-offset:-1px}
 .howto-list{margin:0;padding-left:22px;line-height:1.6;color:#7c5f70;font-size:14px}
 .topbar{max-width:520px;margin-left:auto;margin-right:auto}
+
+/* v13: staf + susun kedai */
+.menu-dock{grid-template-columns:repeat(3,1fr)!important}
+.sheet-note{font-size:12px;color:#8d6f80;margin:0 2px 10px;line-height:1.4}
+.staff-row{display:flex;gap:10px;align-items:center;background:#fff;border-radius:18px;padding:10px;box-shadow:0 3px 0 #ebd1dc}
+.staff-row.locked{opacity:.55}
+.staff-pic{width:64px;height:64px;flex:none;border-radius:16px;background:#fde9ee;display:grid;place-items:center;font-size:30px;overflow:hidden}
+.staff-pic img{width:120%;height:120%;object-fit:contain;margin-top:10%}
+.staff-info{flex:1;min-width:0}.staff-info b{font-size:15px}.staff-info small{display:block;font-size:10px;color:#a48a99;font-weight:800}
+.jobs{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+.job{border:2px solid #ead5df;background:#fff;border-radius:99px;padding:4px 9px;font-size:11px;font-weight:900;color:#a48a99}
+.job.on{background:#e56b93;border-color:#e56b93;color:#fff}
+.edit-bar{display:none;gap:8px;justify-content:center;max-width:620px;margin:10px auto 0}
+.edit-bar button{flex:1;border:0;border-radius:14px;padding:12px;font-weight:900;background:#e56b93;color:#fff;box-shadow:0 4px 0 #ba4d76}
+.edit-bar button.secondary{background:#efe3ea;color:#6a4877;box-shadow:0 4px 0 #d5c2cd}
+.game.editing .edit-bar{display:flex}
+.game.editing .game-hud,.game.editing .goal-track{display:none}

@@ -86,6 +86,9 @@ def main():
             g = cells(p(who + '_walk'), WALK)
             if os.path.exists(p(who + '_side')):
                 g.update(cells(p(who + '_side'), [['side_idle', 'side_walk1', 'side_walk2'], row2]))
+            extra = {'aiman': ['cut', 'color', 'pay'], 'lina': ['cut', 'color', 'wash']}[who]
+            if os.path.exists(p(who + '_work')):
+                g.update(cells(p(who + '_work'), [extra, [None, None, None]]))
             save_group(who + '_', g, names)
     for t in ['biasa', 'makcik', 'remaja', 'vip', 'seleb']:
         if not os.path.exists(p(f'guest_{t}_walk')):
