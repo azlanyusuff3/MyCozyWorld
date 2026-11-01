@@ -33,6 +33,8 @@ button{font-family:inherit;cursor:pointer}
 .pname.turn{background:#ffd27a;color:#4b2f12}
 .caps{display:flex;flex-wrap:wrap;gap:0;min-width:0}.caps img{height:22px;margin-right:-6px}
 :root{--bs:min(94vw,calc(100vh - 230px),620px)}
+@supports (height:100dvh){:root{--bs:min(94vw,calc(100dvh - 230px),620px)}}
+@media (max-height:540px){#game{justify-content:flex-start;gap:3px}.topbar{padding-top:4px;padding-bottom:4px}.actions .btn.small{padding:6px 9px}}
 .board-area{width:var(--bs);height:var(--bs);position:relative;flex:none}
 #boardWrap{width:100%;height:100%;transition:transform .45s cubic-bezier(.3,.1,.2,1),filter .45s}
 #boardWrap.zoom{transform:scale(2.2);filter:blur(2px) brightness(.7)}
