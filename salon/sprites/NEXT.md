@@ -123,7 +123,7 @@ Players can now assign ANY job to any staff, so the helpers need the missing wor
 - `aiman_work.png` — Row 1: **cut** (holding scissors and comb up at head height, focused), **color** (holding a dye brush and a small bowl, painting), **pay** (typing on a handheld card machine, smiling).
 - `lina_work.png` — Row 1: **cut** (scissors and comb up, focused), **color** (dye brush and bowl), **wash** (both hands forward with shampoo foam).
 
-## [ ] Task P — Hair-colour finished looks (the game now shows colour makeovers)
+## [x] Task P — Hair-colour finished looks (the game now shows colour makeovers)
 After a colour service the game switches the guest to a coloured-hair version of the SAME character. Redraw each guest below with ONLY the hair colour changed — same face, outfit, pose, size and position in every cell as their existing sheets (`guest_<id>_walk.png` and `guest_<id>_pose.png`). Do not tint skin or clothes. Normal RULES (magenta, 3x2, 40 px padding).
 For each guest `biasa`, `remaja`, `vip`, `seleb` and each colour make TWO sheets with the EXACT layouts of the originals:
 - `guest_<id>_c<n>_walk.png` — Row 1: front_idle, front_walk1, front_walk2. Row 2: back_idle, back_walk1, back_walk2.
