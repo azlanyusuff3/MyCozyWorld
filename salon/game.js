@@ -2,7 +2,7 @@
 // Sprite hooks: letak gambar dalam salon/sprites/ (lihat SPRITES di bawah). Kalau tiada, game lukis placeholder sendiri.
 (() => {
 'use strict';
-const SALON_VERSION = 13, SALON_DATE = '31 Okt 2026';
+const SALON_VERSION = 14, SALON_DATE = '31 Okt 2026';
 const $ = id => document.getElementById(id);
 const KEY = 'mycozyworld_cozy_salon_v2', OLD_KEY = 'mycozyworld_cozy_salon_v1', LIMIT = 60;
 const W = 720, H = 960;   // logical canvas size (portrait)
@@ -751,7 +751,7 @@ function drawStaff(m) {
   const kind = m.cur?.k === 'work' ? m.cur.slot.kind : m.cur?.k;
   if (moving) m.dir = dirOf(m.tx - m.x, m.ty - m.y);
   const md = m.dir || 'front';
-  const wpose = kind === 'cut' || kind === 'color' ? 'cut' : kind;
+  const wpose = kind === 'color' ? (img(m.id + '_color') ? 'color' : 'cut') : kind;
   let pose = moving ? md + '_' + (Math.sin(m.walk) > 0 ? 'walk1' : 'walk2') : working ? wpose : m.happy > 0 ? 'happy' : 'front_idle';
   const noPose = working && !img(m.id + '_' + pose);
   if (noPose) pose = 'side_idle';
