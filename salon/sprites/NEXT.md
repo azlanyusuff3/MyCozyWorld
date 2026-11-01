@@ -118,7 +118,7 @@ Re-commit the SAME artwork (you can regenerate if you no longer have it) but **e
 - Then **delete** the 6 broken files listed above (the `.png` versions of menu_bg and the 3 cards) so only the good ones remain.
 - After committing, re-download each file from GitHub and check it opens. If any file is ≥ 768 KB, compress more.
 
-## [ ] Task O — Extra work poses for Aiman & Lina
+## [x] Task O — Extra work poses for Aiman & Lina
 Players can now assign ANY job to any staff, so the helpers need the missing work poses. Normal RULES (magenta, 3x2, 40 px padding). Match `aiman_ref.png` / `lina_ref.png` exactly. All poses **side view facing RIGHT**, standing at the same scale as their walk sheets. Leave Row 2 empty magenta.
 - `aiman_work.png` — Row 1: **cut** (holding scissors and comb up at head height, focused), **color** (holding a dye brush and a small bowl, painting), **pay** (typing on a handheld card machine, smiling).
 - `lina_work.png` — Row 1: **cut** (scissors and comb up, focused), **color** (dye brush and bowl), **wash** (both hands forward with shampoo foam).
