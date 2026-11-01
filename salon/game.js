@@ -2,7 +2,7 @@
 // Sprite hooks: letak gambar dalam salon/sprites/ (senarai dalam sprites/list.json). Kalau tiada, game lukis placeholder sendiri.
 (() => {
 'use strict';
-const SALON_VERSION = 15, SALON_DATE = '1 Nov 2026';
+const SALON_VERSION = 16, SALON_DATE = '1 Nov 2026';
 const $ = id => document.getElementById(id);
 const KEY = 'mycozyworld_cozy_salon_v2', OLD_KEY = 'mycozyworld_cozy_salon_v1', BACKUP_KEY = 'mycozyworld_cozy_salon_backup', LIMIT = 60, SAVE_V = 3;
 const W = 720, H = 960;   // logical canvas size (portrait)
@@ -1108,7 +1108,7 @@ function drawReveal() {
   const r = game.reveal; if (!r) return;
   const g = r.g, a = Math.min(1, r.t * 2, (2.6 - r.t) * 4);
   ctx.save(); ctx.globalAlpha = a;
-  const x = 14, y = 262, w = 230, h = 128;
+  const x = 14, y = 96, w = 230, h = 128;   // kawasan dinding: tak tutup stesen/perabot
   rr(x, y, w, h, 18); ctx.fillStyle = '#fffaf7f2'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = '#e56b93'; ctx.stroke();
   text('Sebelum', x + 55, y + 16, 14, '#9a7f8f', 'center', null); text('Selepas ✨', x + 172, y + 16, 14, '#e56b93', 'center', null);
   const before = img('guest_' + g.type + '_sit'), after = guestImg(g, 'after');
