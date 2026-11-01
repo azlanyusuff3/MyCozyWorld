@@ -96,6 +96,11 @@ def main():
         g = cells(p(f'guest_{t}_walk'), WALK)
         if os.path.exists(p(f'guest_{t}_pose')):
             g.update(cells(p(f'guest_{t}_pose'), GUEST_POSE))
+        # Task P: variant warna rambut (sama layout dengan walk/pose) → guest_<t>_<pose>_c<n>
+        for c in (1, 2, 3):
+            for sheet, grid in ((f'guest_{t}_c{c}_walk', WALK), (f'guest_{t}_c{c}_pose', GUEST_POSE)):
+                if os.path.exists(p(sheet)):
+                    g.update({k + f'_c{c}': im for k, im in cells(p(sheet), grid).items()})
         save_group(f'guest_{t}_', g, names)
     if os.path.exists(p('stations')):
         for n, im in cells(p('stations'), STATIONS).items():

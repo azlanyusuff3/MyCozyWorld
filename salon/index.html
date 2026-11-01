@@ -62,13 +62,13 @@
   </div></div>
 
   <div id="sheetMap" class="sheet" hidden><div class="sheet-card">
-    <div class="sheet-head"><h2>🗺️ Perjalanan Salon</h2><button class="sheet-close" type="button">✕</button></div>
+    <div class="sheet-head"><h2>🗺️ Peta Salon</h2><button class="sheet-close" type="button">✕</button></div>
     <div id="locationRow" class="location-row"></div>
   </div></div>
 
   <div id="sheetStaff" class="sheet" hidden><div class="sheet-card">
-    <div class="sheet-head"><h2>👥 Tugas Staf</h2><button class="sheet-close" type="button">✕</button></div>
-    <p class="sheet-note">Pilih siapa buat kerja apa. Kalau ramai boleh buat kerja sama, kerja pergi ke staf yang paling lapang.</p>
+    <div class="sheet-head"><h2>👥 Staf & Latihan</h2><button class="sheet-close" type="button">✕</button></div>
+    <p class="sheet-note">Pilih siapa buat kerja apa (kerja pergi ke staf paling lapang). Setiap staf ada kepakaran — latih mereka dengan coins. Bonus latihan ada had (max tahap 3).</p>
     <div id="staffList" class="goal-list"></div>
   </div></div>
 
@@ -82,6 +82,9 @@
       <li>Pelanggan ada <b>⭐ hajat</b>: nak PERFECT atau nak cepat. Tunaikan untuk bonus!</li>
       <li>Hair dryer jalan sendiri. Habis service, hantar ke <b>kaunter 💰</b>.</li>
       <li>Pelanggan marah? Tap dia → tap <b>mesin kopi ☕</b>.</li>
+      <li>Stesen ada orang? Pilih pelanggan → tap stesen tu untuk <b>📌 tempah giliran</b>. Bila kosong, dia pergi sendiri. Tap stesen sama sekali lagi untuk batal.</li>
+      <li>Setiap level ada <b>objektif</b> (layan, pendapatan, PERFECT, hajat, tanpa marah, warna) — baca taklimat sebelum mula.</li>
+      <li>Peta: ulang level lama untuk bintang. Lepas Level 20 ada <b>Kontrak</b>, lepas Level 60 <b>Salon Master</b>.</li>
       <li>Level 8 upah <b>Aiman</b> (shampoo + kopi), level 14 <b>Lina</b> (kaunter).</li>
     </ol>
   </div></div>
@@ -89,7 +92,7 @@
   <main id="gameView" class="view game" hidden>
     <section class="game-hud">
       <div class="hud-level"><span class="eyebrow" id="hudLoc">KAMPUNG</span><b id="playingLevel">LEVEL 1</b></div>
-      <div class="hud-stat"><small>DILAYAN</small><b id="servedCount">0 / 5</b></div>
+      <div class="hud-stat"><small id="hudObjLabel">DILAYAN</small><b id="servedCount">0 / 5</b></div>
       <div class="hud-stat"><small>DAPAT</small><b id="earnedCount">🪙 0</b></div>
       <button id="pauseBtn" class="icon-btn" type="button" aria-label="Pause">Ⅱ</button>
     </section>
