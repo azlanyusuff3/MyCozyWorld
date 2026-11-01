@@ -20,7 +20,7 @@ Checklist status: **done** means it is playable, saved and covered by an automat
 
 ## Makeover visuals: what is actually visible
 - **Haircut:** after a cut, the guest's waiting/sit pose switches to their existing `after` sprite, which already shows the new hairstyle. Walking sprites still show the original cut. Showing it there would need new art, so that is not done.
-- **Colour:** the renderer uses `guest_<type>_<pose>_c<1..3>.webp` when it exists. **This art does not exist yet** (see `sprites/NEXT.md` Task P, to be drawn by ChatGPT). Until it does, a colour service only shows the colour name on the checkout before/after card. The hair itself does not visibly change.
+- **Colour:** done (v16). Task P sprites `guest_<type>_<pose>_c1..c3` are in for biasa, remaja, vip and seleb, covering all walk and pose frames. Only the hair colour changes.
 - **Mak Cik:** the tudung is preserved. A cut or colour adds a small gold brooch detail instead.
 - **Checkout:** a small non-blocking before/after card appears at the top-left.
 
