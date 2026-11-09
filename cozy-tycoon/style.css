@@ -219,3 +219,14 @@ img.logo{max-width:92%;max-height:110px;object-fit:contain;display:block;margin:
 .flip .front.rezeki.art{background:var(--card-rezeki-front) center/cover}
 .flip .front.musibah.art{background:var(--card-musibah-front) center/cover}
 .flip .front.art{color:#5a3d55;padding:22% 14% 14%}.flip .front.art h2{color:#5a3d55;text-shadow:none}.flip .front.art b{background:#fff8}
+/* fixes after art */
+.flip{display:flex;justify-content:center}
+.flip-in{width:min(240px,62vw);aspect-ratio:600/840;min-height:0}
+.flip .back.art,.flip .front.art{background-size:100% 100%!important;background-repeat:no-repeat!important}
+.flip .front.art{padding:18% 16% 16%;justify-content:center;gap:4px}
+.flip .front.art .big-ic{font-size:58px}
+.flip .front.art h2{font-size:18px;line-height:1.15;margin:4px 0}
+.flip .front.art b{font-size:20px}
+.toasts{top:auto;bottom:calc(10px + env(safe-area-inset-bottom));flex-direction:column-reverse}
+.hint{background:#fffc;border-radius:12px;padding:5px 10px;display:inline-block;color:#8d7086}
+.tag{background:#fffb;border-radius:12px;padding:4px 10px;display:inline-block}
