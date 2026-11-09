@@ -51,8 +51,8 @@ button{font-family:inherit;cursor:pointer}
 .pchip .zz{position:absolute;top:0;right:4px;font-size:12px}
 
 /* board */
-.board-wrap{display:flex;justify-content:center}
-.board{--n:11;position:relative;width:min(100%,calc(100vh - 175px),540px);aspect-ratio:1;display:grid;grid-template-columns:repeat(11,1fr);grid-template-rows:repeat(11,1fr);gap:2px;background:#f4cfe0;border-radius:16px;padding:3px;box-shadow:0 7px 0 #dba8c2}
+.board-wrap{position:relative;margin:0 auto;width:min(100%,calc(100vh - 290px),540px);aspect-ratio:1;overflow:hidden;border-radius:16px;box-shadow:0 7px 0 #dba8c2;background:#f4cfe0}
+.board{position:absolute;left:0;top:0;width:100%;height:100%;transform-origin:0 0;transition:transform var(--cam,.5s) ease;will-change:transform;display:grid;grid-template-columns:repeat(11,1fr);grid-template-rows:repeat(11,1fr);gap:2px;background:#f4cfe0;border-radius:16px;padding:3px}
 .tile{background:#fffaf2;border-radius:5px;position:relative;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:clamp(6px,1.6vw,9px);font-weight:900;color:#6d5166;line-height:1;cursor:pointer}
 .tile .strip{position:absolute;top:0;left:0;right:0;height:22%}
 .tile .ic{font-size:clamp(11px,3.4vw,19px);margin-top:16%}
@@ -77,7 +77,7 @@ button{font-family:inherit;cursor:pointer}
 .log div{margin:1px 0}.log div:first-child{color:#5a3d55;font-weight:900}
 
 .tokens{position:absolute;inset:0;pointer-events:none}
-.token{position:absolute;width:calc(100%/11*.62);height:calc(100%/11*.7);transition:left .17s ease,top .17s ease;z-index:3;filter:drop-shadow(0 2px 1px #0004)}
+.token{position:absolute;width:calc(100%/11*.62);height:calc(100%/11*.7);transition:left .2s ease,top .2s ease;z-index:3;filter:drop-shadow(0 2px 1px #0004)}
 .token svg,.token img{width:100%;height:100%;display:block}
 .token.hop svg,.token.hop img{animation:hop .17s ease}
 @keyframes hop{50%{transform:translateY(-35%)}}
@@ -118,3 +118,35 @@ button{font-family:inherit;cursor:pointer}
 .c-turn img{width:30px;height:32px;object-fit:contain}
 .rank li img{width:36px;height:38px;object-fit:contain}
 .token img{object-fit:contain}
+
+.cam-btn{position:absolute;right:6px;bottom:6px;z-index:6;border:0;background:#fffffff0;border-radius:12px;width:38px;height:34px;font-size:17px;box-shadow:0 3px 0 #e2c3d3}
+.cam-btn.off{opacity:.55}
+.hud{display:grid;grid-template-columns:auto 1fr;grid-template-areas:"turn turn" "dice btn" "log log";align-items:center;gap:8px 12px;max-width:540px;margin:14px auto 0;background:#fffafc;border:3px solid #fff;border-radius:22px;padding:10px 12px;box-shadow:0 6px 0 #ecc9da}
+.hud-turn{grid-area:turn;display:flex;align-items:center;gap:6px;font-weight:900;font-size:15px}
+.hud-turn img,.hud-turn svg{width:36px;height:38px;object-fit:contain}
+.hud .dice{grid-area:dice}.hud .btn{grid-area:btn;padding:13px 10px;font-size:17px}
+.hud .log{grid-area:log;min-height:3.4em;font-size:12px;text-align:left;max-width:none}
+.die{width:48px;height:48px;padding:7px;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);place-items:center;font-size:0}
+.die i{width:9px;height:9px;border-radius:50%;background:#e05f8d;visibility:hidden}.die i.on{visibility:visible}
+.die.land{animation:land .35s cubic-bezier(.3,1.8,.5,1)}
+@keyframes land{from{transform:scale(1.5) rotate(-20deg)}}
+.c-turn img{width:30px;height:32px}
+/* card flip */
+.flip{perspective:900px;margin:-4px -4px 12px}
+.flip-in{position:relative;min-height:230px;transition:transform .6s cubic-bezier(.4,1.5,.5,1);transform-style:preserve-3d}
+.flip.open .flip-in{transform:rotateY(180deg)}
+.flip .face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:14px;color:#fff}
+.flip .back{font:normal 34px "Lilita One",sans-serif;text-shadow:0 3px 0 #0003;background-image:repeating-linear-gradient(45deg,#fff2 0 10px,transparent 10px 20px)}
+.flip .back span{font-size:70px}
+.flip .front{transform:rotateY(180deg)}
+.flip .rezeki{background-color:#5cc9a7}.flip .front.rezeki{background:linear-gradient(135deg,#5cc9a7,#9fe3b7)}
+.flip .musibah{background-color:#ff8a8a}.flip .front.musibah{background:linear-gradient(135deg,#ff8a8a,#ffb37a)}
+.flip .front .big-ic{font-size:76px;animation:wob 1s ease-in-out infinite}
+@keyframes wob{50%{transform:rotate(8deg) scale(1.08)}}
+.flip .front h2{color:#fff;font-size:24px}
+.flip .front b{font:normal 26px "Lilita One",sans-serif;background:#fff3;border-radius:12px;padding:2px 12px}
+.auto-bar{height:6px;border-radius:4px;background:#f3dbe6;margin-top:10px;overflow:hidden}.auto-bar i{display:block;height:100%;background:#ff9fbf;width:100%;animation:shrink linear forwards}
+@keyframes shrink{to{width:0}}
+.tap-hint{font-size:11px;color:#b897aa;margin-top:4px}
+.ai-say{display:flex;align-items:center;gap:8px;text-align:left;background:#fff;border-radius:14px;padding:6px 10px;margin:0 0 10px;font-weight:800;font-size:13px;box-shadow:0 3px 0 #f0d3e1}
+.ai-say img,.ai-say svg{width:40px;height:42px;object-fit:contain;flex:none}

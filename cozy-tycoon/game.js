@@ -131,8 +131,10 @@ updSoundBtn();
 
 /* ---------- State ---------- */
 let G = null, busy = false;
-const cfg = { char: 0, mode: 'ai', count: 4, rounds: 20 };
-const wait = ms => new Promise(r => setTimeout(r, ms));
+const cfg = { char: 0, mode: 'ai', count: 4, rounds: 20, speed: +(localStorage.getItem('cozyTycoonSpeed') || 1.15) };
+const SPD = () => cfg.speed;
+const wait = ms => new Promise(r => setTimeout(r, ms * SPD()));
+let camOn = localStorage.getItem('cozyTycoonCam') !== '0';
 const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.random() * (i + 1) | 0;[a[i], a[j]] = [a[j], a[i]]; } return a; };
 const cur = () => G.players[G.turn];
 const alive = () => G.players.filter(p => !p.out);
@@ -173,16 +175,31 @@ function seg(id, key, num, after) {
   });
 }
 seg('modeSeg', 'mode', false, () => $('countRow').classList.toggle('hidden', cfg.mode !== 'local'));
-seg('countSeg', 'count', true); seg('roundSeg', 'rounds', true);
+seg('countSeg', 'count', true); seg('speedSeg', 'speed', true, () => localStorage.setItem('cozyTycoonSpeed', cfg.speed));
+[...$('speedSeg').children].forEach(b => b.classList.toggle('on', +b.dataset.v === cfg.speed)); seg('roundSeg', 'rounds', true);
 $('startBtn').onclick = () => { newGame(); startPlay(); };
 $('resumeBtn').onclick = () => { G = load(); if (G) startPlay(); };
 
 function startPlay() {
   $('menu').classList.add('hidden'); $('play').classList.remove('hidden');
-  buildBoard(); renderAll(); save(); nextTurn(true);
+  buildBoard(); renderAll(); cam(cur().pos, true); save(); nextTurn(true);
 }
 
 /* ---------- Render ---------- */
+const PIPS = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
+function setDie(el, n) { el.innerHTML = [...Array(9)].map((_, i) => `<i class="${PIPS[n].includes(i) ? 'on' : ''}"></i>`).join(''); }
+/* camera: zoom board & follow a tile */
+function cam(pos, instant) {
+  const b = $('board'), W = $('boardWrap').clientWidth;
+  b.style.setProperty('--cam', instant ? '0s' : (pos === null ? '.6s' : (0.17 * SPD()) + 's'));
+  if (pos === null || !camOn) { b.style.transform = ''; return; }
+  const S = 2.1, [r, c] = tilePos(pos), cx = (c + .5) / 11 * W, cy = (r + .5) / 11 * W;
+  const cl = v => Math.min(0, Math.max(W - W * S, v));
+  b.style.transform = `translate(${cl(W / 2 - cx * S)}px,${cl(W / 2 - cy * S)}px) scale(${S})`;
+}
+$('camBtn').onclick = () => { camOn = !camOn; localStorage.setItem('cozyTycoonCam', camOn ? '1' : '0'); $('camBtn').classList.toggle('off', !camOn); beep(650); cam(G ? cur().pos : null); };
+$('camBtn').classList.toggle('off', !camOn);
+
 function buildBoard() {
   const bd = $('board');
   bd.querySelectorAll('.tile').forEach(t => t.remove());
@@ -213,7 +230,8 @@ function renderAll() {
   $('roundTxt').textContent = `Pusingan ${Math.min(G.round, G.maxRounds)}/${G.maxRounds}`;
   $('turnTxt').innerHTML = `${avatar(p.ci)} Giliran ${p.ai === null && G.players.filter(x => x.ai === null).length === 1 ? 'kau!' : (p.ai !== null ? AIS[p.ai].name : CHARS[p.ci].name)}`;
   $('log').innerHTML = G.log.slice(0, 3).map(l => `<div>${l}</div>`).join('');
-  [...$('dice').children].forEach((d, i) => d.textContent = G.dice[i]);
+  [...$('dice').children].forEach((d, i) => { if (!d.classList.contains('spin')) setDie(d, G.dice[i]); });
+  $('hudTurn').innerHTML = $('turnTxt').innerHTML;
 }
 function placeToken(k, pos) {
   const el = $('tok' + k); if (!el) return;
@@ -233,13 +251,16 @@ function floatText(k, txt, col) {
 /* ---------- Modal ---------- */
 function modal(html, buttons, autoMs) {
   return new Promise(res => {
-    $('modalCard').innerHTML = html + (buttons.length ? `<div class="btns">${buttons.map((b, i) => `<button class="btn ${b.cls || 'pink'}" data-i="${i}" ${b.dis ? 'disabled' : ''}>${b.label}</button>`).join('')}</div>` : '');
+    const ms = autoMs ? autoMs * SPD() : 0;
+    $('modalCard').innerHTML = html + (ms ? `<div class="auto-bar"><i style="animation-duration:${ms}ms"></i></div><div class="tap-hint">tap untuk teruskan</div>` : (buttons.length ? `<div class="btns">${buttons.map((b, i) => `<button class="btn ${b.cls || 'pink'}" data-i="${i}" ${b.dis ? 'disabled' : ''}>${b.label}</button>`).join('')}</div>` : ''));
     $('modal').classList.remove('hidden');
     let done = false;
     const close = v => { if (done) return; done = true; $('modal').classList.add('hidden'); res(v); };
     $('modalCard').querySelectorAll('button').forEach(b => b.onclick = () => { beep(700); close(buttons[+b.dataset.i].v); });
-    if (autoMs) setTimeout(() => close(buttons.length ? buttons[0].v : null), autoMs);
-    if (!buttons.length) $('modal').onclick = () => close(null); else $('modal').onclick = null;
+    const fin = () => close(buttons.length ? buttons[0].v : null);
+    if (ms) { setTimeout(fin, ms); $('modal').onclick = fin; }
+    else if (!buttons.length) $('modal').onclick = () => close(null); else $('modal').onclick = null;
+    if (html.includes('class="flip"')) setTimeout(() => { const f = $('modalCard').querySelector('.flip'); if (f) { f.classList.add('open'); sfx.buy(); } }, 450);
   });
 }
 function rentOf(i, diceSum) {
@@ -304,6 +325,7 @@ async function nextTurn(first) {
   if (G.round > G.maxRounds || alive().length < 2) return endGame();
   renderAll(); save();
   const p = cur();
+  cam(p.pos);
   if (p.sleep > 0) {
     p.sleep--; log(`💤 ${pname(p)} masih tidur kat Rumah Tok Wan...`);
     await wait(1100); return nextTurn();
@@ -316,12 +338,12 @@ $('rollBtn').onclick = () => { if (busy || !isHumanTurn()) return; busy = true; 
 async function doRoll(dbl) {
   const p = cur(), k = G.turn, dies = [...$('dice').children];
   dies.forEach(d => d.classList.add('spin'));
-  for (let i = 0; i < 8; i++) { dies.forEach(d => d.textContent = 1 + (Math.random() * 6 | 0)); beep(400 + i * 40, .03); await wait(60); }
-  dies.forEach(d => d.classList.remove('spin'));
+  for (let i = 0; i < 10; i++) { dies.forEach(d => setDie(d, 1 + (Math.random() * 6 | 0))); beep(400 + i * 40, .03); await new Promise(r => setTimeout(r, 70)); }
+  dies.forEach(d => { d.classList.remove('spin'); d.classList.remove('land'); void d.offsetWidth; d.classList.add('land'); });
   const a = 1 + (Math.random() * 6 | 0), b = 1 + (Math.random() * 6 | 0);
   G.dice = [a, b]; renderAll();
   log(`${pname(p)} dapat ${a} + ${b} = ${a + b}${a === b ? ' — DOUBLE! 🎉' : ''}`);
-  await wait(350);
+  cam(p.pos); await wait(700);
   await moveSteps(k, a + b);
   await landOn(k, a + b);
   if (G.over) return;
@@ -339,10 +361,11 @@ async function moveSteps(k, n) {
     p.pos = (p.pos + dir + 40) % 40;
     if (p.pos === 0 && dir > 0) { gain(k, 200); log(`🏁 ${pname(p)} lalu MULA, dapat RM200!`); }
     const tok = $('tok' + k); tok.classList.remove('hop'); void tok.offsetWidth; tok.classList.add('hop');
-    G.players.forEach((q, j) => placeToken(j, q.pos)); sfx.step();
-    await wait(170);
+    G.players.forEach((q, j) => placeToken(j, q.pos)); cam(p.pos); sfx.step();
+    await wait(230);
   }
   const t = $('tile' + p.pos); t.classList.remove('flash'); void t.offsetWidth; t.classList.add('flash');
+  await wait(450);
 }
 async function goTo(k, pos) {
   const p = G.players[k], steps = (pos - p.pos + 40) % 40;
@@ -356,7 +379,8 @@ async function sendSleep(k) {
 
 async function landOn(k, sum) {
   const p = G.players[k], t = TILES[p.pos], i = p.pos, ai = p.ai !== null ? AIS[p.ai] : null;
-  const auto = ai ? 1500 : 0;
+  const auto = ai ? 2600 : 0;
+  const say = t => `<div class="ai-say">${avatar(p.ci)}<span>${t}</span></div>`;
   if (t.t === 'prop' || t.t === 'stn' || t.t === 'util') {
     const o = G.own[i];
     if (o === null) {
@@ -367,20 +391,21 @@ async function landOn(k, sum) {
       if (want) {
         p.money -= t.price; G.own[i] = k; sfx.buy(); floatText(k, '-' + t.price, '#e64980');
         log(`🛒 ${pname(p)} beli ${t.name}!`);
-        if (ai) await modal(propHtml(i) + `<p><b>${pname(p)}</b> beli tempat ni!</p>`, [{ label: 'OK' }], auto);
-      } else log(`${pname(p)} tak beli ${t.name}`);
+        if (ai) await modal(say(`${pname(p)}: "Yeay! Aku beli ${t.name}!"`) + propHtml(i), [{ label: 'OK' }], auto);
+      } else { log(`${pname(p)} tak beli ${t.name}`); if (ai) await modal(say(`${pname(p)}: "Hmm... mahal la, tak nak."`) + propHtml(i), [{ label: 'OK' }], 1800); }
     } else if (o === k) {
       if (t.t === 'prop' && G.lvl[i] < 2) {
         const cost = UPC[t.set], can = p.money >= cost, nx = G.lvl[i] + 1;
         let up;
         if (ai) up = can && p.money - cost >= ai.upReserve;
         else up = await modal(propHtml(i) + `<p>Ni tempat kau! Nak naik taraf jadi <b>${LVL_IC[nx]} ${LVL[nx]}</b>?</p>`, [{ label: `🔨 UPGRADE ${rm(cost)}`, v: true, cls: 'mint', dis: !can }, { label: 'Nanti dulu', v: false, cls: 'grey' }]);
-        if (up) { p.money -= cost; G.lvl[i] = nx; sfx.buy(); log(`🔨 ${pname(p)} naik taraf ${t.name} jadi ${LVL[nx]}!`); }
+        if (up) { p.money -= cost; G.lvl[i] = nx; sfx.buy(); log(`🔨 ${pname(p)} naik taraf ${t.name} jadi ${LVL[nx]}!`); renderAll(); if (ai) await modal(say(`${pname(p)}: "${t.name} aku dah jadi ${LVL[nx]}! ${LVL_IC[nx]}"`) + propHtml(i), [{ label: 'OK' }], auto); }
       } else log(`${pname(p)} rehat kat ${t.name} sendiri 😌`);
     } else {
       const r = rentOf(i, sum), owner = G.players[o];
       log(`🏠 ${pname(p)} bayar sewa ${rm(r)} kat ${pname(owner)}`);
       if (!ai) await modal(propHtml(i) + `<p>Alamak! Ni tempat <b>${pname(owner)}</b>. Kena bayar sewa:</p><h2>${rm(r)}</h2>`, [{ label: '💸 BAYAR', cls: 'pink' }]);
+      else await modal(say(`${pname(p)}: "Alamak, kena bayar ${rm(r)} kat ${pname(owner)}!"`) + propHtml(i), [{ label: 'OK' }], 2200);
       await pay(k, r, o);
     }
   } else if (t.t === 'tax') {
@@ -407,7 +432,7 @@ async function drawCard(k, type) {
   let extra = '';
   if (c.money) extra = c.money > 0 ? `+${rm(c.money)}` : `-${rm(-c.money)}`;
   if (c.each) extra = c.each > 0 ? `Setiap kawan bagi ${rm(c.each)}` : `Bayar setiap kawan ${rm(-c.each)}`;
-  await modal(`<div class="deck-card ${type}"><small>${type.toUpperCase()}</small><div class="big-ic">${c.ic}</div><h2 style="color:#fff">${c.txt}</h2>${extra ? `<b>${extra}</b>` : ''}</div>`, [{ label: 'OK!', cls: type === 'rezeki' ? 'mint' : 'pink' }], p.ai !== null ? 1600 : 0);
+  await modal(`<p style="margin:0 0 8px"><b>${pname(p)}</b> ambil kad...</p><div class="flip"><div class="flip-in"><div class="face back ${type}"><span>${type === 'rezeki' ? '🍀' : '🌧️'}</span>${type === 'rezeki' ? 'REZEKI' : 'MUSIBAH'}</div><div class="face front ${type}"><div class="big-ic">${c.ic}</div><h2>${c.txt}</h2>${extra ? `<b>${extra}</b>` : ''}</div></div></div>`, [{ label: 'OK!', cls: type === 'rezeki' ? 'mint' : 'pink' }], p.ai !== null ? 3400 : 0);
   log(`${c.ic} ${pname(p)}: ${c.txt}`);
   if (c.money > 0) gain(k, c.money);
   else if (c.money < 0) await pay(k, -c.money);
@@ -441,6 +466,7 @@ function worth(k) {
   return G.players[k].money + TILES.reduce((s, t, i) => s + (G.own[i] === k ? (t.price || 0) + G.lvl[i] * (UPC[t.set] || 0) : 0), 0);
 }
 async function endGame() {
+  cam(null);
   G.over = true; save(); busy = true; setRoll(false);
   const rank = G.players.map((p, k) => ({ p, k, w: p.out ? -1 : worth(k) })).sort((a, b) => b.w - a.w);
   const win = rank[0].p;

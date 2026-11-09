@@ -37,6 +37,9 @@
       <div class="row hidden" id="countRow"><span>Berapa orang?</span>
         <div class="seg small" id="countSeg"><button data-v="2">2</button><button data-v="3">3</button><button data-v="4" class="on">4</button></div>
       </div>
+      <div class="row"><span>Kelajuan</span>
+        <div class="seg small" id="speedSeg"><button data-v="1.7">Perlahan</button><button data-v="1.15" class="on">Biasa</button><button data-v="0.7">Laju</button></div>
+      </div>
       <div class="row"><span>Berapa pusingan?</span>
         <div class="seg small" id="roundSeg"><button data-v="12">12</button><button data-v="20" class="on">20</button><button data-v="30">30</button></div>
       </div>
@@ -49,18 +52,22 @@
   <!-- GAME -->
   <main id="play" class="view hidden">
     <div class="players" id="players"></div>
-    <div class="board-wrap">
+    <div class="board-wrap" id="boardWrap">
       <div class="board" id="board">
         <div class="center" id="center">
           <div class="c-title">Cozy Tycoon</div>
           <div class="c-round" id="roundTxt">Pusingan 1/20</div>
           <div class="c-turn" id="turnTxt"></div>
-          <div class="dice" id="dice"><div class="die">1</div><div class="die">1</div></div>
-          <button id="rollBtn" class="btn pink" type="button">🎲 BALING</button>
-          <div class="log" id="log"></div>
         </div>
         <div class="tokens" id="tokens"></div>
       </div>
+      <button id="camBtn" class="cam-btn" type="button" aria-label="Zoom kamera">🔍</button>
+    </div>
+    <div class="hud">
+      <div class="hud-turn" id="hudTurn"></div>
+      <div class="dice" id="dice"><div class="die"></div><div class="die"></div></div>
+      <button id="rollBtn" class="btn pink" type="button">🎲 BALING</button>
+      <div class="log" id="log"></div>
     </div>
   </main>
 
