@@ -308,7 +308,7 @@ function renderAll() {
   });
   G.players.forEach((p, k) => placeToken(k, p.pos));
   const p = cur();
-  $('roundTxt').textContent = `Pusingan ${Math.min(G.round, G.maxRounds)}/${G.maxRounds}`;
+  $('roundTxt').textContent = G.maxRounds ? `Pusingan ${Math.min(G.round, G.maxRounds)}/${G.maxRounds}` : `Pusingan ${G.round} · sampai tinggal sorang`;
   $('turnTxt').innerHTML = `${avatar(p.ci)} Giliran ${p.ai === null && G.players.filter(x => x.ai === null).length === 1 ? 'kau!' : (p.ai !== null ? AIS[p.ai].name : CHARS[p.ci].name)}`;
   $('log').innerHTML = G.log.slice(0, 3).map(l => `<div>${l}</div>`).join('');
   [...$('dice').children].forEach((d, i) => { if (!d.classList.contains('spin')) setDie(d, G.dice[i]); });
@@ -401,10 +401,10 @@ async function nextTurn(first) {
   if (G.over) return;
   if (!first) {
     let n = G.turn;
-    do { n = (n + 1) % G.players.length; if (n === 0) { G.round++; G.round <= G.maxRounds && setTimeout(folkChatter, 400); } } while (G.players[n].out);
+    do { n = (n + 1) % G.players.length; if (n === 0) { G.round++; (!G.maxRounds || G.round <= G.maxRounds) && setTimeout(folkChatter, 400); } } while (G.players[n].out);
     G.turn = n;
   }
-  if (G.round > G.maxRounds || alive().length < 2) return endGame();
+  if ((G.maxRounds && G.round > G.maxRounds) || alive().length < 2) return endGame();
   renderAll(); save();
   const p = cur();
   if (p.sleep > 0) {
