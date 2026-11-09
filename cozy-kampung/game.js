@@ -1,5 +1,5 @@
 'use strict';
-/* Cozy Kampung Plot — Dots and Boxes, tema kampung.
+/* Titik Titik — Dots and Boxes gaya kertas buku latihan zaman sekolah.
    Art: semua dilukis guna SVG. Kalau ada sprite dalam sprites/list.json, sprite tu ganti lukisan SVG. */
 const GAME_VERSION = 'v1';
 const $ = s => document.querySelector(s);
@@ -10,11 +10,11 @@ const store = {
 };
 
 /* ---------- Watak ---------- */
-const P1 = { name: 'Mimi', emoji: '🐱', sprite: 'av_mimi', color: '#e0574a', roof: 'merah' };
-const P2 = { name: 'Pipi', emoji: '🐼', sprite: 'av_pipi', color: '#3b7dd8', roof: 'biru' };
+const P1 = { name: 'Mimi', emoji: '🐱', sprite: 'av_mimi', color: '#2346b0', roof: 'biru' };
+const P2 = { name: 'Pipi', emoji: '🐼', sprite: 'av_pipi', color: '#d1342f', roof: 'merah' };
 const AIS = {
   easy: { name: 'Koko', emoji: '🐤', sprite: 'av_koko', label: 'Senang', talk: { cap: ['Yeay dapat! 🐣', 'Ciap ciap!'], win: ['Koko menang?! Ciap!'], lose: ['Alaa... tahniah! 🐥'] } },
-  medium: { name: 'Bubu', emoji: '🐰', sprite: 'av_bubu', label: 'Sederhana', talk: { cap: ['Hehe, plot ni Bubu punya~', 'Hop hop!'], win: ['Bubu menang! 🥕'], lose: ['Pandai la awak!'] } },
+  medium: { name: 'Bubu', emoji: '🐰', sprite: 'av_bubu', label: 'Sederhana', talk: { cap: ['Hehe, kotak ni Bubu punya~', 'Hop hop!'], win: ['Bubu menang! 🥕'], lose: ['Pandai la awak!'] } },
   hard: { name: 'Sensei Belang', emoji: '🐯', sprite: 'av_belang', label: 'Susah', talk: { cap: ['Grrr... sedap.', 'Semua ni aku punya 😼'], dc: ['Nah, ambik la 2 kotak tu... hehe 😼', 'Hadiah untuk kau. Percuma... kononnya.'], win: ['Sensei sentiasa menang. 🐯'], lose: ['Hmm... kau dah belajar rupanya.'] } }
 };
 const SPR = {}; // nama -> url
@@ -50,67 +50,6 @@ function el(tag, attrs = {}, parent) {
   for (const k in attrs) e.setAttribute(k, attrs[k]);
   if (parent) parent.appendChild(e); return e;
 }
-// Semua objek dilukis dalam kotak 100x100 (tapak di bawah, y~92)
-const ART = {
-  rumah(color) {
-    return `<ellipse cx="50" cy="93" rx="38" ry="6" fill="#00000022"/>
-    <g stroke="#6b4423" stroke-width="2.5" stroke-linejoin="round">
-    <rect x="24" y="74" width="5" height="18" fill="#8a5a33"/><rect x="71" y="74" width="5" height="18" fill="#8a5a33"/><rect x="47" y="74" width="5" height="18" fill="#8a5a33"/>
-    <path d="M40 92 l6 -18 h8 l6 18" fill="none" stroke-width="2"/>
-    <rect x="20" y="48" width="60" height="28" rx="2" fill="#d9a066"/>
-    <path d="M20 56h60M20 64h60" stroke="#b97f45" stroke-width="1.5"/>
-    <rect x="30" y="54" width="13" height="13" rx="2" fill="#ffe9a8"/><rect x="57" y="54" width="13" height="13" rx="2" fill="#ffe9a8"/>
-    <path d="M36.5 54v13M63.5 54v13" stroke-width="1.5"/>
-    <path d="M10 50 L50 18 L90 50 Z" fill="${color}"/>
-    <path d="M44 23 L50 10 L56 23" fill="${color}"/></g>
-    <path d="M22 46 L50 24" stroke="#ffffff77" stroke-width="3" stroke-linecap="round"/>`;
-  },
-  pisang() {
-    return `<ellipse cx="50" cy="93" rx="26" ry="5" fill="#00000022"/>
-    <g class="sway"><path d="M47 92 Q45 60 50 38 Q55 60 53 92Z" fill="#8fae4a" stroke="#5e7a2a" stroke-width="2.5"/>
-    <g fill="#7cc24a" stroke="#4f8a2a" stroke-width="2.5" stroke-linejoin="round">
-    <path d="M50 40 Q30 18 8 30 Q28 34 50 44Z"/><path d="M50 40 Q72 16 94 28 Q72 34 50 44Z"/>
-    <path d="M50 38 Q40 8 22 6 Q34 24 48 42Z"/><path d="M50 38 Q62 8 80 8 Q66 24 52 42Z"/></g>
-    <g fill="#f4d23c" stroke="#b3901a" stroke-width="1.5"><path d="M54 50 q8 2 8 10 q-6 -2 -8 -10z"/><path d="M54 56 q9 3 7 12 q-6 -3 -7 -12z"/></g></g>`;
-  },
-  kelapa() {
-    return `<ellipse cx="46" cy="93" rx="24" ry="5" fill="#00000022"/>
-    <g class="sway"><path d="M40 92 Q44 60 58 30 L64 32 Q52 62 48 92Z" fill="#b98652" stroke="#6b4423" stroke-width="2.5"/>
-    <path d="M44 80h8M46 68h8M49 56h9M53 44h8" stroke="#8a5a33" stroke-width="2"/>
-    <g fill="#5fb84a" stroke="#3b7a2a" stroke-width="2.5" stroke-linejoin="round">
-    <path d="M61 30 Q40 12 16 26 Q38 24 60 34Z"/><path d="M61 30 Q82 10 96 30 Q80 24 62 34Z"/>
-    <path d="M61 30 Q56 6 36 4 Q52 14 58 32Z"/><path d="M61 30 Q76 40 84 58 Q70 42 60 34Z"/><path d="M61 30 Q46 42 36 58 Q48 40 60 33Z"/></g>
-    <circle cx="57" cy="36" r="5" fill="#7a4a22"/><circle cx="65" cy="37" r="5" fill="#7a4a22"/></g>`;
-  },
-  reban() {
-    return `<ellipse cx="50" cy="93" rx="36" ry="5" fill="#00000022"/>
-    <g stroke="#6b4423" stroke-width="2.5" stroke-linejoin="round">
-    <rect x="22" y="56" width="48" height="34" fill="#e3b77a"/><path d="M30 56v34M38 56v34M46 56v34M54 56v34M62 56v34" stroke="#c4955a" stroke-width="2"/>
-    <path d="M16 58 L46 36 L76 58Z" fill="#c8693f"/><path d="M38 90 v-16 q8 -8 16 0 v16z" fill="#5a3a20"/></g>
-    <g stroke="#b3741a" stroke-width="2"><ellipse cx="80" cy="84" rx="10" ry="9" fill="#ffd94a"/><circle cx="83" cy="73" r="7" fill="#ffd94a"/></g>
-    <circle cx="85" cy="72" r="1.6" fill="#3a2a1a"/><path d="M89 74 l5 1 -5 2z" fill="#f08a2a"/><path d="M82 66 q1 -4 4 -3" stroke="#e05a4a" stroke-width="3" fill="none" stroke-linecap="round"/>`;
-  },
-  wakaf() {
-    return `<ellipse cx="50" cy="93" rx="36" ry="5" fill="#00000022"/>
-    <g stroke="#6b4423" stroke-width="2.5" stroke-linejoin="round">
-    <rect x="22" y="48" width="5" height="44" fill="#8a5a33"/><rect x="73" y="48" width="5" height="44" fill="#8a5a33"/>
-    <rect x="18" y="72" width="64" height="7" rx="2" fill="#c48a55"/>
-    <path d="M10 50 L50 20 L90 50Z" fill="#a8763f"/><path d="M50 20 l0 -8" /></g>
-    <path d="M16 50 Q30 56 50 50 Q70 56 84 50" stroke="#e8c27a" stroke-width="3" fill="none"/>
-    <circle cx="50" cy="11" r="3" fill="#f6b93b" stroke="#6b4423" stroke-width="2"/>`;
-  },
-  // Pancang (titik)
-  pancang() {
-    return `<ellipse cx="0" cy="6" rx="9" ry="4" fill="#00000030"/><rect x="-6" y="-12" width="12" height="18" rx="4" fill="#9a6538" stroke="#5e3b1f" stroke-width="2.5"/><ellipse cx="0" cy="-12" rx="6" ry="3" fill="#d8a06a" stroke="#5e3b1f" stroke-width="2"/>`;
-  },
-  rumput() {
-    return `<path d="M0 0 q2 -7 3 0 q2 -9 3 0 q2 -6 3 0" fill="none" stroke="#7fbd55" stroke-width="2" stroke-linecap="round"/>`;
-  },
-  bunga(c) {
-    return `<g><circle cx="0" cy="0" r="2.6" fill="${c}"/><circle cx="0" cy="0" r="1.1" fill="#fff6c4"/></g>`;
-  }
-};
-
 /* ---------- Avatar ---------- */
 function avHTML(who) { return SPR[who.sprite] ? `<img src="${SPR[who.sprite]}" alt="">` : who.emoji; }
 
@@ -121,7 +60,11 @@ function renderMenu() {
   document.querySelectorAll('#sizeSeg button').forEach(b => b.classList.toggle('on', +b.dataset.v === S.size));
   $('#levelBox').classList.toggle('hidden', S.mode !== 'ai');
   $('#levelSeg').innerHTML = Object.keys(AIS).map(k => `<button data-v="${k}" type="button" class="${k === S.level ? 'on' : ''}"><span class="av">${avHTML(AIS[k])}</span>${AIS[k].name}<small>${AIS[k].label}</small></button>`).join('');
-  $('#titleArt').innerHTML = `<svg viewBox="0 0 240 110">${['<g transform="translate(0,8)">' + ART.kelapa() + '</g>', '<g transform="translate(70,0) scale(1.05)">' + ART.rumah(P1.color) + '</g>', '<g transform="translate(140,10) scale(.95)">' + ART.reban() + '</g>'].join('')}</svg>`;
+  $('#titleArt').innerHTML = `<svg viewBox="0 0 200 110"><g stroke-linecap="round" fill="none" stroke-width="4">
+    <path d="M30 20 Q65 18 100 21" stroke="${P1.color}"/><path d="M30 20 Q28 55 31 90" stroke="${P2.color}"/><path d="M100 21 Q102 55 99 90" stroke="${P1.color}"/><path d="M31 90 Q65 92 99 90" stroke="${P2.color}"/>
+    <path d="M100 21 Q135 19 170 22" stroke="${P2.color}"/><path d="M170 22 Q168 40 171 56" stroke="${P1.color}" stroke-dasharray="4 7"/></g>
+    <text x="65" y="68" text-anchor="middle" font-family="Caveat" font-size="44" fill="${P2.color}" transform="rotate(-6 65 60)">P</text>
+    ${[[30,20],[100,21],[170,22],[31,90],[99,90],[171,56],[170,90]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="5" fill="#1d2440"/>`).join('')}</svg>`;
   $('#soundBtn').textContent = soundOn ? '🔊' : '🔇';
 }
 $('#modeSeg').onclick = e => { const b = e.target.closest('button'); if (!b) return; S.mode = b.dataset.v; store.set('settings', S); renderMenu(); };
@@ -168,15 +111,14 @@ function buildBoard() {
   const { n, N, ends } = G.geo, W = n * CS + PAD * 2, svg = $('#board');
   svg.setAttribute('viewBox', `0 0 ${W} ${W}`); svg.innerHTML = '';
   const defs = el('defs', {}, svg);
-  defs.innerHTML = `<radialGradient id="gr" cx=".5" cy=".4" r=".7"><stop offset="0" stop-color="#c4ec9c"/><stop offset="1" stop-color="#a9db80"/></radialGradient>`;
+  
   const ground = el('g', {}, svg);
   // rumput dan bunga hiasan (tetap ikut seed supaya tak berubah bila render semula)
-  let seed = n * 977;
+  let seed = n * 977 + 1;
   const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
   for (let b = 0; b < n * n; b++) {
     const r = Math.floor(b / n), c = b % n, x = PAD + c * CS, y = PAD + r * CS;
-    el('rect', { x: x + 3, y: y + 3, width: CS - 6, height: CS - 6, rx: 12, fill: 'url(#gr)', class: 'plot-tint', id: 'plot' + b }, ground);
-    for (let i = 0; i < 3; i++) { const g = el('g', { transform: `translate(${x + 15 + rnd() * 62},${y + 20 + rnd() * 66})` }, ground); g.innerHTML = rnd() < .7 ? ART.rumput() : ART.bunga(['#ff8fb1', '#fff', '#ffd23f'][Math.floor(rnd() * 3)]); }
+    el('rect', { x: x + 4, y: y + 4, width: CS - 8, height: CS - 8, fill: 'transparent', class: 'plot-tint', id: 'plot' + b }, ground);
   }
   G.objLayer = el('g', {}, svg);
   G.fenceLayer = el('g', {}, svg);
@@ -190,7 +132,7 @@ function buildBoard() {
     G.hits[l] = g;
   }
   const dotLayer = el('g', {}, svg);
-  for (let r = 0; r <= n; r++) for (let c = 0; c <= n; c++) { const g = el('g', { transform: `translate(${PAD + c * CS},${PAD + r * CS + 4})` }, dotLayer); g.innerHTML = ART.pancang(); }
+  for (let r = 0; r <= n; r++) for (let c = 0; c <= n; c++) { el('circle', { cx: PAD + c * CS + (rnd() - .5) * 2, cy: PAD + r * CS + (rnd() - .5) * 2, r: 5.5 + rnd(), fill: '#1d2440' }, dotLayer); }
   // lukis semula state sedia ada (contoh: lepas sprite load)
   for (let l = 0; l < N; l++) if (G.L[l]) drawFence(l, false);
   G.owner.forEach((o, b) => { if (o >= 0) drawPlot(b, o, false); });
@@ -201,44 +143,26 @@ function drawFence(l, anim = true) {
   const { ends } = G.geo, [r1, c1, r2, c2] = ends[l];
   const x1 = PAD + c1 * CS, y1 = PAD + r1 * CS, x2 = PAD + c2 * CS, y2 = PAD + r2 * CS, horiz = r1 === r2;
   G.hits[l].style.display = 'none';
-  const tie = G.who[G.lineOwner[l]].color;
-  const g = el('g', { class: 'fence', id: 'f' + l, style: `--len:${CS}` }, G.fenceLayer);
-  const a = { x1, y1, x2, y2, 'stroke-linecap': 'round' };
-  el('line', { ...a, stroke: tie, 'stroke-width': 20, class: 'glow' }, g);
-  el('line', { ...a, stroke: '#9c7a2c', 'stroke-width': 12, class: anim ? 'pole' : '' }, g);
-  el('line', { ...a, stroke: '#e9c96a', 'stroke-width': 7, class: anim ? 'pole' : '' }, g);
-  el('line', { ...a, stroke: '#fff3b8', 'stroke-width': 2, transform: horiz ? 'translate(0,-2)' : 'translate(-2,0)', class: anim ? 'pole' : '' }, g);
-  // ruas buluh + ikatan warna pemain
-  [.33, .66].forEach(t => {
-    const x = x1 + (x2 - x1) * t, y = y1 + (y2 - y1) * t;
-    el('line', horiz ? { x1: x, y1: y - 6, x2: x, y2: y + 6 } : { x1: x - 6, y1: y, x2: x + 6, y2: y }, g).setAttribute('style', 'stroke:#8a6a22;stroke-width:2.5');
-  });
-  const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
-  el('rect', horiz ? { x: mx - 4, y: my - 7, width: 8, height: 14, rx: 3, fill: tie } : { x: mx - 7, y: my - 4, width: 14, height: 8, rx: 3, fill: tie }, g);
-  if (!anim) g.querySelectorAll('.pole').forEach(p => p.classList.remove('pole'));
+  const ink = G.who[G.lineOwner[l]].color;
+  // garisan tangan: sikit bengkok, hujung tak tepat sangat (tetap ikut nombor garisan)
+  const w = k => (Math.sin(l * 12.9898 + k * 78.233) * 43758.5453 % 1);
+  const j = () => w(1) * 5, mx = (x1 + x2) / 2 + (horiz ? 0 : j()), my = (y1 + y2) / 2 + (horiz ? j() : 0);
+  const d = `M${x1 + w(2) * 3} ${y1 + w(3) * 3} Q${mx} ${my} ${x2 + w(4) * 3} ${y2 + w(5) * 3}`;
+  const g = el('g', { class: 'fence', id: 'f' + l, style: `--len:${CS + 10}` }, G.fenceLayer);
+  el('path', { d, stroke: '#fff27a', 'stroke-width': 18, fill: 'none', 'stroke-linecap': 'round', class: 'glow' }, g);
+  el('path', { d, stroke: ink, 'stroke-width': 5, fill: 'none', 'stroke-linecap': 'round', opacity: .92, class: anim ? 'pole' : '' }, g);
 }
 function markLast() {
   document.querySelectorAll('.fence.last').forEach(f => f.classList.remove('last'));
   if (G.last >= 0) { const f = document.getElementById('f' + G.last); if (f) f.classList.add('last'); }
 }
-function pickObj(b, owner) {
-  if (G.objs[b]) return G.objs[b];
-  const r = Math.random();
-  return (G.objs[b] = r < .45 ? 'rumah' : r < .62 ? 'pisang' : r < .77 ? 'kelapa' : r < .9 ? 'reban' : 'wakaf');
-}
 function drawPlot(b, owner, anim = true) {
   const n = G.geo.n, r = Math.floor(b / n), c = b % n, x = PAD + c * CS, y = PAD + r * CS, who = G.who[owner];
-  const tint = document.getElementById('plot' + b);
-  tint.setAttribute('fill', owner === 0 ? '#f7c7b4' : '#bfd6f7');
-  const kind = pickObj(b, owner);
-  const outer = el('g', { transform: `translate(${x},${y})` }, G.objLayer);
+  const rot = (Math.sin(b * 91.7) * 9).toFixed(1);
+  const outer = el('g', { transform: `translate(${x + 50},${y + 50}) rotate(${rot})` }, G.objLayer);
   const inner = el('g', { class: anim ? 'obj-in' : '' }, outer);
-  const sprName = kind === 'rumah' ? 'rumah_' + who.roof : kind;
-  if (SPR[sprName]) el('image', { href: SPR[sprName], x: 6, y: 4, width: 88, height: 92 }, inner);
-  else inner.innerHTML = `<g transform="translate(8,6) scale(.84)">${ART[kind](who.color)}</g>`;
-  // bendera kecil penanda pemilik (selain rumah yang dah ada warna bumbung)
-  if (kind !== 'rumah') { const f = el('g', { transform: 'translate(12,14)' }, inner); f.innerHTML = `<path d="M0 0v26" stroke="#6b4423" stroke-width="2.5"/><path d="M1 1 l16 5 -16 6z" fill="${who.color}" stroke="#6b4423" stroke-width="1.5"/>`; }
-  if (anim) { const s = el('text', { x: x + 50, y: y + 40, 'text-anchor': 'middle', 'font-size': 28, class: 'spark' }, G.objLayer); s.textContent = '✨'; setTimeout(() => s.remove(), 800); }
+  const t = el('text', { x: 0, y: 22, 'text-anchor': 'middle', 'font-family': 'Caveat, cursive', 'font-weight': 700, 'font-size': 66, fill: who.color, opacity: .9 }, inner);
+  t.textContent = who.name[0].toUpperCase();
 }
 
 /* ---------- HUD ---------- */
@@ -252,7 +176,7 @@ function updateHud() {
     p.classList.toggle('on', !G.over && G.turn === i);
   });
   const left = G.geo.n ** 2 - G.score[0] - G.score[1];
-  $('#turnLbl').innerHTML = G.over ? 'Kampung dah siap! 🎉' : isAiTurn() ? `${G.who[1].name} tengah fikir... 🤔` : `Giliran <b style="color:${G.who[G.turn].color}">${G.who[G.turn].name}</b> · ${left} plot lagi`;
+  $('#turnLbl').innerHTML = G.over ? 'Semua kotak dah penuh! 🎉' : isAiTurn() ? `${G.who[1].name} tengah fikir... 🤔` : `Giliran <b style="color:${G.who[G.turn].color}">${G.who[G.turn].name}</b> · ${left} kotak lagi`;
 }
 function toast(t) { const e = $('#toast'); e.textContent = t; e.classList.remove('show'); void e.offsetWidth; e.classList.add('show'); }
 let bubbleT = 0;
@@ -292,7 +216,7 @@ function endGame() {
     const w = win < 0 ? null : G.who[win];
     $('#endAv').innerHTML = w ? avHTML(w) : '🤝';
     $('#endTitle').textContent = w ? (G.ai && win === 1 ? `${w.name} menang!` : `${w.name} menang! 🎉`) : 'Seri!';
-    $('#endText').textContent = `${G.who[0].name} ${a} plot · ${G.who[1].name} ${b} plot` + (w ? ` — kampung ${w.name} lagi besar!` : ' — kampung sama besar!');
+    $('#endText').textContent = `${G.who[0].name} ${a} kotak · ${G.who[1].name} ${b} kotak` + (w ? '' : ' — sama banyak!');
     $('#endModal').classList.remove('hidden');
     if (G.ai && win === 1) { SFX.lose(); say('win'); } else { SFX.win(); if (G.ai) say('lose'); }
     if (G.ai && win === 0) { const k = 'wins_' + S.level; store.set(k, store.get(k, 0) + 1); }

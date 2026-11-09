@@ -84,3 +84,40 @@ button{font-family:inherit;cursor:pointer;color:inherit}
 .end-av{width:96px;height:96px;margin:0 auto;font-size:72px;line-height:96px}
 .modal-card h2{font:normal 30px "Lilita One",sans-serif;color:#5b7f35;margin:6px 0}
 .modal-card p{margin:0 0 16px;color:#7d6a52}
+
+/* ===== Gaya kertas buku latihan ===== */
+body{background:#e9e2cf url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='6'%3E%3Ccircle cx='1' cy='1' r='.6' fill='%23d6cdb4'/%3E%3C/svg%3E");color:#1d2440;font-family:"Patrick Hand","Nunito",system-ui,sans-serif}
+.view,.topbar{font-family:"Patrick Hand","Nunito",sans-serif}
+.brand strong,#menu h1,.pcard .sc,.vs,.modal-card h2{font-family:"Caveat",cursive;font-weight:700}
+.brand strong{font-size:28px;color:#1d2440}.brand small{color:#9a8f73}
+#menu h1{font-size:clamp(46px,13vw,64px);color:#1d2440;text-shadow:none;transform:rotate(-2deg)}
+.tag{font-size:17px;color:#5a5340}
+.hub-link{background:#1d2440;box-shadow:0 3px 0 #000}
+.icon-btn{box-shadow:0 3px 0 #cfc5a8}
+.title-art svg{animation:none}
+.card,.pcard,.modal-card{background:#fffef8;border:0;border-radius:6px;box-shadow:0 2px 0 #d8cfb5,0 10px 20px #5a4b2a22}
+.card h3{font-family:"Patrick Hand";font-size:16px;color:#d1342f;letter-spacing:.5px}
+.seg button,.ai-pick button{background:#f5f0e1;box-shadow:0 2px 0 #d8cfb5;border-radius:8px;font-family:"Patrick Hand";font-weight:400;font-size:17px;border:2px solid transparent}
+.seg button.on{background:#fffef8;color:#2346b0;border:2px solid #2346b0;box-shadow:none}
+.ai-pick button.on{background:#fffef8;border:2px solid #d1342f;box-shadow:none}
+.btn{font-family:"Patrick Hand";font-weight:400;border-radius:8px;box-shadow:0 3px 0 #cfc5a8}
+.btn.gold{background:#2346b0;color:#fff;box-shadow:0 4px 0 #142a70;font-size:22px}
+.tip{background:#fff6a8}
+.pcard{border-radius:8px;border:2px solid transparent}
+.pcard .nm{font-size:15px;font-weight:400}.pcard .sc{font-size:32px}
+.pcard.on{border-color:var(--pc);box-shadow:0 0 0 3px #fff,0 6px 14px #5a4b2a33}
+.turn{font-size:16px;font-weight:400;color:#5a5340}
+/* kertas */
+.board-wrap{border-radius:3px;padding:10px 6px 10px 26px;transform:rotate(-.6deg);
+  background:linear-gradient(90deg,transparent 18px,#ef8a8a 18px,#ef8a8a 20px,transparent 20px),repeating-linear-gradient(180deg,#fffef8 0,#fffef8 23px,#bcd3ef 23px,#bcd3ef 24px);
+  box-shadow:0 1px 0 #e4dcc6,0 14px 28px #4a3d1f33}
+.board-wrap:before,.board-wrap:after{content:"";position:absolute;top:-10px;width:70px;height:22px;background:#f5e9b0cc;box-shadow:0 1px 2px #0002}
+.board-wrap:before{left:18%;transform:rotate(-5deg)}.board-wrap:after{right:16%;transform:rotate(4deg)}
+.guide{stroke:#1d244022;stroke-width:3;stroke-dasharray:1 9}
+.hit:hover+.guide,.hit.hov+.guide{stroke:#1d244055;stroke-width:4;stroke-dasharray:6 6}
+.fence .pole{stroke-dasharray:var(--len);stroke-dashoffset:var(--len);animation:draw .22s ease-out forwards}
+.fence.last .glow{opacity:.85;animation:none}
+.toast{font-family:"Caveat",cursive;font-weight:700;font-size:44px;color:#d1342f;text-shadow:2px 2px 0 #fff}
+.bubble{font-family:"Patrick Hand";font-weight:400;font-size:16px;border-radius:8px}
+.modal{background:#2a241888}
+.modal-card p{font-size:17px}
