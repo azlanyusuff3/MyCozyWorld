@@ -245,7 +245,7 @@ function newGame() {
   if (cfg.mode === 'ai') {
     const others = [0, 1, 2, 3].filter(i => i !== cfg.char);
     players.push({ name: 'Kau', ci: cfg.char, ai: null });
-    others.forEach((ci, k) => players.push({ name: AIS[k].name, ci, ai: k }));
+    others.forEach((ci, k) => players.push({ name: CHARS[ci].name, ci, ai: k }));
   } else {
     const order = [cfg.char, ...[0, 1, 2, 3].filter(i => i !== cfg.char)].slice(0, cfg.count);
     order.forEach((ci, k) => players.push({ name: 'Pemain ' + (k + 1) + ' · ' + CHARS[ci].name, ci, ai: null }));
@@ -324,7 +324,7 @@ function renderAll() {
   if (!G || !$('board').querySelector('.tile')) return;
   $('players').style.gridTemplateColumns = `repeat(${G.players.length},1fr)`;
   $('players').innerHTML = G.players.map((p, k) =>
-    `<div class="pchip ${k === G.turn ? 'turn' : ''} ${p.out ? 'out' : ''}" style="border-color:${k === G.turn ? CHARS[p.ci].color : '#fff'}">${p.sleep ? '<i class="zz">💤</i>' : ''}${avatar(p.ci)}<b>${p.ai !== null ? AIS[p.ai].name.split(' ').pop() : (G.players.filter(x => x.ai === null).length > 1 ? CHARS[p.ci].name : 'Kau')}</b><span>${p.out ? 'Bankrap' : rm(p.money)}</span></div>`).join('');
+    `<div class="pchip ${k === G.turn ? 'turn' : ''} ${p.out ? 'out' : ''}" style="border-color:${k === G.turn ? CHARS[p.ci].color : '#fff'}">${p.sleep ? '<i class="zz">💤</i>' : ''}${avatar(p.ci)}<b>${p.ai !== null ? CHARS[p.ci].name : (G.players.filter(x => x.ai === null).length > 1 ? CHARS[p.ci].name : 'Kau')}</b><span>${p.out ? 'Bankrap' : rm(p.money)}</span></div>`).join('');
   TILES.forEach((t, i) => {
     const el = $('tile' + i), o = G.own[i];
     el.classList.toggle('owned', o !== null);
@@ -334,7 +334,7 @@ function renderAll() {
   G.players.forEach((p, k) => placeToken(k, p.pos));
   const p = cur();
   $('roundTxt').textContent = G.maxRounds ? `Pusingan ${Math.min(G.round, G.maxRounds)}/${G.maxRounds}` : `Pusingan ${G.round} · sampai tinggal sorang`;
-  $('turnTxt').innerHTML = `${avatar(p.ci)} Giliran ${p.ai === null && G.players.filter(x => x.ai === null).length === 1 ? 'kau!' : (p.ai !== null ? AIS[p.ai].name : CHARS[p.ci].name)}`;
+  $('turnTxt').innerHTML = `${avatar(p.ci)} Giliran ${p.ai === null && G.players.filter(x => x.ai === null).length === 1 ? 'kau!' : (p.ai !== null ? CHARS[p.ci].name : CHARS[p.ci].name)}`;
   $('log').innerHTML = G.log.slice(0, 3).map(l => `<div>${l}</div>`).join('');
   [...$('dice').children].forEach((d, i) => { if (!d.classList.contains('spin')) setDie(d, G.dice[i]); });
   $('hudTurn').innerHTML = $('turnTxt').innerHTML;
@@ -390,7 +390,7 @@ function propHtml(i) {
 function tileDesc(t) {
   return { go: 'Lalu sini dapat RM200!', rezeki: 'Ambil kad Rezeki — selalunya best!', musibah: 'Ambil kad Musibah — alamak...', tax: `Bayar ${rm(t.amt)}.`, jail: 'Rumah Tok Wan. Kalau singgah je, takpe. Kalau tertidur, rehat 1 giliran.', gojail: 'Mengantuk! Terus pergi tidur kat Rumah Tok Wan.', kenduri: 'Kenduri kahwin! Semua orang bagi salam berisi RM20 kat kau.' }[t.t] || '';
 }
-const pname = p => p.ai !== null ? AIS[p.ai].name : (G.players.filter(x => x.ai === null).length === 1 ? 'Kau' : CHARS[p.ci].name);
+const pname = p => p.ai !== null ? CHARS[p.ci].name : (G.players.filter(x => x.ai === null).length === 1 ? 'Kau' : CHARS[p.ci].name);
 function showTileInfo(i) { if (!G) return; modal(propHtml(i), []); }
 
 /* ---------- Money ---------- */
