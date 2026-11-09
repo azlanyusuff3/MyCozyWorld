@@ -182,22 +182,22 @@ $('resumeBtn').onclick = () => { G = load(); if (G) startPlay(); };
 
 function startPlay() {
   $('menu').classList.add('hidden'); $('play').classList.remove('hidden');
-  buildBoard(); renderAll(); cam(cur().pos, true); save(); nextTurn(true);
+  buildBoard(); renderAll(); save(); nextTurn(true);
 }
 
 /* ---------- Render ---------- */
 const PIPS = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
 function setDie(el, n) { el.innerHTML = [...Array(9)].map((_, i) => `<i class="${PIPS[n].includes(i) ? 'on' : ''}"></i>`).join(''); }
-/* camera: zoom board & follow a tile */
-function cam(pos, instant) {
-  const b = $('board'), W = $('boardWrap').clientWidth;
-  b.style.setProperty('--cam', instant ? '0s' : (pos === null ? '.6s' : (0.17 * SPD()) + 's'));
-  if (pos === null || !camOn) { b.style.transform = ''; return; }
-  const S = 2.1, [r, c] = tilePos(pos), cx = (c + .5) / 11 * W, cy = (r + .5) / 11 * W;
-  const cl = v => Math.min(0, Math.max(W - W * S, v));
-  b.style.transform = `translate(${cl(W / 2 - cx * S)}px,${cl(W / 2 - cy * S)}px) scale(${S})`;
+/* camera: pseudo-3D tilt toward moving token, then back flat */
+function cam(pos) {
+  const b = $('board');
+  G && G.players.forEach((q, j) => { const t = $('tok' + j); t && t.classList.toggle('active', pos !== null && j === G.turn); });
+  if (pos === null || !camOn) { b.style.transform = ''; b.classList.remove('tilt'); return; }
+  const [r, c] = tilePos(pos);
+  b.style.transformOrigin = `${(c + .5) / 11 * 100}% ${(r + .5) / 11 * 100}%`;
+  b.style.transform = 'rotateX(24deg) scale(1.22)'; b.classList.add('tilt');
 }
-$('camBtn').onclick = () => { camOn = !camOn; localStorage.setItem('cozyTycoonCam', camOn ? '1' : '0'); $('camBtn').classList.toggle('off', !camOn); beep(650); cam(G ? cur().pos : null); };
+$('camBtn').onclick = () => { camOn = !camOn; localStorage.setItem('cozyTycoonCam', camOn ? '1' : '0'); $('camBtn').classList.toggle('off', !camOn); beep(650); };
 $('camBtn').classList.toggle('off', !camOn);
 
 function buildBoard() {
@@ -325,7 +325,6 @@ async function nextTurn(first) {
   if (G.round > G.maxRounds || alive().length < 2) return endGame();
   renderAll(); save();
   const p = cur();
-  cam(p.pos);
   if (p.sleep > 0) {
     p.sleep--; log(`💤 ${pname(p)} masih tidur kat Rumah Tok Wan...`);
     await wait(1100); return nextTurn();
@@ -343,7 +342,7 @@ async function doRoll(dbl) {
   const a = 1 + (Math.random() * 6 | 0), b = 1 + (Math.random() * 6 | 0);
   G.dice = [a, b]; renderAll();
   log(`${pname(p)} dapat ${a} + ${b} = ${a + b}${a === b ? ' — DOUBLE! 🎉' : ''}`);
-  cam(p.pos); await wait(700);
+  await wait(300); cam(p.pos); await wait(450);
   await moveSteps(k, a + b);
   await landOn(k, a + b);
   if (G.over) return;
@@ -365,7 +364,7 @@ async function moveSteps(k, n) {
     await wait(230);
   }
   const t = $('tile' + p.pos); t.classList.remove('flash'); void t.offsetWidth; t.classList.add('flash');
-  await wait(450);
+  await wait(450); cam(null); await wait(350);
 }
 async function goTo(k, pos) {
   const p = G.players[k], steps = (pos - p.pos + 40) % 40;
