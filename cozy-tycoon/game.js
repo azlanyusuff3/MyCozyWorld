@@ -321,7 +321,7 @@ async function raiseCash(k) {
   }
   if (p.money < 0) {
     p.out = true; p.money = 0; log(`💸 ${pname(p)} dah bankrap!`);
-    await modal(`<div class="big-ic">😭</div><h2>${pname(p)} Bankrap!</h2><p>Duit habis... takpe, lain kali cuba lagi!</p>`, [{ label: 'OK' }], p.ai !== null ? 1800 : 0);
+    await modal(`<div class="big-ic">😭</div><h2>${pname(p)} Bankrap!</h2><p>Duit habis... takpe, lain kali cuba lagi!</p>`, [{ label: 'OK' }], p.ai !== null ? 10000 : 0);
   }
 }
 
