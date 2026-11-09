@@ -172,14 +172,16 @@ button{font-family:inherit;cursor:pointer}
 .token .shadow{position:absolute;left:15%;right:15%;bottom:-6%;height:22%;border-radius:50%;background:radial-gradient(#0005,transparent 70%)}
 .token.hop .stand img,.token.hop .stand svg{animation:hop .2s ease}
 .token.active .stand img,.token.active .stand svg{transform:scale(1.4) translateY(-6%)}
-/* 3D dice */
-.die{--h:22px;width:44px;height:44px;padding:0;background:none;box-shadow:none;perspective:300px;display:block;border-radius:0}
-.die .cube{position:relative;width:100%;height:100%;transform-style:preserve-3d}
-.die .cf{position:absolute;inset:0;background:linear-gradient(145deg,#fff,#fbe6ef);border-radius:9px;box-shadow:inset 0 0 0 2px #f4cddd;padding:7px;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);place-items:center;backface-visibility:hidden}
-.die .cf i{width:8px;height:8px}
-.die.land{animation:none}
+/* dice (2D, iPhone-safe) */
+.die{width:46px;height:46px;padding:0;background:none;box-shadow:none;display:block;border-radius:12px;position:relative}
+.die .face{width:100%;height:100%;background:linear-gradient(145deg,#fff 40%,#fbe3ee);border-radius:12px;box-shadow:inset 0 -4px 0 #f2c6d8,0 5px 0 #e0a9c1,0 8px 10px #b46a8c40;padding:8px;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);place-items:center}
+.die .face i{width:8px;height:8px;border-radius:50%;background:#e05f8d;visibility:hidden;box-shadow:inset 0 2px 0 #0003}.die .face i.on{visibility:visible}
+.die.img img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 5px 4px #b46a8c55)}
+.die.spin{animation:tumble .3s linear infinite}
+@keyframes tumble{0%{transform:translateY(0) rotate(0)}25%{transform:translateY(-10px) rotate(90deg)}50%{transform:translateY(0) rotate(180deg)}75%{transform:translateY(-6px) rotate(270deg)}100%{transform:translateY(0) rotate(360deg)}}
+.die.land{animation:land .35s cubic-bezier(.3,1.8,.5,1)}
 .hud .dice{gap:16px;padding:4px 6px}
-.die.spin{animation:none}
+
 
 .hud{position:relative}.hud .cam-btn{position:absolute;top:10px;right:10px;bottom:auto}
 .token{width:calc(100%/11*.78);height:calc(100%/11*1.0)}

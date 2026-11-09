@@ -20,3 +20,9 @@ Game dah boleh main tanpa gambar (watak chibi dilukis guna SVG). Bila nak tukar 
 ## Kad hub (pilihan)
 `assets/hub/card_tycoon.webp` (landscape 4:3), kemudian tambah `card_tycoon` dalam `assets/hub/list.json`:
 > Cute chibi kitten, bunny, panda and chick standing around a colourful Monopoly-style board game with Malaysian landmarks (KLCC, Menara KL, kampung house, pasar malam stall), big dice and gold coins, pastel pink and sky blue background, kawaii mobile game key art, no text.
+
+## Dadu (6 gambar)
+Fail: `dice_1.webp` hingga `dice_6.webp` (persegi 256×256, background transparent). Lepas tu tambah `"dice_1"` … `"dice_6"` dalam `list.json`.
+> Cute chunky 3D toy dice, glossy pastel pink-white plastic with soft rounded corners, viewed slightly from above at a 3/4 angle so the top and two sides are visible, the top-facing side shows exactly N dots (round hot-pink dots), soft drop shadow underneath, kawaii mobile game style, transparent background, no text.
+
+Tukar **N** ikut nombor fail (1–6). Pastikan sudut pandangan, warna dan saiz sama untuk semua 6.

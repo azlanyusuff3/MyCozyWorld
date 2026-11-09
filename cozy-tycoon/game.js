@@ -40,6 +40,7 @@ function chibi(c) {
 function avatar(ci) { const c = CHARS[ci]; return SPRITES[c.id] ? `<img src="${SPRITES[c.id]}" alt="">` : chibi(c); }
 fetch('sprites/list.json').then(r => r.ok ? r.json() : []).then(l => {
   CHARS.forEach(c => { if (l.indexOf('token_' + c.id) >= 0) SPRITES[c.id] = 'sprites/token_' + c.id + '.webp'; });
+  for (let n = 1; n <= 6; n++) if (l.indexOf('dice_' + n) >= 0) { DICE_IMG[n] = 'sprites/dice_' + n + '.webp'; new Image().src = DICE_IMG[n]; }
   renderMenu(); if (G) renderAll();
 }).catch(() => {});
 
@@ -112,6 +113,7 @@ function beep(f = 600, d = .08, type = 'triangle', v = .07) {
   if (!soundOn) return;
   try {
     AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+    if (AC.state !== 'running') AC.resume();
     const o = AC.createOscillator(), g = AC.createGain();
     o.type = type; o.frequency.value = f; g.gain.value = v;
     g.gain.exponentialRampToValueAtTime(.0001, AC.currentTime + d);
@@ -125,6 +127,18 @@ const sfx = {
   buy: () => [523, 659, 784].forEach((f, i) => setTimeout(() => beep(f, .1), i * 80)),
   win: () => [523, 659, 784, 1047, 784, 1047].forEach((f, i) => setTimeout(() => beep(f, .14), i * 120)),
 };
+// iPhone: unlock audio on first touch & play even when silent switch is on
+function unlockAudio() {
+  try {
+    if (navigator.audioSession) navigator.audioSession.type = 'playback';
+    AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+    AC.resume();
+    const b = AC.createBuffer(1, 1, 22050), src = AC.createBufferSource(); src.buffer = b; src.connect(AC.destination); src.start(0);
+    const a = new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAIlYAAESsAAACABAAZGF0YQAAAAA='); a.setAttribute('playsinline', ''); a.play().catch(() => {});
+  } catch (e) {}
+}
+['touchstart', 'touchend', 'pointerdown', 'click'].forEach(ev => document.addEventListener(ev, unlockAudio, { passive: true }));
+document.addEventListener('visibilitychange', () => { if (!document.hidden && AC) AC.resume(); });
 function updSoundBtn() { $('soundBtn').textContent = soundOn ? '🔊' : '🔇'; }
 $('soundBtn').onclick = () => { soundOn = !soundOn; localStorage.setItem('cozyTycoonSound', soundOn ? '1' : '0'); updSoundBtn(); beep(); };
 updSoundBtn();
@@ -187,18 +201,11 @@ function startPlay() {
 
 /* ---------- Render ---------- */
 const PIPS = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
-const FACE_ROT = { 1: [0, 0], 6: [0, 180], 3: [0, -90], 4: [0, 90], 2: [-90, 0], 5: [90, 0] };
-const FACE_POS = { 1: 'rotateY(0deg)', 6: 'rotateY(180deg)', 3: 'rotateY(90deg)', 4: 'rotateY(-90deg)', 2: 'rotateX(90deg)', 5: 'rotateX(-90deg)' };
-function setDie(el, n, spin) {
-  if (!el.querySelector('.cube')) {
-    el.innerHTML = `<div class="cube">${[1, 2, 3, 4, 5, 6].map(f => `<div class="cf" style="transform:${FACE_POS[f]} translateZ(var(--h))">${[...Array(9)].map((_, i) => `<i class="${PIPS[f].includes(i) ? 'on' : ''}"></i>`).join('')}</div>`).join('')}</div>`;
-    el._sx = 0; el._sy = 0;
-  }
-  const cube = el.querySelector('.cube');
-  if (spin) { el._sx += 720 + 360 * (Math.random() * 2 | 0); el._sy += 720 + 360 * (Math.random() * 2 | 0); }
-  cube.style.transition = spin ? 'transform 1.1s cubic-bezier(.2,.9,.3,1.05)' : 'none';
-  const [rx, ry] = FACE_ROT[n];
-  cube.style.transform = `rotateX(-18deg) rotateY(22deg) rotateX(${rx + el._sx}deg) rotateY(${ry + el._sy}deg)`;
+const DICE_IMG = {};
+function setDie(el, n) {
+  if (DICE_IMG[n]) { el.classList.add('img'); el.innerHTML = `<img src="${DICE_IMG[n]}" alt="${n}">`; return; }
+  el.classList.remove('img');
+  el.innerHTML = `<div class="face">${[...Array(9)].map((_, i) => `<i class="${PIPS[n].includes(i) ? 'on' : ''}"></i>`).join('')}</div>`;
 }
 /* camera: pseudo-3D tilt toward moving token, then back flat */
 function cam(pos) {
@@ -350,8 +357,9 @@ $('rollBtn').onclick = () => { if (busy || !isHumanTurn()) return; busy = true; 
 async function doRoll(dbl) {
   const p = cur(), k = G.turn, dies = [...$('dice').children];
   const a = 1 + (Math.random() * 6 | 0), b = 1 + (Math.random() * 6 | 0);
-  dies.forEach((d, i) => { d.classList.add('spin'); setDie(d, [a, b][i], true); });
-  for (let i = 0; i < 9; i++) { beep(380 + i * 45, .03); await new Promise(r => setTimeout(r, 110)); }
+  dies.forEach(d => d.classList.add('spin'));
+  for (let i = 0; i < 10; i++) { dies.forEach(d => setDie(d, 1 + (Math.random() * 6 | 0))); beep(380 + i * 45, .03); await new Promise(r => setTimeout(r, 90)); }
+  dies.forEach((d, i) => setDie(d, [a, b][i]));
   dies.forEach(d => { d.classList.remove('spin'); d.classList.remove('land'); void d.offsetWidth; d.classList.add('land'); });
   G.dice = [a, b]; renderAll();
   log(`${pname(p)} dapat ${a} + ${b} = ${a + b}${a === b ? ' — DOUBLE! 🎉' : ''}`);
