@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="ms">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#ffb4c8">
+<title>Cozy Tycoon | MyCozyWorld</title>
+<link rel="manifest" href="../manifest.json">
+<link rel="icon" href="../assets/icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <header class="topbar">
+    <a class="hub-link" href="../" aria-label="Back to game hub">‹ GAMES</a>
+    <div class="brand"><small>MYCOZYWORLD</small><strong>Cozy Tycoon</strong></div>
+    <button id="soundBtn" class="icon-btn" type="button" aria-label="Sound">🔊</button>
+  </header>
+
+  <!-- MENU -->
+  <main id="menu" class="view">
+    <div class="title-chars" id="titleChars"></div>
+    <h1>Cozy Tycoon <span>🏠</span></h1>
+    <p class="tag">Baling dadu, beli gerai, jadi <b>jutawan comel</b> Malaysia!</p>
+    <button id="resumeBtn" class="btn gold hidden" type="button">▶ SAMBUNG GAME</button>
+
+    <section class="card">
+      <h3>Pilih watak kau</h3>
+      <div class="char-pick" id="charPick"></div>
+    </section>
+
+    <section class="card">
+      <h3>Cara main</h3>
+      <div class="seg" id="modeSeg"><button data-v="ai" class="on">Lawan AI</button><button data-v="local">Main Bersama</button></div>
+      <div class="row hidden" id="countRow"><span>Berapa orang?</span>
+        <div class="seg small" id="countSeg"><button data-v="2">2</button><button data-v="3">3</button><button data-v="4" class="on">4</button></div>
+      </div>
+      <div class="row"><span>Berapa pusingan?</span>
+        <div class="seg small" id="roundSeg"><button data-v="12">12</button><button data-v="20" class="on">20</button><button data-v="30">30</button></div>
+      </div>
+    </section>
+
+    <button id="startBtn" class="btn pink big" type="button">🎲 MULA MAIN</button>
+    <p class="hint">Siapa paling kaya bila pusingan habis — dia menang!</p>
+  </main>
+
+  <!-- GAME -->
+  <main id="play" class="view hidden">
+    <div class="players" id="players"></div>
+    <div class="board-wrap">
+      <div class="board" id="board">
+        <div class="center" id="center">
+          <div class="c-title">Cozy Tycoon</div>
+          <div class="c-round" id="roundTxt">Pusingan 1/20</div>
+          <div class="c-turn" id="turnTxt"></div>
+          <div class="dice" id="dice"><div class="die">1</div><div class="die">1</div></div>
+          <button id="rollBtn" class="btn pink" type="button">🎲 BALING</button>
+          <div class="log" id="log"></div>
+        </div>
+        <div class="tokens" id="tokens"></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- MODAL -->
+  <div id="modal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-card" id="modalCard"></div>
+  </div>
+  <div id="confetti"></div>
+</div>
+<script src="game.js"></script>
+</body>
+</html>
