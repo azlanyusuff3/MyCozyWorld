@@ -185,3 +185,4 @@ button{font-family:inherit;cursor:pointer}
 
 .hud{position:relative}.hud .cam-btn{position:absolute;top:10px;right:10px;bottom:auto}
 .token{width:calc(100%/11*.78);height:calc(100%/11*1.0)}
+.die.img{width:60px;height:60px;margin:-6px 0}.die.img.spin{animation-duration:.35s}
