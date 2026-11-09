@@ -41,8 +41,33 @@ function avatar(ci) { const c = CHARS[ci]; return SPRITES[c.id] ? `<img src="${S
 fetch('sprites/list.json').then(r => r.ok ? r.json() : []).then(l => {
   CHARS.forEach(c => { if (l.indexOf('token_' + c.id) >= 0) SPRITES[c.id] = 'sprites/token_' + c.id + '.webp'; });
   for (let n = 1; n <= 6; n++) if (l.indexOf('dice_' + n) >= 0) { DICE_IMG[n] = 'sprites/dice_' + n + '.webp'; new Image().src = DICE_IMG[n]; }
-  renderMenu(); if (G) renderAll();
+  l.forEach(n => { ART[n] = 'sprites/' + n + '.webp'; });
+  applyArt();
+  renderMenu(); if (G) { buildBoard(); renderAll(); }
 }).catch(() => {});
+/* ---------- Optional art from ChatGPT (see sprites/ART_BRIEF.md) ---------- */
+const ART = {};
+const SLUGS = ['go', 'cendol', 'rezeki', 'roticanai', 'bil_elektrik', 'lrt', 'pasarmalam', 'musibah', 'mamak', 'runcit',
+  'tokwan', 'melaka', 'air', 'ipoh', 'kuantan', 'ktm', 'kotabharu', 'rezeki', 'kterengganu', 'alorsetar',
+  'kenduri', 'cameron', 'musibah', 'genting', 'langkawi', 'ets', 'kuching', 'kk', 'elektrik', 'sandakan',
+  'tertidur', 'putrajaya', 'jb', 'rezeki', 'penang', 'feri', 'musibah', 'menarakl', 'saman', 'klcc'];
+const img = (n, cls) => `<img class="${cls || 'art'}" src="${ART[n]}" alt="" draggable="false">`;
+function tileIcon(i) { const n = 'tile_' + SLUGS[i]; return ART[n] ? img(n, 'ti') : TILES[i].ic; }
+function bldIcon(lv) { const n = 'bld_' + ['gerai', 'kedai', 'bangunan'][lv]; return ART[n] ? img(n, 'bi') : LVL_IC[lv]; }
+function applyArt() {
+  const root = document.documentElement.style;
+  if (ART.bg_menu) root.setProperty('--bg-menu', `url(sprites/bg_menu.webp)`);
+  if (ART.bg_game) root.setProperty('--bg-game', `url(sprites/bg_game.webp)`);
+  if (ART.board_center) root.setProperty('--board-center', `url(sprites/board_center.webp)`);
+  ['rezeki', 'musibah'].forEach(t => ['back', 'front'].forEach(f => { const n = `card_${t}_${f}`; if (ART[n]) root.setProperty('--' + n.replace(/_/g, '-'), `url(sprites/${n}.webp)`); }));
+  document.body.classList.toggle('has-art', !!(ART.bg_menu || ART.bg_game));
+  if (ART.logo_tycoon) {
+    const h = document.querySelector('#menu h1'); if (h) h.innerHTML = img('logo_tycoon', 'logo');
+    const c = document.querySelector('.c-title'); if (c) c.innerHTML = img('logo_tycoon', 'logo');
+  }
+  Object.keys(FOLK || {}).forEach(k => { if (ART['folk_' + k]) FOLK[k].img = ART['folk_' + k]; });
+  Object.values(ART).forEach(u => { new Image().src = u; });
+}
 
 /* ---------- Board ---------- */
 const SET = {
@@ -176,7 +201,7 @@ function notify(who, msg, voice) {
   const F = FOLK[who] || FOLK.kiah, box = $('toasts'); if (!box) return;
   const t = document.createElement('div');
   t.className = 'toast' + (who === 'ann' ? ' ann' : ''); t.style.setProperty('--c', F.c);
-  t.innerHTML = `<div class="face">${F.f}</div><div><b>${F.n}</b><span>${msg}</span></div>`;
+  t.innerHTML = `<div class="face">${F.img ? `<img src="${F.img}" alt="">` : F.f}</div><div><b>${F.n}</b><span>${msg}</span></div>`;
   t.onclick = () => t.remove();
   box.prepend(t);
   while (box.children.length > 2) box.lastChild.remove();
@@ -256,7 +281,7 @@ $('startBtn').onclick = () => { newGame(); startPlay(); };
 $('resumeBtn').onclick = () => { G = load(); if (G) startPlay(); };
 
 function startPlay() {
-  $('menu').classList.add('hidden'); $('play').classList.remove('hidden');
+  $('menu').classList.add('hidden'); $('play').classList.remove('hidden'); document.body.classList.add('playing');
   buildBoard(); renderAll(); save(); nextTurn(true);
 }
 
@@ -289,7 +314,7 @@ function buildBoard() {
     el.className = 'tile' + (i % 10 === 0 ? ' corner' : ''); el.id = 'tile' + i;
     el.style.gridRow = r + 1; el.style.gridColumn = c + 1;
     el.innerHTML = (t.set ? `<div class="strip" style="background:${SET[t.set]}"></div>` : '') +
-      `<div class="ic">${t.ic}</div>` + (t.price ? `<div class="pr">${t.price}</div>` : (i % 10 === 0 ? '' : `<div class="pr">${t.amt ? '-' + t.amt : ''}</div>`)) + '<div class="bld"></div>';
+      `<div class="ic">${tileIcon(i)}</div>` + (t.price ? `<div class="pr">${t.price}</div>` : (i % 10 === 0 ? '' : `<div class="pr">${t.amt ? '-' + t.amt : ''}</div>`)) + '<div class="bld"></div>';
     el.onclick = () => { if (!busy && $('modal').classList.contains('hidden')) showTileInfo(i); };
     bd.appendChild(el);
   });
@@ -304,7 +329,7 @@ function renderAll() {
     const el = $('tile' + i), o = G.own[i];
     el.classList.toggle('owned', o !== null);
     if (o !== null) el.style.setProperty('--own', CHARS[G.players[o].ci].color);
-    el.querySelector('.bld').textContent = o !== null && t.t === 'prop' ? LVL_IC[G.lvl[i]] : (o !== null ? '⭐' : '');
+    el.querySelector('.bld').innerHTML = o !== null && t.t === 'prop' ? bldIcon(G.lvl[i]) : (o !== null ? (ART.bld_owned ? img('bld_owned', 'bi') : '⭐') : '');
   });
   G.players.forEach((p, k) => placeToken(k, p.pos));
   const p = cur();
@@ -360,7 +385,7 @@ function propHtml(i) {
   } else if (t.t === 'stn') body = `<p>Sewa RM25 / 50 / 100 / 200 ikut berapa stesen tuan dia ada.</p>`;
   else if (t.t === 'util') body = `<p>Sewa = dadu × 4 (atau × 10 kalau ada dua-dua syarikat).</p>`;
   else body = `<p>${tileDesc(t)}</p>`;
-  return `<div class="prop-head" style="background:${col}"><div class="big-ic">${t.ic}</div><h2 style="color:#fff">${t.name}</h2>${t.price ? rm(t.price) : ''}</div>${body}${o !== null ? `<p>Tuan: <b>${pname(G.players[o])}</b></p>` : ''}`;
+  return `<div class="prop-head" style="background:${col}"><div class="big-ic">${tileIcon(i)}</div><h2 style="color:#fff">${t.name}</h2>${t.price ? rm(t.price) : ''}</div>${body}${o !== null ? `<p>Tuan: <b>${pname(G.players[o])}</b></p>` : ''}`;
 }
 function tileDesc(t) {
   return { go: 'Lalu sini dapat RM200!', rezeki: 'Ambil kad Rezeki — selalunya best!', musibah: 'Ambil kad Musibah — alamak...', tax: `Bayar ${rm(t.amt)}.`, jail: 'Rumah Tok Wan. Kalau singgah je, takpe. Kalau tertidur, rehat 1 giliran.', gojail: 'Mengantuk! Terus pergi tidur kat Rumah Tok Wan.', kenduri: 'Kenduri kahwin! Semua orang bagi salam berisi RM20 kat kau.' }[t.t] || '';
@@ -495,7 +520,7 @@ async function landOn(k, sum) {
     }
   } else if (t.t === 'tax') {
     log(`${t.ic} ${pname(p)} bayar ${t.name} ${rm(t.amt)}`);
-    if (!ai) await modal(`<div class="big-ic">${t.ic}</div><h2>${t.name}</h2><p>Kena bayar <b>${rm(t.amt)}</b>.</p>`, [{ label: 'Bayar' }]);
+    if (!ai) await modal(`<div class="big-ic">${tileIcon(i)}</div><h2>${t.name}</h2><p>Kena bayar <b>${rm(t.amt)}</b>.</p>`, [{ label: 'Bayar' }]);
     await pay(k, t.amt);
   } else if (t.t === 'gojail') {
     await modal(`<div class="big-ic">😴</div><h2>Tertidur!</h2><p>${pname(p)} mengantuk sangat... terus pergi tidur kat Rumah Tok Wan.</p>`, [{ label: 'Zzz...' }], auto || 0);
@@ -518,7 +543,7 @@ async function drawCard(k, type) {
   let extra = '';
   if (c.money) extra = c.money > 0 ? `+${rm(c.money)}` : `-${rm(-c.money)}`;
   if (c.each) extra = c.each > 0 ? `Setiap kawan bagi ${rm(c.each)}` : `Bayar setiap kawan ${rm(-c.each)}`;
-  await modal(`<p style="margin:0 0 8px"><b>${pname(p)}</b> ambil kad...</p><div class="flip"><div class="flip-in"><div class="face back ${type}"><span>${type === 'rezeki' ? '🍀' : '🌧️'}</span>${type === 'rezeki' ? 'REZEKI' : 'MUSIBAH'}</div><div class="face front ${type}"><div class="big-ic">${c.ic}</div><h2>${c.txt}</h2>${extra ? `<b>${extra}</b>` : ''}</div></div></div>`, [{ label: 'OK!', cls: type === 'rezeki' ? 'mint' : 'pink' }], p.ai !== null ? 10000 : 0);
+  await modal(`<p style="margin:0 0 8px"><b>${pname(p)}</b> ambil kad...</p><div class="flip"><div class="flip-in"><div class="face back ${type} ${ART['card_' + type + '_back'] ? 'art' : ''}"><span>${type === 'rezeki' ? '🍀' : '🌧️'}</span>${type === 'rezeki' ? 'REZEKI' : 'MUSIBAH'}</div><div class="face front ${type} ${ART['card_' + type + '_front'] ? 'art' : ''}"><div class="big-ic">${c.ic}</div><h2>${c.txt}</h2>${extra ? `<b>${extra}</b>` : ''}</div></div></div>`, [{ label: 'OK!', cls: type === 'rezeki' ? 'mint' : 'pink' }], p.ai !== null ? 10000 : 0);
   log(`${c.ic} ${pname(p)}: ${c.txt}`);
   if (c.money > 0) gain(k, c.money);
   else if (c.money < 0) await pay(k, -c.money);
@@ -562,7 +587,7 @@ async function endGame() {
     <ol class="rank">${rank.map((r, n) => `<li>${['🥇', '🥈', '🥉', '4️⃣'][n]} ${avatar(r.p.ci)} ${pname(r.p)}<span>${r.w < 0 ? 'Bankrap' : rm(r.w)}</span></li>`).join('')}</ol>`,
     [{ label: '🔁 MAIN LAGI', v: 'again' }, { label: 'Menu', v: 'menu', cls: 'grey' }]).then(v => {
       if (v === 'again') { newGame(); startPlay(); }
-      else { $('play').classList.add('hidden'); $('menu').classList.remove('hidden'); G = null; renderMenu(); }
+      else { $('play').classList.add('hidden'); $('menu').classList.remove('hidden'); document.body.classList.remove('playing'); G = null; renderMenu(); }
     });
 }
 function confetti() {
