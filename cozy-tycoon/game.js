@@ -109,6 +109,7 @@ const AIS = [
 
 /* ---------- Sound ---------- */
 let soundOn = localStorage.getItem('cozyTycoonSound') !== '0', AC = null;
+let voiceOn = localStorage.getItem('cozyTycoonVoice') !== '0';
 function beep(f = 600, d = .08, type = 'triangle', v = .07) {
   if (!soundOn) return;
   try {
@@ -131,6 +132,7 @@ const sfx = {
 function unlockAudio() {
   try {
     if (navigator.audioSession) navigator.audioSession.type = 'playback';
+    if (window.speechSynthesis && !unlockAudio.sp) { unlockAudio.sp = 1; const u = new SpeechSynthesisUtterance(' '); u.volume = 0; speechSynthesis.speak(u); }
     AC = AC || new (window.AudioContext || window.webkitAudioContext)();
     AC.resume();
     const b = AC.createBuffer(1, 1, 22050), src = AC.createBufferSource(); src.buffer = b; src.connect(AC.destination); src.start(0);
@@ -139,9 +141,68 @@ function unlockAudio() {
 }
 ['touchstart', 'touchend', 'pointerdown', 'click'].forEach(ev => document.addEventListener(ev, unlockAudio, { passive: true }));
 document.addEventListener('visibilitychange', () => { if (!document.hidden && AC) AC.resume(); });
-function updSoundBtn() { $('soundBtn').textContent = soundOn ? '🔊' : '🔇'; }
+function updSoundBtn() { $('soundBtn').textContent = soundOn ? '🔊' : '🔇'; $('voiceBtn') && $('voiceBtn').classList.toggle('off', !voiceOn); }
+setTimeout(() => { $('voiceBtn').onclick = () => { voiceOn = !voiceOn; localStorage.setItem('cozyTycoonVoice', voiceOn ? '1' : '0'); updSoundBtn(); if (voiceOn) speak('Suara pengumuman dihidupkan'); else window.speechSynthesis && speechSynthesis.cancel(); }; updSoundBtn(); });
 $('soundBtn').onclick = () => { soundOn = !soundOn; localStorage.setItem('cozyTycoonSound', soundOn ? '1' : '0'); updSoundBtn(); beep(); };
 updSoundBtn();
+
+/* ---------- Penduduk notifications + voice announcer ---------- */
+const FOLK = {
+  kiah: { n: 'Mak Cik Kiah', f: '👵', c: '#e05f8d' },
+  abu: { n: 'Pak Abu', f: '👴', c: '#a9765a' },
+  mira: { n: 'Adik Mira', f: '👧', c: '#5cc9a7' },
+  polis: { n: 'Encik Polis', f: '👮', c: '#5b7fd6' },
+  ann: { n: 'PENGUMUMAN', f: '📢', c: '#e0a100' },
+};
+let VOICE = null;
+function pickVoice() {
+  if (!window.speechSynthesis) return;
+  const v = speechSynthesis.getVoices();
+  VOICE = v.find(x => /^ms/i.test(x.lang)) || v.find(x => /^id/i.test(x.lang)) || null;
+}
+if (window.speechSynthesis) { pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; }
+function speak(txt) {
+  if (!voiceOn || !soundOn || !window.speechSynthesis) return;
+  try {
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(txt.replace(/RM(\d+)/g, '$1 ringgit').replace(/[^\p{L}\p{N}\s,.!?']/gu, ''));
+    u.lang = VOICE ? VOICE.lang : 'ms-MY'; if (VOICE) u.voice = VOICE;
+    u.rate = 1.02; u.pitch = 1.15; u.volume = 1;
+    speechSynthesis.speak(u);
+  } catch (e) {}
+}
+function chime() { beep(784, .25, 'sine', .08); setTimeout(() => beep(587, .35, 'sine', .08), 260); }
+function notify(who, msg, voice) {
+  const F = FOLK[who] || FOLK.kiah, box = $('toasts'); if (!box) return;
+  const t = document.createElement('div');
+  t.className = 'toast' + (who === 'ann' ? ' ann' : ''); t.style.setProperty('--c', F.c);
+  t.innerHTML = `<div class="face">${F.f}</div><div><b>${F.n}</b><span>${msg}</span></div>`;
+  t.onclick = () => t.remove();
+  box.prepend(t);
+  while (box.children.length > 2) box.lastChild.remove();
+  setTimeout(() => { t.classList.add('bye'); setTimeout(() => t.remove(), 400); }, 6500);
+  if (voice) { chime(); setTimeout(() => speak((who === 'ann' ? 'Pengumuman! ' : '') + msg), 650); }
+  else beep(1046, .06, 'sine', .05);
+}
+const pick = a => a[Math.random() * a.length | 0];
+function folkChatter() {
+  if (!G || Math.random() > .55) return;
+  const ps = alive().map(p => ({ p, n: G.own.filter(o => o === G.players.indexOf(p)).length }));
+  const rich = ps.slice().sort((a, b) => b.n - a.n)[0], poor = ps.slice().sort((a, b) => a.p.money - b.p.money)[0];
+  const opts = [];
+  if (rich && rich.n >= 4) opts.push(['abu', `Tak puas hati betul! ${pname(rich.p)} dah borong ${rich.n} tempat. Tinggal apa untuk orang lain?`, true]);
+  if (poor && poor.p.money < 300) opts.push(['kiah', `Kesian ${pname(poor.p)}, tinggal ${rm(poor.p.money)} je. Jimat-jimat ye nak!`, false]);
+  opts.push(pick([
+    ['polis', 'Hari ni jalan sesak kat KLCC. Sila guna LRT ye!', true],
+    ['mira', 'Cendol kat Gerai Cendol sedap gila! Nak lagi!', false],
+    ['kiah', 'Harga barang naik lagi... mak cik pening kepala.', false],
+    ['abu', 'Bila nak buat taman permainan baru ni? Budak-budak bosan!', true],
+    ['polis', 'Ingat! Jangan parking merata-rata. Nanti kena saman!', false],
+    ['mira', 'Yeay! Esok cuti sekolah, jom pergi Langkawi!', false],
+    ['ann', 'Pasar malam dibuka malam ini. Jemput datang semua!', true],
+  ]));
+  const o = pick(opts); notify(o[0], o[1], o[2]);
+}
 
 /* ---------- State ---------- */
 let G = null, busy = false;
@@ -328,6 +389,7 @@ async function raiseCash(k) {
   }
   if (p.money < 0) {
     p.out = true; p.money = 0; log(`💸 ${pname(p)} dah bankrap!`);
+    notify('ann', `Berita sedih. ${pname(p)} dah bankrap!`, true);
     await modal(`<div class="big-ic">😭</div><h2>${pname(p)} Bankrap!</h2><p>Duit habis... takpe, lain kali cuba lagi!</p>`, [{ label: 'OK' }], p.ai !== null ? 10000 : 0);
   }
 }
@@ -339,7 +401,7 @@ async function nextTurn(first) {
   if (G.over) return;
   if (!first) {
     let n = G.turn;
-    do { n = (n + 1) % G.players.length; if (n === 0) G.round++; } while (G.players[n].out);
+    do { n = (n + 1) % G.players.length; if (n === 0) { G.round++; G.round <= G.maxRounds && setTimeout(folkChatter, 400); } } while (G.players[n].out);
     G.turn = n;
   }
   if (G.round > G.maxRounds || alive().length < 2) return endGame();
@@ -379,7 +441,7 @@ async function moveSteps(k, n) {
   const p = G.players[k], dir = n < 0 ? -1 : 1;
   for (let s = 0; s < Math.abs(n); s++) {
     p.pos = (p.pos + dir + 40) % 40;
-    if (p.pos === 0 && dir > 0) { gain(k, 200); log(`🏁 ${pname(p)} lalu MULA, dapat RM200!`); }
+    if (p.pos === 0 && dir > 0) { gain(k, 200); log(`🏁 ${pname(p)} lalu MULA, dapat RM200!`); notify('ann', `${pname(p)} lalu MULA dan dapat RM200!`, false); }
     const tok = $('tok' + k); tok.classList.remove('hop'); void tok.offsetWidth; tok.classList.add('hop');
     G.players.forEach((q, j) => placeToken(j, q.pos)); cam(p.pos); sfx.step();
     await wait(230);
@@ -395,6 +457,7 @@ async function sendSleep(k) {
   const p = G.players[k];
   p.pos = 10; p.sleep = 1; renderAll();
   log(`😴 ${pname(p)} tertidur kat Rumah Tok Wan (rehat 1 giliran)`);
+  notify('polis', `Shhh... ${pname(p)} tengah tidur kat Rumah Tok Wan. Jangan bising!`, true);
 }
 
 async function landOn(k, sum) {
@@ -411,6 +474,7 @@ async function landOn(k, sum) {
       if (want) {
         p.money -= t.price; G.own[i] = k; sfx.buy(); floatText(k, '-' + t.price, '#e64980');
         log(`🛒 ${pname(p)} beli ${t.name}!`);
+        notify(pick(['kiah', 'mira', 'ann']), pick([`${pname(p)} dah beli ${t.name}! Tahniah!`, `Wah, ${t.name} ada tuan baru: ${pname(p)}!`]), true);
         if (ai) await modal(say(`${pname(p)}: "Yeay! Aku beli ${t.name}!"`) + propHtml(i), [{ label: 'OK' }], auto);
       } else { log(`${pname(p)} tak beli ${t.name}`); if (ai) await modal(say(`${pname(p)}: "Hmm... mahal la, tak nak."`) + propHtml(i), [{ label: 'OK' }], 10000); }
     } else if (o === k) {
@@ -419,11 +483,12 @@ async function landOn(k, sum) {
         let up;
         if (ai) up = can && p.money - cost >= ai.upReserve;
         else up = await modal(propHtml(i) + `<p>Ni tempat kau! Nak naik taraf jadi <b>${LVL_IC[nx]} ${LVL[nx]}</b>?</p>`, [{ label: `🔨 UPGRADE ${rm(cost)}`, v: true, cls: 'mint', dis: !can }, { label: 'Nanti dulu', v: false, cls: 'grey' }]);
-        if (up) { p.money -= cost; G.lvl[i] = nx; sfx.buy(); log(`🔨 ${pname(p)} naik taraf ${t.name} jadi ${LVL[nx]}!`); renderAll(); if (ai) await modal(say(`${pname(p)}: "${t.name} aku dah jadi ${LVL[nx]}! ${LVL_IC[nx]}"`) + propHtml(i), [{ label: 'OK' }], auto); }
+        if (up) { p.money -= cost; G.lvl[i] = nx; sfx.buy(); log(`🔨 ${pname(p)} naik taraf ${t.name} jadi ${LVL[nx]}!`); renderAll(); notify('mira', `Cantiknya! ${t.name} dah jadi ${LVL[nx]} ${LVL_IC[nx]}`, true); if (ai) await modal(say(`${pname(p)}: "${t.name} aku dah jadi ${LVL[nx]}! ${LVL_IC[nx]}"`) + propHtml(i), [{ label: 'OK' }], auto); }
       } else log(`${pname(p)} rehat kat ${t.name} sendiri 😌`);
     } else {
       const r = rentOf(i, sum), owner = G.players[o];
       log(`🏠 ${pname(p)} bayar sewa ${rm(r)} kat ${pname(owner)}`);
+      if (r >= 100) notify('abu', `Mahalnya sewa ${t.name}, ${rm(r)}! Tak puas hati betul!`, true); else notify('abu', pick([`Sewa ${t.name} ${rm(r)}. Bolehlah...`, `${pname(p)} bayar sewa kat ${pname(owner)}.`]), false);
       if (!ai) await modal(propHtml(i) + `<p>Alamak! Ni tempat <b>${pname(owner)}</b>. Kena bayar sewa:</p><h2>${rm(r)}</h2>`, [{ label: '💸 BAYAR', cls: 'pink' }]);
       else await modal(say(`${pname(p)}: "Alamak, kena bayar ${rm(r)} kat ${pname(owner)}!"`) + propHtml(i), [{ label: 'OK' }], 10000);
       await pay(k, r, o);
@@ -439,6 +504,7 @@ async function landOn(k, sum) {
     let tot = 0;
     for (let j = 0; j < G.players.length; j++) if (j !== k && !G.players[j].out) { tot += 20; await pay(j, 20, k); }
     log(`💐 Kenduri ${pname(p)}! Dapat salam berisi ${rm(tot)}`); sfx.coin();
+    notify('ann', `Semua dijemput ke kenduri kahwin ${pname(p)}!`, true);
     await modal(`<div class="big-ic">💐</div><h2>Kenduri Kahwin!</h2><p>Semua orang datang bagi salam berisi. ${pname(p)} dapat <b>${rm(tot)}</b>!</p>`, [{ label: 'Yeay!' }], auto || 0);
   } else if (t.t === 'rezeki' || t.t === 'musibah') {
     await drawCard(k, t.t);
@@ -490,7 +556,7 @@ async function endGame() {
   G.over = true; save(); busy = true; setRoll(false);
   const rank = G.players.map((p, k) => ({ p, k, w: p.out ? -1 : worth(k) })).sort((a, b) => b.w - a.w);
   const win = rank[0].p;
-  sfx.win(); confetti();
+  sfx.win(); confetti(); notify('ann', `Tahniah ${pname(win)}! Jutawan Comel bandar kita!`, true);
   await modal(`<div class="big-ic">🏆</div><h2>${pname(win)} ${win.ai === null && G.players.filter(x => x.ai === null).length === 1 ? 'menang! Hebat!' : 'jadi Jutawan Comel!'}</h2>
     <p>Kekayaan = duit + nilai tanah & bangunan</p>
     <ol class="rank">${rank.map((r, n) => `<li>${['🥇', '🥈', '🥉', '4️⃣'][n]} ${avatar(r.p.ci)} ${pname(r.p)}<span>${r.w < 0 ? 'Bankrap' : rm(r.w)}</span></li>`).join('')}</ol>`,

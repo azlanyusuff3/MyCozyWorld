@@ -16,7 +16,7 @@
   <header class="topbar">
     <a class="hub-link" href="../" aria-label="Back to game hub">‹ GAMES</a>
     <div class="brand"><small>MYCOZYWORLD</small><strong>Cozy Tycoon</strong></div>
-    <button id="soundBtn" class="icon-btn" type="button" aria-label="Sound">🔊</button>
+    <div class="top-btns"><button id="voiceBtn" class="icon-btn" type="button" aria-label="Suara pengumuman">🗣️</button><button id="soundBtn" class="icon-btn" type="button" aria-label="Sound">🔊</button></div>
   </header>
 
   <!-- MENU -->
@@ -75,6 +75,7 @@
   <div id="modal" class="modal hidden" role="dialog" aria-modal="true">
     <div class="modal-card" id="modalCard"></div>
   </div>
+  <div id="toasts" class="toasts"></div>
   <div id="confetti"></div>
 </div>
 <script src="game.js"></script>
