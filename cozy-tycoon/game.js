@@ -391,7 +391,7 @@ async function sendSleep(k) {
 
 async function landOn(k, sum) {
   const p = G.players[k], t = TILES[p.pos], i = p.pos, ai = p.ai !== null ? AIS[p.ai] : null;
-  const auto = ai ? 6000 : 0;
+  const auto = ai ? 10000 : 0;
   const say = t => `<div class="ai-say">${avatar(p.ci)}<span>${t}</span></div>`;
   if (t.t === 'prop' || t.t === 'stn' || t.t === 'util') {
     const o = G.own[i];
@@ -404,7 +404,7 @@ async function landOn(k, sum) {
         p.money -= t.price; G.own[i] = k; sfx.buy(); floatText(k, '-' + t.price, '#e64980');
         log(`🛒 ${pname(p)} beli ${t.name}!`);
         if (ai) await modal(say(`${pname(p)}: "Yeay! Aku beli ${t.name}!"`) + propHtml(i), [{ label: 'OK' }], auto);
-      } else { log(`${pname(p)} tak beli ${t.name}`); if (ai) await modal(say(`${pname(p)}: "Hmm... mahal la, tak nak."`) + propHtml(i), [{ label: 'OK' }], 4500); }
+      } else { log(`${pname(p)} tak beli ${t.name}`); if (ai) await modal(say(`${pname(p)}: "Hmm... mahal la, tak nak."`) + propHtml(i), [{ label: 'OK' }], 10000); }
     } else if (o === k) {
       if (t.t === 'prop' && G.lvl[i] < 2) {
         const cost = UPC[t.set], can = p.money >= cost, nx = G.lvl[i] + 1;
@@ -417,7 +417,7 @@ async function landOn(k, sum) {
       const r = rentOf(i, sum), owner = G.players[o];
       log(`🏠 ${pname(p)} bayar sewa ${rm(r)} kat ${pname(owner)}`);
       if (!ai) await modal(propHtml(i) + `<p>Alamak! Ni tempat <b>${pname(owner)}</b>. Kena bayar sewa:</p><h2>${rm(r)}</h2>`, [{ label: '💸 BAYAR', cls: 'pink' }]);
-      else await modal(say(`${pname(p)}: "Alamak, kena bayar ${rm(r)} kat ${pname(owner)}!"`) + propHtml(i), [{ label: 'OK' }], 6000);
+      else await modal(say(`${pname(p)}: "Alamak, kena bayar ${rm(r)} kat ${pname(owner)}!"`) + propHtml(i), [{ label: 'OK' }], 10000);
       await pay(k, r, o);
     }
   } else if (t.t === 'tax') {
