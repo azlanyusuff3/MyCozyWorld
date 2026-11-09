@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="ms">
+<head>
+<script src="../assets/ios-audio.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#bfe6a0">
+<title>Cozy Kampung Plot | MyCozyWorld</title>
+<link rel="manifest" href="../manifest.json">
+<link rel="icon" href="../assets/icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <header class="topbar">
+    <a class="hub-link" href="../" aria-label="Back to game hub">‹ GAMES</a>
+    <div class="brand"><small>MYCOZYWORLD</small><strong>Kampung Plot</strong></div>
+    <button id="soundBtn" class="icon-btn" type="button" aria-label="Sound">🔊</button>
+  </header>
+
+  <!-- MENU -->
+  <main id="menu" class="view">
+    <div class="title-art" id="titleArt"></div>
+    <h1>Cozy Kampung Plot</h1>
+    <p class="tag">Pacak pagar, tutup plot, bina <b>kampung comel</b> kau!</p>
+
+    <section class="card">
+      <h3>Mod</h3>
+      <div class="seg" id="modeSeg">
+        <button data-v="ai" type="button">🤖 Lawan AI</button>
+        <button data-v="pvp" type="button">👫 2 Pemain</button>
+      </div>
+      <div id="levelBox">
+        <h3>Lawan</h3>
+        <div class="ai-pick" id="levelSeg"></div>
+      </div>
+      <h3>Saiz kampung</h3>
+      <div class="seg" id="sizeSeg">
+        <button data-v="3" type="button">Kecik<br><small>3×3</small></button>
+        <button data-v="5" type="button">Sedang<br><small>5×5</small></button>
+        <button data-v="7" type="button">Besar<br><small>7×7</small></button>
+      </div>
+    </section>
+
+    <button id="startBtn" class="btn gold" type="button">▶ MULA BINA</button>
+
+    <details class="card how">
+      <summary>Cara main</summary>
+      <ol>
+        <li>Giliran sorang satu, pacak <b>satu pagar buluh</b> antara dua pancang.</li>
+        <li>Siapa tutup sisi ke-4 sesuatu plot, plot tu <b>jadi milik dia</b> dan terus tumbuh rumah / pokok!</li>
+        <li>Dapat plot = <b>main sekali lagi</b>.</li>
+        <li>Semua plot penuh, siapa paling banyak plot, dia menang.</li>
+      </ol>
+      <p class="tip">💡 Tip: jangan pacak pagar ke-3 sesuatu plot, nanti lawan yang sapu!</p>
+    </details>
+  </main>
+
+  <!-- GAME -->
+  <main id="play" class="view hidden">
+    <div class="hud">
+      <div class="pcard" id="p0"><span class="av"></span><div><b class="nm"></b><span class="sc">0</span></div></div>
+      <div class="vs">VS</div>
+      <div class="pcard" id="p1"><span class="av"></span><div><b class="nm"></b><span class="sc">0</span></div></div>
+    </div>
+    <div class="turn" id="turnLbl"></div>
+    <div class="board-wrap">
+      <svg id="board" xmlns="http://www.w3.org/2000/svg"></svg>
+      <div id="bubble" class="bubble hidden"></div>
+      <div id="toast" class="toast"></div>
+    </div>
+    <div class="play-btns">
+      <button id="menuBtn" class="btn small" type="button">☰ Menu</button>
+      <button id="restartBtn" class="btn small" type="button">↻ Mula semula</button>
+    </div>
+  </main>
+
+  <!-- END -->
+  <div id="endModal" class="modal hidden">
+    <div class="modal-card">
+      <div class="end-av" id="endAv"></div>
+      <h2 id="endTitle"></h2>
+      <p id="endText"></p>
+      <button id="againBtn" class="btn gold" type="button">↻ MAIN LAGI</button>
+      <button id="viewBtn" class="btn small" type="button">👀 Tengok kampung</button>
+      <button id="endMenuBtn" class="btn small" type="button">☰ Menu</button>
+    </div>
+  </div>
+</div>
+<script src="game.js"></script>
+</body>
+</html>
