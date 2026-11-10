@@ -405,28 +405,42 @@ function showTileInfo(i) { if (!G) return; modal(propHtml(i), []); }
 
 /* ---------- Money ---------- */
 async function pay(k, amt, to) {
-  const p = G.players[k];
+  const p = G.players[k], before = p.money;
   p.money -= amt; floatText(k, '-' + amt, '#e64980'); sfx.pay();
-  if (to !== undefined && to !== null) { G.players[to].money += amt; floatText(to, '+' + amt, '#2f9f73'); }
-  if (p.money < 0) await raiseCash(k);
+  let raised = 0;
+  if (p.money < 0) raised = await raiseCash(k, amt);
+  // if they went bankrupt, the receiver only gets what they really had
+  const paid = p.out ? Math.max(0, before + raised) : amt;
+  if (to !== undefined && to !== null && paid > 0) { G.players[to].money += paid; floatText(to, '+' + paid, '#2f9f73'); }
   renderAll();
 }
 function gain(k, amt) { G.players[k].money += amt; floatText(k, '+' + amt, '#2f9f73'); sfx.coin(); renderAll(); }
-async function raiseCash(k) {
-  const p = G.players[k];
+async function raiseCash(k, owed) {
+  const p = G.players[k], sold = [];
+  let raised = 0;
   const mine = () => TILES.map((t, i) => i).filter(i => G.own[i] === k);
   while (p.money < 0 && mine().length) {
-    const i = mine().sort((a, b) => (G.lvl[b] - G.lvl[a]) || ((TILES[b].price || 0) - (TILES[a].price || 0)))[0];
-    let v;
-    if (G.lvl[i] > 0) { v = UPC[TILES[i].set] / 2 | 0; G.lvl[i]--; log(`${pname(p)} jual ${LVL[G.lvl[i] + 1]} ${TILES[i].name} (+${v})`); }
-    else { v = TILES[i].price / 2 | 0; G.own[i] = null; log(`${pname(p)} jual ${TILES[i].name} kat bank (+${v})`); }
-    p.money += v;
+    const need = -p.money, list = mine();
+    // 1) sell a building level first (cheapest upgrade), 2) else the cheapest land that covers the debt, 3) else the cheapest land
+    const ups = list.filter(i => G.lvl[i] > 0).sort((a, b) => UPC[TILES[a].set] - UPC[TILES[b].set]);
+    const lands = list.filter(i => G.lvl[i] === 0).sort((a, b) => TILES[a].price - TILES[b].price);
+    let i, v;
+    if (ups.length) { i = ups.find(x => (UPC[TILES[x].set] / 2 | 0) >= need) ?? ups[ups.length - 1]; v = UPC[TILES[i].set] / 2 | 0; G.lvl[i]--; sold.push(`${LVL_IC[G.lvl[i] + 1]} ${LVL[G.lvl[i] + 1]} ${TILES[i].name} (+${rm(v)})`); }
+    else { i = lands.find(x => (TILES[x].price / 2 | 0) >= need) ?? lands[lands.length - 1]; v = TILES[i].price / 2 | 0; G.own[i] = null; sold.push(`${TILES[i].ic} ${TILES[i].name} (+${rm(v)})`); }
+    p.money += v; raised += v;
+  }
+  renderAll();
+  if (sold.length) {
+    log(`🏦 ${pname(p)} tak cukup duit, bank beli: ${sold.join(', ')}`);
+    notify('kiah', `Alamak, ${pname(p)} tak cukup duit! Terpaksa jual ${sold.length > 1 ? sold.length + ' harta' : 'harta'} kat bank.`, false);
+    await modal(`<div class="big-ic">🏦</div><h2>Duit tak cukup!</h2><p>${pname(p)} kena bayar <b>${rm(owed)}</b> tapi duit tak cukup. Bank beli harta ni separuh harga:</p><div class="sold-list">${sold.map(x => `<div>${x}</div>`).join('')}</div><p>Baki duit sekarang: <b>${rm(Math.max(0, p.money))}</b></p>`, [{ label: 'OK' }], p.ai !== null ? 10000 : 0);
   }
   if (p.money < 0) {
     p.out = true; p.money = 0; log(`💸 ${pname(p)} dah bankrap!`);
     notify('ann', `Berita sedih. ${pname(p)} dah bankrap!`, true);
     await modal(`<div class="big-ic">😭</div><h2>${pname(p)} Bankrap!</h2><p>Duit habis... takpe, lain kali cuba lagi!</p>`, [{ label: 'OK' }], p.ai !== null ? 10000 : 0);
   }
+  return raised;
 }
 
 /* ---------- Turn flow ---------- */
