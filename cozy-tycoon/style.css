@@ -246,3 +246,17 @@ img.logo{max-width:92%;max-height:110px;object-fit:contain;display:block;margin:
 .tile .own img,.tile .own svg{width:150%;height:150%;margin:-6% 0 0 -25%;object-fit:cover;object-position:50% 0}
 .tile.owned .pr{visibility:hidden}
 .tile .own{width:40%;height:40%}.pchip i.cnt{display:block;font-style:normal;font-size:10px;font-weight:900;color:#a07e95}
+
+/* fakta + perayaan */
+.fact{background:#fff7d6;border-radius:12px;padding:7px 10px;margin:0 0 8px;font-size:13px;font-weight:700;color:#7a5a2a;text-align:left;line-height:1.35}
+.fact b{color:#c98a00}
+.fest{background:#ffe3ee;border-radius:10px;padding:5px 8px;font-weight:900;color:#d24f7c!important}
+/* tile fx */
+.tile.pop{animation:tpop .6s cubic-bezier(.3,1.8,.5,1)}
+@keyframes tpop{0%{transform:scale(1)}35%{transform:scale(1.45);z-index:5}100%{transform:scale(1)}}
+.fx{position:absolute;width:0;height:0;z-index:8;pointer-events:none}
+.fx span{position:absolute;left:0;top:0;font-size:16px;transform:translate(-50%,-50%);animation:burst 1.2s ease-out forwards}
+.fx span.dot{width:7px;height:7px;border-radius:50%}
+@keyframes burst{0%{transform:translate(-50%,-50%) scale(.4);opacity:1}70%{opacity:1}100%{transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(1.1);opacity:0}}
+.fx b{position:absolute;left:0;top:0;transform:translate(-50%,-160%);white-space:nowrap;font:normal 15px "Lilita One",sans-serif;color:#fff;background:#ff7fa8;border-radius:10px;padding:2px 8px;box-shadow:0 3px 0 #d55a83;animation:lbl 1.5s ease-out forwards}
+@keyframes lbl{0%{transform:translate(-50%,-80%) scale(.5);opacity:0}20%{transform:translate(-50%,-160%) scale(1.1);opacity:1}80%{opacity:1}100%{transform:translate(-50%,-220%);opacity:0}}

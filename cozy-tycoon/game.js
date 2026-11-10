@@ -103,6 +103,38 @@ function tilePos(i) {
   return [i - 30, 10];
 }
 
+/* ---------- Fakta tempat (untuk budak belajar) ---------- */
+const FACTS = {
+  cendol: 'Warna hijau cendol datang dari daun pandan.',
+  roticanai: 'Roti canai ditebar nipis-nipis, lepas tu dimakan dengan kuah kari.',
+  pasarmalam: 'Pasar malam buka waktu petang sampai malam. Banyak makanan sedap!',
+  mamak: 'Teh tarik dituang dari satu gelas ke gelas lain supaya berbuih.',
+  runcit: 'Kedai runcit jual barang harian macam roti, telur dan gula.',
+  melaka: 'Bandar Melaka ialah Tapak Warisan Dunia UNESCO.',
+  ipoh: 'Ipoh terkenal dengan ayam tauge dan bukit batu kapur.',
+  kuantan: 'Kuantan ialah ibu negeri Pahang, negeri paling besar di Semenanjung.',
+  kotabharu: 'Kota Bharu ialah ibu negeri Kelantan, negeri wau bulan.',
+  kterengganu: 'Keropok lekor Terengganu dibuat daripada ikan.',
+  alorsetar: 'Kedah digelar Jelapang Padi sebab banyak sawah padi.',
+  cameron: 'Cameron Highlands sejuk, ada ladang teh dan strawberi.',
+  genting: 'Genting Highlands terletak tinggi atas bukit, jadi cuaca dia sejuk.',
+  langkawi: 'Langkawi ada lebih kurang 99 pulau!',
+  kuching: 'Kuching ialah ibu negeri Sarawak, digelar Bandaraya Kucing.',
+  kk: 'Gunung Kinabalu di Sabah ialah gunung paling tinggi di Malaysia.',
+  sandakan: 'Dekat Sandakan ada Sepilok, tempat jaga anak orang utan.',
+  putrajaya: 'Putrajaya ialah pusat pentadbiran kerajaan. Kubah Masjid Putra warna pink!',
+  jb: 'Johor Bahru disambung ke Singapura melalui Tambak Johor.',
+  penang: 'Pulau Pinang digelar Mutiara Timur dan terkenal dengan makanan sedap.',
+  menarakl: 'Menara KL tingginya 421 meter!',
+  klcc: 'Menara Berkembar Petronas ada 88 tingkat!',
+  lrt: 'LRT bergerak atas landasan tinggi, jadi tak kena jalan sesak.',
+  ktm: 'KTM maksudnya Keretapi Tanah Melayu.',
+  ets: 'ETS ialah tren elektrik laju yang bawa orang ke bandar jauh.',
+  feri: 'Feri bawa orang menyeberang laut ke pulau.',
+  air: 'Jimat air! Tutup paip masa gosok gigi.',
+  elektrik: 'Jimat elektrik! Tutup lampu bila keluar bilik.',
+};
+
 /* ---------- Cards ---------- */
 const REZEKI = [
   { txt: 'Durian runtuh! Dapat duit', money: 200, ic: '🍈' },
@@ -210,6 +242,11 @@ function notify(who, msg, voice) {
   else beep(1046, .06, 'sine', .05);
 }
 const pick = a => a[Math.random() * a.length | 0];
+function festStart() {
+  notify('ann', 'Musim Perayaan dah bermula! Mulai sekarang sewa naik setiap pusingan!', true);
+  modal(`<div class="big-ic">🎉</div><h2>Musim Perayaan!</h2><p>Bandar makin meriah dan ramai pelancong! Mulai pusingan ni, <b>sewa naik 10% setiap pusingan</b> (paling tinggi ×4).</p><p>Siapa paling banyak tanah, dia untung besar!</p>`, [{ label: 'Jom!' }], 10000);
+}
+function festMore() { notify('abu', `Sewa dah naik ×${festMult().toFixed(1)}! Tak puas hati betul, mahal sangat!`, true); }
 function folkChatter() {
   if (!G || Math.random() > .55) return;
   const ps = alive().map(p => ({ p, n: G.own.filter(o => o === G.players.indexOf(p)).length }));
@@ -345,7 +382,7 @@ function renderAll() {
   });
   G.players.forEach((p, k) => placeToken(k, p.pos));
   const p = cur();
-  $('roundTxt').textContent = G.maxRounds ? `Pusingan ${Math.min(G.round, G.maxRounds)}/${G.maxRounds}` : `Pusingan ${G.round} · sampai tinggal sorang`;
+  $('roundTxt').textContent = (G.maxRounds ? `Pusingan ${Math.min(G.round, G.maxRounds)}/${G.maxRounds}` : `Pusingan ${G.round} · sampai tinggal sorang`) + (festMult() > 1 ? ` · 🎉 Sewa ×${festMult().toFixed(1)}` : '');
   $('turnTxt').innerHTML = `${avatar(p.ci)} Giliran ${pname(p)}!`;
   $('log').innerHTML = G.log.slice(0, 3).map(l => `<div>${l}</div>`).join('');
   [...$('dice').children].forEach((d, i) => { if (!d.classList.contains('spin')) setDie(d, G.dice[i]); });
@@ -381,7 +418,11 @@ function modal(html, buttons, autoMs) {
     if (html.includes('class="flip"')) setTimeout(() => { const f = $('modalCard').querySelector('.flip'); if (f) { f.classList.add('open'); sfx.buy(); } }, 450);
   });
 }
-function rentOf(i, diceSum) {
+// Musim Perayaan: from round 31, rent grows 10% per round (max x4) so long games finish
+const FEST_START = 30;
+function festMult() { return G && G.round > FEST_START ? Math.min(4, 1 + (G.round - FEST_START) * 0.1) : 1; }
+function rentOf(i, diceSum) { return Math.round(rawRent(i, diceSum) * festMult()); }
+function rawRent(i, diceSum) {
   const t = TILES[i], o = G.own[i]; if (o === null) return 0;
   if (t.t === 'stn') return 25 * Math.pow(2, TILES.filter((x, j) => x.t === 'stn' && G.own[j] === o).length - 1);
   if (t.t === 'util') return diceSum * (TILES.filter((x, j) => x.t === 'util' && G.own[j] === o).length === 2 ? 10 : 4);
@@ -397,13 +438,35 @@ function propHtml(i) {
   } else if (t.t === 'stn') body = `<p>Sewa RM25 / 50 / 100 / 200 ikut berapa stesen tuan dia ada.</p>`;
   else if (t.t === 'util') body = `<p>Sewa = dadu × 4 (atau × 10 kalau ada dua-dua syarikat).</p>`;
   else body = `<p>${tileDesc(t)}</p>`;
-  return `<div class="prop-head" style="background:${col}"><div class="big-ic">${tileIcon(i)}</div><h2 style="color:#fff">${t.name}</h2>${t.price ? rm(t.price) : ''}</div>${body}${o !== null ? `<p>Tuan: <b>${pname(G.players[o])}</b></p>` : ''}`;
+  if (festMult() > 1 && t.price) body += `<p class="fest">🎉 Musim Perayaan: semua sewa ×${festMult().toFixed(1)}</p>`;
+  const fact = FACTS[SLUGS[i]];
+  return `<div class="prop-head" style="background:${col}"><div class="big-ic">${tileIcon(i)}</div><h2 style="color:#fff">${t.name}</h2>${t.price ? rm(t.price) : ''}</div>${fact ? `<div class="fact">💡 <b>Tahukah kau?</b> ${fact}</div>` : ''}${body}${o !== null ? `<p>Tuan: <b>${pname(G.players[o])}</b></p>` : ''}`;
 }
 function tileDesc(t) {
   return { go: 'Lalu sini dapat RM200!', rezeki: 'Ambil kad Rezeki — selalunya best!', musibah: 'Ambil kad Musibah — alamak...', tax: `Bayar ${rm(t.amt)}.`, jail: 'Rumah Tok Wan. Kalau singgah je, takpe. Kalau tertidur, rehat 1 giliran.', gojail: 'Mengantuk! Terus pergi tidur kat Rumah Tok Wan.', kenduri: 'Kenduri kahwin! Semua orang bagi salam berisi RM20 kat kau.' }[t.t] || '';
 }
 const pname = p => p.ai !== null ? CHARS[p.ci].name : esc(p.name || CHARS[p.ci].name);
 function showTileInfo(i) { if (!G) return; modal(propHtml(i), []); }
+
+/* ---------- Tile FX (beli / upgrade) ---------- */
+function tileFx(i, kind) {
+  const el = $('tile' + i); if (!el) return;
+  el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop');
+  const [r, c] = tilePos(i), box = document.createElement('div');
+  box.className = 'fx'; box.style.left = (c + .5) / 11 * 100 + '%'; box.style.top = (r + .5) / 11 * 100 + '%';
+  const big = kind === 'big', n = big ? 22 : 12, em = big ? ['🎆', '✨', '⭐', '🎉'] : ['✨', '⭐', '💖'];
+  for (let k = 0; k < n; k++) {
+    const sp = document.createElement('span'), a = Math.PI * 2 * k / n + Math.random() * .4, d = (big ? 70 : 42) + Math.random() * 25;
+    sp.textContent = big && k % 2 ? '' : pick(em);
+    if (!sp.textContent) { sp.className = 'dot'; sp.style.background = pick(['#ff7fa8', '#ffd43b', '#5cc9a7', '#7fd0f0', '#b197fc']); }
+    sp.style.setProperty('--dx', Math.cos(a) * d + 'px'); sp.style.setProperty('--dy', Math.sin(a) * d + 'px');
+    sp.style.animationDelay = (big ? Math.random() * .3 : 0) + 's';
+    box.appendChild(sp);
+  }
+  if (kind !== 'small') { const lbl = document.createElement('b'); lbl.textContent = big ? 'BANGUNAN!' : kind === 'up' ? 'UPGRADE!' : 'DIBELI!'; box.appendChild(lbl); }
+  $('tokens').appendChild(box); setTimeout(() => box.remove(), 1600);
+  if (big) [523, 659, 784, 1047, 1319].forEach((f, k) => setTimeout(() => beep(f, .12, 'triangle', .06), k * 90));
+}
 
 /* ---------- Money ---------- */
 async function pay(k, amt, to) {
@@ -452,7 +515,7 @@ async function nextTurn(first) {
   if (G.over) return;
   if (!first) {
     let n = G.turn;
-    do { n = (n + 1) % G.players.length; if (n === 0) { G.round++; (!G.maxRounds || G.round <= G.maxRounds) && setTimeout(folkChatter, 400); } } while (G.players[n].out);
+    do { n = (n + 1) % G.players.length; if (n === 0) { G.round++; (!G.maxRounds || G.round <= G.maxRounds) && setTimeout(G.round === FEST_START + 1 ? festStart : (G.round > FEST_START && (G.round - FEST_START) % 10 === 0 ? festMore : folkChatter), 400); } } while (G.players[n].out);
     G.turn = n;
   }
   if ((G.maxRounds && G.round > G.maxRounds) || alive().length < 2) return endGame();
@@ -524,7 +587,7 @@ async function landOn(k, sum) {
       else want = await modal(propHtml(i) + `<p>Duit kau: <b>${rm(p.money)}</b></p>`, [{ label: `🛒 BELI ${rm(t.price)}`, v: true, cls: 'mint', dis: !can }, { label: 'Tak nak', v: false, cls: 'grey' }]);
       if (want) {
         p.money -= t.price; G.own[i] = k; sfx.buy(); floatText(k, '-' + t.price, '#e64980');
-        log(`🛒 ${pname(p)} beli ${t.name}!`);
+        log(`🛒 ${pname(p)} beli ${t.name}!`); renderAll(); tileFx(i, 'buy'); await wait(1000);
         notify(pick(['kiah', 'mira', 'ann']), pick([`${pname(p)} dah beli ${t.name}! Tahniah!`, `Wah, ${t.name} ada tuan baru: ${pname(p)}!`]), true);
         if (ai) await modal(say(`${pname(p)}: "Yeay! Aku beli ${t.name}!"`) + propHtml(i), [{ label: 'OK' }], auto);
       } else { log(`${pname(p)} tak beli ${t.name}`); if (ai) await modal(say(`${pname(p)}: "Hmm... mahal la, tak nak."`) + propHtml(i), [{ label: 'OK' }], 10000); }
@@ -534,7 +597,7 @@ async function landOn(k, sum) {
         let up;
         if (ai) up = can && p.money - cost >= ai.upReserve;
         else up = await modal(propHtml(i) + `<p>Ni tempat kau! Nak naik taraf jadi <b>${LVL_IC[nx]} ${LVL[nx]}</b>?</p>`, [{ label: `🔨 UPGRADE ${rm(cost)}`, v: true, cls: 'mint', dis: !can }, { label: 'Nanti dulu', v: false, cls: 'grey' }]);
-        if (up) { p.money -= cost; G.lvl[i] = nx; sfx.buy(); log(`🔨 ${pname(p)} naik taraf ${t.name} jadi ${LVL[nx]}!`); renderAll(); notify('mira', `Cantiknya! ${t.name} dah jadi ${LVL[nx]} ${LVL_IC[nx]}`, true); if (ai) await modal(say(`${pname(p)}: "${t.name} aku dah jadi ${LVL[nx]}! ${LVL_IC[nx]}"`) + propHtml(i), [{ label: 'OK' }], auto); }
+        if (up) { p.money -= cost; G.lvl[i] = nx; sfx.buy(); renderAll(); tileFx(i, nx === 2 ? 'big' : 'up'); await wait(1100); log(`🔨 ${pname(p)} naik taraf ${t.name} jadi ${LVL[nx]}!`); renderAll(); notify('mira', `Cantiknya! ${t.name} dah jadi ${LVL[nx]} ${LVL_IC[nx]}`, true); if (ai) await modal(say(`${pname(p)}: "${t.name} aku dah jadi ${LVL[nx]}! ${LVL_IC[nx]}"`) + propHtml(i), [{ label: 'OK' }], auto); }
       } else log(`${pname(p)} rehat kat ${t.name} sendiri 😌`);
     } else {
       const r = rentOf(i, sum), owner = G.players[o];
