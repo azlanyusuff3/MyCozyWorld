@@ -170,3 +170,11 @@ All: **512×600 portrait, transparent**, full body standing, facing the viewer, 
 | `token_ravi.webp` | **Ravi**, Indian boy about 8, round glasses, curly hair, yellow polo shirt and shorts, holding a toy dice, big grin |
 
 Important: all four must have the same size, proportions and line style. Register `token_aina`, `token_meimei`, `token_adam`, `token_ravi` in `list.json` (keep everything already there).
+
+## Batch 10 — Redraw hub card & menu background with the human kids (2 images)
+Do this **after Batch 9**, and use the four new kid tokens (`token_aina`, `token_meimei`, `token_adam`, `token_ravi`) as the character reference so they look identical. **Overwrite** the existing files (same names, same sizes). No new `list.json` entries are needed for these two (they are already registered), but still bump `sw.js` VERSION.
+
+| File | Size | Background | Description |
+|---|---|---|---|
+| `assets/hub/card_tycoon.webp` | same size as the current file (landscape 4:3) | opaque | Aina, Mei Mei, Adam and Ravi standing happily around a colourful Monopoly-style board with Malaysian landmarks (KLCC, Menara KL, kampung house, pasar malam stall), big pink dice and gold coins, pastel pink and sky blue background. **No animals, no text.** |
+| `cozy-tycoon/sprites/bg_menu.webp` | 1080×1920 portrait | opaque | Same dreamy pastel kampung-and-city scene as the current file, but replace any animal characters with the four kids (small, placed near the bottom corners, playing with dice and coins). Keep the **middle 60% calm and low detail** for the UI. **No animals, no text.** |
