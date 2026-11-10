@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="ms">
+<head>
+<script src="../assets/ios-audio.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#2f8f5b">
+<title>Mamak Rush | MyCozyWorld</title>
+<link rel="manifest" href="../manifest.json">
+<link rel="icon" href="../assets/icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <!-- MENU -->
+  <main id="menu" class="screen">
+    <header class="topbar">
+      <a class="hub-link" href="../">‹ GAMES</a>
+      <button id="soundBtn" class="icon-btn" type="button" aria-label="Sound">🔊</button>
+    </header>
+    <div class="sign"><small>RESTORAN</small><h1>Mamak Rush</h1><small>24 JAM · ROTI · TEH · MAGGI</small></div>
+    <div class="menu-art" id="menuArt"></div>
+    <div class="wallet">💰 <b id="menuCoins">RM0</b></div>
+    <button id="playBtn" class="btn gold" type="button">▶ BUKA KEDAI · HARI 1</button>
+    <button id="shopBtn" class="btn" type="button">🛠️ Upgrade kedai</button>
+    <div class="days" id="daysList"></div>
+    <details class="card how"><summary>Cara main</summary>
+      <ul>
+        <li><b>Roti canai:</b> tap untuk ambik doh, <b>swipe</b> kiri-kanan untuk tebar, tunggu masak, tap bila dah keemasan.</li>
+        <li><b>Teh tarik:</b> <b>tekan & tahan</b> untuk tarik, lepas bila jarum masuk zon hijau. Kalau perfect, buih tebal dan tip lebih!</li>
+        <li><b>Maggi goreng:</b> tap untuk masak, ambik sebelum hangus.</li>
+        <li>Makanan siap akan terus dihantar ke pelanggan yang order. Kalau takde yang order, dia tunggu atas dulang.</li>
+        <li>Pelanggan merah 😤 = tak sabar. <b>Tap dia</b> untuk tenangkan.</li>
+      </ul>
+    </details>
+    <button id="resetBtn" class="link-btn" type="button">Reset progress</button>
+  </main>
+
+  <!-- GAME -->
+  <main id="game" class="screen hidden">
+    <header class="hud">
+      <button id="pauseBtn" class="icon-btn" type="button">❚❚</button>
+      <div class="hud-day" id="hudDay">Hari 1</div>
+      <div class="hud-time"><span id="hudTime">1:30</span><i><b id="timeBar"></b></i></div>
+      <div class="hud-coin">💰 <b id="hudCoin">RM0</b><small id="hudTarget"></small></div>
+    </header>
+    <div id="notifs" class="notifs"></div>
+    <section class="shop-floor">
+      <div class="wall"><div class="menu-board">MENU<br><span id="menuBoard"></span></div><div class="tv hidden" id="tv">📺⚽</div><div class="fan hidden" id="fan">🌀</div></div>
+      <div class="tables" id="tables"></div>
+      <div class="counter">
+        <div class="grab-spot" id="grabSpot"></div>
+        <div class="tray" id="tray"></div>
+        <div class="cat-spot" id="catSpot"></div>
+      </div>
+    </section>
+    <section class="stations" id="stations"></section>
+  </main>
+
+  <!-- MODALS -->
+  <div id="modal" class="modal hidden"><div class="modal-card" id="modalCard"></div></div>
+</div>
+<script src="game.js"></script>
+</body>
+</html>
