@@ -320,3 +320,46 @@ body{background:#5b3a22}
 .st.garing{border-color:#ff7a3c;box-shadow:0 0 0 3px #ff7a3c99,0 0 22px #ff7a3c}
 .st.garing .hint{color:#ffd23f}
 .st,.st *{-webkit-tap-highlight-color:transparent}
+
+/* ===== v4: stesen besar 2x2, senang tekan ===== */
+.stations{display:grid;grid-template-columns:1fr 1fr;gap:7px;padding:7px 7px calc(8px + env(safe-area-inset-bottom))}
+.st{height:clamp(128px,16.5vh,168px);padding-top:22px;border-radius:18px}
+.st .lbl{font-size:11px;top:5px}
+.st .big{width:clamp(58px,8vh,80px);height:clamp(58px,8vh,80px)}
+.st .hint{font-size:13px;min-height:0;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:94%}
+.st .bar{height:10px;bottom:8px}
+.st.sub{padding-top:22px;gap:6px;padding-left:6px;padding-right:6px}
+.st .pan{border-radius:12px;background:#ffffff0d}
+.st .pan .big{width:clamp(48px,6.5vh,64px);height:clamp(48px,6.5vh,64px)}
+.st .pan .hint{font-size:12px}
+.choosing .choose{inset:22px 6px 8px}
+.st:not(.sub) .choose:has(button:nth-child(3)){grid-template-columns:repeat(4,minmax(0,1fr))}
+.st:not(.sub) .choose:has(button:nth-child(3)):not(:has(button:nth-child(4))){grid-template-columns:repeat(3,minmax(0,1fr))}
+.choose button{font-size:12px;border-radius:12px}
+.choose button .av{width:clamp(34px,5vh,48px)!important;height:clamp(34px,5vh,48px)!important;font-size:30px!important;line-height:1!important}
+.choose button small{font-size:10px}
+.st .pan .choose button{font-size:12px;flex-direction:row;gap:4px}
+.st .pan .choose button .av{width:34px!important;height:34px!important}
+.pan.choosing .choose{inset:2px 2px 2px}
+.has-chips .chips{bottom:6px;left:6px;right:30px;gap:5px}
+.chip{font-size:18px;padding:3px 0;border-radius:10px}
+.has-chips.choosing .choose{bottom:40px}
+.has-chips .hint{font-size:12px}
+.meter{width:16px;right:9px;top:22px;bottom:12px}
+.st .cnt{font-size:12px;top:22px;right:8px}
+/* Grab: saiz bubble betul */
+.grab .av{width:auto!important;height:auto!important}
+.grab>.av{width:64px!important;height:64px!important}
+.grab .order .it>.av{width:26px!important;height:26px!important;font-size:18px;line-height:26px}
+/* Pekerja pindah ke dinding */
+.staff-bar{position:absolute;right:6px;left:auto;top:4px;bottom:auto;z-index:2}
+.staff{width:auto;flex-direction:row;padding:2px 6px 2px 2px;gap:3px;border-radius:20px;background:#fff8e8ee}
+.staff .av{width:34px;height:34px;font-size:24px;line-height:34px}
+.staff b{font-size:10px}
+body.has-bg_dinding #tv,body.has-bg_dinding #fan{display:none}
+.table.spr .meja{height:var(--mh)}
+.table.spr .cust,.tables.n5 .table.spr .cust{margin-bottom:calc(var(--mh)*.74)}
+.cust>.av{width:min(clamp(96px,14vh,140px),calc(var(--mh)*.95))!important;height:min(clamp(96px,14vh,140px),calc(var(--mh)*.95))!important}
+.table.spr .cust>.av{margin-bottom:calc(var(--mh)*-.28)!important}
+.notif{font-size:12px;padding:5px 10px}
+.tables:not(.n5) .table.spr .cust{margin-bottom:calc(var(--mh)*.86)}

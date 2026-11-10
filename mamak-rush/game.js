@@ -137,7 +137,7 @@ function notify(txt, kind = '') {
   const box = $('#notifs'), n = document.createElement('div');
   if (box.firstChild && box.firstChild.innerHTML === txt && !box.firstChild.classList.contains('out')) return;
   n.className = 'notif ' + kind; n.innerHTML = txt; box.prepend(n);
-  while (box.children.length > 3) box.lastChild.remove();
+  while (box.children.length > 2) box.lastChild.remove();
   SFX.notif();
   setTimeout(() => { n.classList.add('out'); setTimeout(() => n.remove(), 300); }, 2600);
 }
@@ -390,7 +390,10 @@ function patCls(c) { const f = c.pat / c.max; return f > .5 ? '' : f > .25 ? 'mi
 function fitTables() {
   const box = $('#tables'); if (!box || !R) return;
   const n = R.tables.length, rows = n === 5 ? 2 : Math.ceil(n / 2), h = box.clientHeight - 30;
-  if (h > 50) box.style.setProperty('--th', Math.max(110, Math.min(240, h / rows - 6)) + 'px');
+  if (h > 50) {
+    const th = Math.max(110, Math.min(240, h / rows - 6)); box.style.setProperty('--th', th + 'px');
+    const t = box.querySelector('.table'); if (t) { const w = t.clientWidth * (n === 5 ? 1.12 : 1.06); box.style.setProperty('--mh', Math.min(th * .66, w * .75) + 'px'); }
+  }
 }
 addEventListener('resize', fitTables);
 function renderTables() {
@@ -480,7 +483,7 @@ function drawStations() {
   tEl.querySelector('.teh-stream').style.height = t.hold ? (20 + t.lvl * 60) + 'px' : '0';
   setChoose(tEl, t.s === 'idle' && milo ? 'pick' : '', t.s === 'idle' && milo ? `<button type="button" data-air="teh"><span class="av">${ico('item_teh', '☕')}</span>Teh<small>tahan</small></button><button type="button" data-air="milo"><span class="av">${ico('item_milo', '🥤')}</span>Milo<small>goncang</small></button>` : '');
   const setTxt = (e, v) => { if (e._v !== v) { e._v = v; e.innerHTML = v; } };
-  if (t.s === 'idle') { setTxt(tEl.querySelector('.big'), milo ? '' : ico('st_teko', '🫖')); setTxt(tEl.querySelector('.hint'), milo ? '' : 'Tekan & tahan, lepas kat hijau'); }
+  if (t.s === 'idle') { setTxt(tEl.querySelector('.big'), milo ? '' : ico('st_teko', '🫖')); setTxt(tEl.querySelector('.hint'), milo ? '' : 'Tahan, lepas kat hijau'); }
   else if (t.s === 'shake') { setTxt(tEl.querySelector('.big'), ico('st_milo', '🥤')); setTxt(tEl.querySelector('.hint'), '↕️ Swipe atas-bawah, lepas kat hijau'); }
 
   // KUALI
