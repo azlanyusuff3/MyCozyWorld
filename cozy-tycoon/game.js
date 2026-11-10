@@ -230,12 +230,21 @@ function speak(txt) {
   } catch (e) {}
 }
 function chime() { beep(784, .25, 'sine', .08); setTimeout(() => beep(587, .35, 'sine', .08), 260); }
+// put notifications over the centre of the board (map area), not over money or buttons
+function placeToasts() {
+  const box = $('toasts'), bw = $('boardWrap');
+  if (!box || !bw || $('play').classList.contains('hidden')) { box && box.removeAttribute('style'); return; }
+  const r = bw.getBoundingClientRect(), w = r.width * 0.74;
+  box.style.cssText = `top:${r.top + r.height * 0.5}px;bottom:auto;left:${r.left + (r.width - w) / 2}px;right:auto;width:${w}px;transform:translateY(-50%);padding:0`;
+}
+window.addEventListener('resize', placeToasts);
+window.addEventListener('scroll', placeToasts, { passive: true });
 function notify(who, msg, voice) {
   const F = FOLK[who] || FOLK.kiah, box = $('toasts'); if (!box) return;
   const t = document.createElement('div');
   t.className = 'toast' + (who === 'ann' ? ' ann' : ''); t.style.setProperty('--c', F.c);
   t.innerHTML = `<div class="face">${F.img ? `<img src="${F.img}" alt="">` : F.f}</div><div><b>${F.n}</b><span>${msg}</span></div>`;
-  t.onclick = () => t.remove();
+  placeToasts();
   box.prepend(t);
   while (box.children.length > 2) box.lastChild.remove();
   setTimeout(() => { t.classList.add('bye'); setTimeout(() => t.remove(), 400); }, 6500);
