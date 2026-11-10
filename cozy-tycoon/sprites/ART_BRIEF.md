@@ -119,3 +119,39 @@ All: **256×256, transparent**, chibi head-and-shoulders portrait, big sparkly e
 - [ ] Style matches `token_*.webp` and `dice_*.webp`
 - [ ] `list.json` updated, still valid JSON, old entries kept
 - [ ] `sw.js` VERSION bumped by one
+
+---
+
+## Batch 7 — Mini game & Pasar Malam (10 images)
+All: **256×256, transparent**, single object centred, same style as tiles.
+
+| File | Object |
+|---|---|
+| `mg_coin.webp` | Shiny cute gold coin with a tiny smiling face and sparkle (no text, no numbers) |
+| `mg_bomb.webp` | Cute round cartoon bomb with a lit fuse and a nervous face |
+| `kuih_0.webp` | Kuih lapis (colourful layered cake slice, pink and white layers) |
+| `kuih_1.webp` | Karipap (golden curry puff with crimped edge) |
+| `kuih_2.webp` | Ring doughnut coated with white sugar |
+| `kuih_3.webp` | Three sticks of satay with peanut sauce |
+| `kuih_4.webp` | Bowl of ABC / ais kacang with colourful toppings |
+| `kuih_5.webp` | Grilled corn on the cob (jagung bakar) |
+| `kuih_6.webp` | Wobbly pastel pudding with caramel |
+| `kuih_7.webp` | Apam balik folded pancake with peanut and corn filling |
+
+## Batch 8 — Sticker badges (12 images)
+All: **256×256, transparent**, round collectible sticker badge with a thick white die-cut border and soft shadow, one cute icon inside, pastel background circle. **No text.**
+
+| File | Icon inside the badge |
+|---|---|
+| `stk_first_buy.webp` | Small stall with a "sold" heart flag (heart only, no letters) |
+| `stk_klcc.webp` | Twin towers with a gold crown |
+| `stk_bangunan.webp` | Little architect hard hat on top of a tower |
+| `stk_set.webp` | Three coloured tiles joined with a gold star |
+| `stk_kenduri3.webp` | Bunga manggar wedding flower with three hearts |
+| `stk_tidur.webp` | Sleeping pillow with a nightcap and moon |
+| `stk_rich.webp` | Pile of gold coins with a money bag |
+| `stk_win.webp` | Gold trophy with confetti |
+| `stk_minigame.webp` | Gold coin being caught by a small hand / net |
+| `stk_trade.webp` | Two cute paws doing a handshake |
+| `stk_math.webp` | Smiling brain with plus and minus symbols (+ and − allowed) |
+| `stk_pasar.webp` | Red paper lantern with a kuih on a stick |

@@ -145,6 +145,7 @@ const REZEKI = [
   { txt: 'Hari jadi kau! Semua kawan bagi hadiah', each: 30, ic: '🎂' },
   { txt: 'Naik basikal laju ke MULA', goto: 0, ic: '🚲' },
   { txt: 'Naik tren ke stesen terdekat', nearest: 'stn', ic: '🚝' },
+  { txt: 'Pasar Malam! Pilih satu kuih', pasar: true, ic: '🏮' },
 ];
 const MUSIBAH = [
   { txt: 'Kena saman parking!', money: -50, ic: '🚓' },
@@ -268,7 +269,7 @@ function folkChatter() {
 
 /* ---------- State ---------- */
 let G = null, busy = false;
-const cfg = { char: 0, mode: 'ai', count: 4, rounds: 20, speed: +(localStorage.getItem('cozyTycoonSpeed') || 1.15) };
+const cfg = { math: localStorage.getItem('cozyTycoonMathMode') === '1', char: 0, mode: 'ai', count: 4, rounds: 20, speed: +(localStorage.getItem('cozyTycoonSpeed') || 1.15) };
 const SPD = () => cfg.speed;
 const wait = ms => new Promise(r => setTimeout(r, ms * SPD()));
 let camOn = localStorage.getItem('cozyTycoonCam') !== '0';
@@ -292,7 +293,7 @@ function newGame() {
     players, turn: 0, round: 1, maxRounds: cfg.rounds,
     own: TILES.map(() => null), lvl: TILES.map(() => 0),
     rz: shuffle([...REZEKI.keys()]), ms: shuffle([...MUSIBAH.keys()]),
-    log: ['Selamat datang ke Cozy Tycoon! 🎉'], dice: [1, 1], over: false,
+    log: ['Selamat datang ke Cozy Tycoon! 🎉'], dice: [1, 1], over: false, math: cfg.math,
   };
 }
 function save() { try { if (G && !G.over) localStorage.setItem(SAVE, JSON.stringify(G)); else localStorage.removeItem(SAVE); } catch (e) {} }
@@ -309,7 +310,7 @@ function renderNames() {
   box.querySelectorAll('input').forEach(inp => inp.oninput = () => { NAMES[+inp.dataset.k] = inp.value; try { localStorage.setItem('cozyTycoonNames', JSON.stringify(NAMES)); } catch (e) {} });
 }
 function renderMenu() {
-  renderNames();
+  renderNames(); renderStickers();
   $('titleChars').innerHTML = CHARS.map((c, i) => avatar(i)).join('');
   $('charPick').innerHTML = CHARS.map((c, i) => `<button data-i="${i}" class="${i === cfg.char ? 'on' : ''}">${avatar(i)}${c.name}</button>`).join('');
   [...$('charPick').children].forEach(b => b.onclick = () => { cfg.char = +b.dataset.i; beep(700); renderMenu(); });
@@ -322,12 +323,15 @@ function seg(id, key, num, after) {
   });
 }
 seg('modeSeg', 'mode', false, () => { $('countRow').classList.toggle('hidden', cfg.mode !== 'local'); renderNames(); });
-seg('countSeg', 'count', true, renderNames); seg('speedSeg', 'speed', true, () => localStorage.setItem('cozyTycoonSpeed', cfg.speed));
+seg('countSeg', 'count', true, renderNames);
+seg('mathSeg', 'math', false, () => { cfg.math = cfg.math === '1' || cfg.math === true; localStorage.setItem('cozyTycoonMathMode', cfg.math ? '1' : '0'); });
+[...$('mathSeg').children].forEach(b => b.classList.toggle('on', (b.dataset.v === '1') === cfg.math)); seg('speedSeg', 'speed', true, () => localStorage.setItem('cozyTycoonSpeed', cfg.speed));
 [...$('speedSeg').children].forEach(b => b.classList.toggle('on', +b.dataset.v === cfg.speed)); seg('roundSeg', 'rounds', true);
 $('startBtn').onclick = () => { newGame(); startPlay(); };
 $('resumeBtn').onclick = () => { G = load(); if (G) { G.players.forEach(p => { if (p.ai === null && /^Pemain \d/.test(p.name || '')) p.name = CHARS[p.ci].name; }); startPlay(); } };
 
 function startPlay() {
+  ensureState();
   $('menu').classList.add('hidden'); $('play').classList.remove('hidden'); document.body.classList.add('playing');
   buildBoard(); renderAll(); save(); nextTurn(true);
 }
@@ -411,7 +415,8 @@ function modal(html, buttons, autoMs) {
     $('modal').classList.remove('hidden');
     let done = false;
     const close = v => { if (done) return; done = true; $('modal').classList.add('hidden'); res(v); };
-    $('modalCard').querySelectorAll('button').forEach(b => b.onclick = () => { beep(700); close(buttons[+b.dataset.i].v); });
+    $('modalCard').querySelectorAll('button[data-i]').forEach(b => b.onclick = () => { beep(700); close(buttons[+b.dataset.i].v); });
+    $('modalCard').querySelectorAll('[data-pick]').forEach(b => b.onclick = e => { e.stopPropagation(); if (b.disabled) return; beep(700); close(b.dataset.pick); });
     const fin = () => close(buttons.length ? buttons[0].v : null);
     if (ms) { setTimeout(fin, ms); $('modal').onclick = fin; }
     else if (!buttons.length) $('modal').onclick = () => close(null); else $('modal').onclick = null;
@@ -471,12 +476,15 @@ function tileFx(i, kind) {
 /* ---------- Money ---------- */
 async function pay(k, amt, to) {
   const p = G.players[k], before = p.money;
+  let mathOk = false;
+  if (G.math && p.ai === null && amt > 0 && before >= amt) mathOk = await mathQuiz(k, before, amt);
   p.money -= amt; floatText(k, '-' + amt, '#e64980'); sfx.pay();
   let raised = 0;
   if (p.money < 0) raised = await raiseCash(k, amt);
   // if they went bankrupt, the receiver only gets what they really had
   const paid = p.out ? Math.max(0, before + raised) : amt;
   if (to !== undefined && to !== null && paid > 0) { G.players[to].money += paid; floatText(to, '+' + paid, '#2f9f73'); }
+  if (mathOk && !p.out) { await wait(300); gain(k, 10); log(`🧮 ${pname(p)} kira betul! Bonus RM10`); }
   renderAll();
 }
 function gain(k, amt) { G.players[k].money += amt; floatText(k, '+' + amt, '#2f9f73'); sfx.coin(); renderAll(); }
@@ -510,7 +518,14 @@ async function raiseCash(k, owed) {
 
 /* ---------- Turn flow ---------- */
 const isHumanTurn = () => cur().ai === null;
-function setRoll(on) { $('rollBtn').disabled = !on; $('rollBtn').style.visibility = on ? 'visible' : 'hidden'; }
+function setRoll(on) {
+  $('rollBtn').disabled = !on; $('rollBtn').style.visibility = on ? 'visible' : 'hidden';
+  const hum = on && G && !G.over && isHumanTurn();
+  $('tradeBtn').classList.toggle('hidden', !hum || !TILES.some((t, i) => G.own[i] !== null && G.own[i] !== G.turn));
+  const lb = G && G.lastBuy;
+  $('undoBtn').classList.toggle('hidden', !(hum && lb && lb.k === G.turn && G.own[lb.i] === G.turn && G.lvl[lb.i] === 0));
+  if (lb) $('undoBtn').textContent = `↩️ Batal beli ${TILES[lb.i].name}`;
+}
 async function nextTurn(first) {
   if (G.over) return;
   if (!first) {
@@ -525,6 +540,7 @@ async function nextTurn(first) {
     p.sleep--; log(`💤 ${pname(p)} masih tidur kat Rumah Tok Wan...`);
     await wait(1100); return nextTurn();
   }
+  G.players.forEach((q, j) => { if (!q.out && q.money >= 5000) sticker('rich', j); });
   if (isHumanTurn()) { setRoll(true); busy = false; }
   else { setRoll(false); busy = true; await wait(650); await doRoll(0); }
 }
@@ -532,6 +548,8 @@ $('rollBtn').onclick = () => { if (busy || !isHumanTurn()) return; busy = true; 
 
 async function doRoll(dbl) {
   const p = cur(), k = G.turn, dies = [...$('dice').children];
+  if (G.lastBuy && G.lastBuy.k === k) G.lastBuy = null;
+  setRoll(false);
   const a = 1 + (Math.random() * 6 | 0), b = 1 + (Math.random() * 6 | 0);
   dies.forEach(d => d.classList.add('spin'));
   for (let i = 0; i < 10; i++) { dies.forEach(d => setDie(d, 1 + (Math.random() * 6 | 0))); beep(380 + i * 45, .03); await new Promise(r => setTimeout(r, 90)); }
@@ -569,7 +587,7 @@ async function goTo(k, pos) {
 }
 async function sendSleep(k) {
   const p = G.players[k];
-  p.pos = 10; p.sleep = 1; renderAll();
+  p.pos = 10; p.sleep = 1; st(k).sleeps++; sticker('tidur', k); renderAll();
   log(`😴 ${pname(p)} tertidur kat Rumah Tok Wan (rehat 1 giliran)`);
   notify('polis', `Shhh... ${pname(p)} tengah tidur kat Rumah Tok Wan. Jangan bising!`, true);
 }
@@ -586,7 +604,7 @@ async function landOn(k, sum) {
       if (ai) want = can && aiWantsBuy(k, i);
       else want = await modal(propHtml(i) + `<p>Duit kau: <b>${rm(p.money)}</b></p>`, [{ label: `🛒 BELI ${rm(t.price)}`, v: true, cls: 'mint', dis: !can }, { label: 'Tak nak', v: false, cls: 'grey' }]);
       if (want) {
-        p.money -= t.price; G.own[i] = k; sfx.buy(); floatText(k, '-' + t.price, '#e64980');
+        p.money -= t.price; G.own[i] = k; sfx.buy(); st(k).bought++; if (!ai) G.lastBuy = { k, i, price: t.price }; sticker('first_buy', k); if (i === 39) sticker('klcc', k); if (t.set && TILES.every((x, j) => x.set !== t.set || G.own[j] === k)) sticker('set', k); floatText(k, '-' + t.price, '#e64980');
         log(`🛒 ${pname(p)} beli ${t.name}!`); renderAll(); tileFx(i, 'buy'); await wait(1000);
         notify(pick(['kiah', 'mira', 'ann']), pick([`${pname(p)} dah beli ${t.name}! Tahniah!`, `Wah, ${t.name} ada tuan baru: ${pname(p)}!`]), true);
         if (ai) await modal(say(`${pname(p)}: "Yeay! Aku beli ${t.name}!"`) + propHtml(i), [{ label: 'OK' }], auto);
@@ -597,14 +615,25 @@ async function landOn(k, sum) {
         let up;
         if (ai) up = can && p.money - cost >= ai.upReserve;
         else up = await modal(propHtml(i) + `<p>Ni tempat kau! Nak naik taraf jadi <b>${LVL_IC[nx]} ${LVL[nx]}</b>?</p>`, [{ label: `🔨 UPGRADE ${rm(cost)}`, v: true, cls: 'mint', dis: !can }, { label: 'Nanti dulu', v: false, cls: 'grey' }]);
-        if (up) { p.money -= cost; G.lvl[i] = nx; sfx.buy(); renderAll(); tileFx(i, nx === 2 ? 'big' : 'up'); await wait(1100); log(`🔨 ${pname(p)} naik taraf ${t.name} jadi ${LVL[nx]}!`); renderAll(); notify('mira', `Cantiknya! ${t.name} dah jadi ${LVL[nx]} ${LVL_IC[nx]}`, true); if (ai) await modal(say(`${pname(p)}: "${t.name} aku dah jadi ${LVL[nx]}! ${LVL_IC[nx]}"`) + propHtml(i), [{ label: 'OK' }], auto); }
+        if (up) { p.money -= cost; G.lvl[i] = nx; sfx.buy(); if (nx === 2) sticker('bangunan', k); renderAll(); tileFx(i, nx === 2 ? 'big' : 'up'); await wait(1100); log(`🔨 ${pname(p)} naik taraf ${t.name} jadi ${LVL[nx]}!`); renderAll(); notify('mira', `Cantiknya! ${t.name} dah jadi ${LVL[nx]} ${LVL_IC[nx]}`, true); if (ai) await modal(say(`${pname(p)}: "${t.name} aku dah jadi ${LVL[nx]}! ${LVL_IC[nx]}"`) + propHtml(i), [{ label: 'OK' }], auto); }
       } else log(`${pname(p)} rehat kat ${t.name} sendiri 😌`);
     } else {
-      const r = rentOf(i, sum), owner = G.players[o];
+      let r = rentOf(i, sum); const owner = G.players[o];
+      if (G.lastBuy && G.lastBuy.i === i) G.lastBuy = null;
       log(`🏠 ${pname(p)} bayar sewa ${rm(r)} kat ${pname(owner)}`);
       if (r >= 100) notify('abu', `Mahalnya sewa ${t.name}, ${rm(r)}! Tak puas hati betul!`, true); else notify('abu', pick([`Sewa ${t.name} ${rm(r)}. Bolehlah...`, `${pname(p)} bayar sewa kat ${pname(owner)}.`]), false);
-      if (!ai) await modal(propHtml(i) + `<p>Alamak! Ni tempat <b>${pname(owner)}</b>. Kena bayar sewa:</p><h2>${rm(r)}</h2>`, [{ label: '💸 BAYAR', cls: 'pink' }]);
+      if (!ai) {
+        const big = r >= 20;
+        const v = await modal(propHtml(i) + `<p>Alamak! Ni tempat <b>${pname(owner)}</b>. Kena bayar sewa:</p><h2>${rm(r)}</h2>${big ? '<p class="mg-hint">🎮 Main <b>Tangkap Syiling</b>! Dapat 7 syiling, sewa jadi separuh.</p>' : ''}`,
+          big ? [{ label: '🎮 CUBA NASIB', v: 'mg', cls: 'mint' }, { label: '💸 Bayar je', v: 'pay', cls: 'pink' }] : [{ label: '💸 BAYAR', v: 'pay', cls: 'pink' }]);
+        if (v === 'mg') {
+          const ok = await coinGame();
+          if (ok) { r = Math.ceil(r / 2); sticker('minigame', k); log(`🪙 ${pname(p)} menang Tangkap Syiling! Sewa jadi ${rm(r)}`); notify('mira', `Hebatnya ${pname(p)}! Sewa dapat separuh harga!`, false); }
+          else log(`🪙 ${pname(p)} tak sempat... bayar penuh ${rm(r)}`);
+        }
+      }
       else await modal(say(`${pname(p)}: "Alamak, kena bayar ${rm(r)} kat ${pname(owner)}!"`) + propHtml(i), [{ label: 'OK' }], 10000);
+      st(k).rentPaid += r; st(o).rentEarn += r; G.tileEarn[i] += r;
       await pay(k, r, o);
     }
   } else if (t.t === 'tax') {
@@ -618,6 +647,7 @@ async function landOn(k, sum) {
     let tot = 0;
     for (let j = 0; j < G.players.length; j++) if (j !== k && !G.players[j].out) { tot += 20; await pay(j, 20, k); }
     log(`💐 Kenduri ${pname(p)}! Dapat salam berisi ${rm(tot)}`); sfx.coin();
+    st(k).kenduri++; if (st(k).kenduri >= 3) sticker('kenduri3', k);
     notify('ann', `Semua dijemput ke kenduri kahwin ${pname(p)}!`, true);
     await modal(`<div class="big-ic">💐</div><h2>Kenduri Kahwin!</h2><p>Semua orang datang bagi salam berisi. ${pname(p)} dapat <b>${rm(tot)}</b>!</p>`, [{ label: 'Yeay!' }], auto || 0);
   } else if (t.t === 'rezeki' || t.t === 'musibah') {
@@ -634,7 +664,8 @@ async function drawCard(k, type) {
   if (c.each) extra = c.each > 0 ? `Setiap kawan bagi ${rm(c.each)}` : `Bayar setiap kawan ${rm(-c.each)}`;
   await modal(`<p style="margin:0 0 8px"><b>${pname(p)}</b> ambil kad...</p><div class="flip"><div class="flip-in"><div class="face back ${type} ${ART['card_' + type + '_back'] ? 'art' : ''}"><span>${type === 'rezeki' ? '🍀' : '🌧️'}</span>${type === 'rezeki' ? 'REZEKI' : 'MUSIBAH'}</div><div class="face front ${type} ${ART['card_' + type + '_front'] ? 'art' : ''}"><div class="big-ic">${c.ic}</div><h2>${c.txt}</h2>${extra ? `<b>${extra}</b>` : ''}</div></div></div>`, [{ label: 'OK!', cls: type === 'rezeki' ? 'mint' : 'pink' }], p.ai !== null ? 10000 : 0);
   log(`${c.ic} ${pname(p)}: ${c.txt}`);
-  if (c.money > 0) gain(k, c.money);
+  if (c.pasar) await pasarMalam(k);
+  else if (c.money > 0) gain(k, c.money);
   else if (c.money < 0) await pay(k, -c.money);
   else if (c.each) {
     for (let j = 0; j < G.players.length; j++) if (j !== k && !G.players[j].out) {
@@ -661,6 +692,176 @@ function aiWantsBuy(k, i) {
   return left >= ai.reserve;
 }
 
+/* ===================== EXTRAS ===================== */
+function ensureState() {
+  if (!G.stats) G.stats = G.players.map(() => ({ rentPaid: 0, rentEarn: 0, sleeps: 0, kenduri: 0, bought: 0 }));
+  if (!G.tileEarn) G.tileEarn = TILES.map(() => 0);
+  if (G.math === undefined) G.math = false;
+}
+const st = k => { ensureState(); return G.stats[k]; };
+
+/* --- Stickers (simpan kekal dalam phone) --- */
+const STICKERS = [
+  ['first_buy', '🛒', 'Tanah Pertama', 'Beli tanah pertama'],
+  ['klcc', '🏙️', 'Tuan KLCC', 'Beli KLCC'],
+  ['bangunan', '🏢', 'Arkitek Cilik', 'Naik taraf jadi Bangunan'],
+  ['set', '⭐', 'Set Lengkap', 'Kumpul satu set warna penuh'],
+  ['kenduri3', '💐', 'Raja Kenduri', '3 kali kenduri dalam satu game'],
+  ['tidur', '😴', 'Kaki Tidur', 'Tertidur kat Rumah Tok Wan'],
+  ['rich', '💰', 'Jutawan Comel', 'Kumpul RM5000'],
+  ['win', '🏆', 'Juara Tycoon', 'Menang satu game'],
+  ['minigame', '🪙', 'Penangkap Syiling', 'Menang Tangkap Syiling'],
+  ['trade', '🤝', 'Pakar Tawar', 'Berjaya beli tanah kawan'],
+  ['math', '🧮', 'Otak Geliga', 'Jawab 10 soalan kira dengan betul'],
+  ['pasar', '🍡', 'Hantu Kuih', 'Pilih kuih kat Pasar Malam'],
+];
+let STK = {}; try { STK = JSON.parse(localStorage.getItem('cozyTycoonStickers')) || {}; } catch (e) {}
+function sticker(id, k) {
+  if (STK[id] || !G || k < 0 || !G.players[k] || G.players[k].ai !== null) return;
+  STK[id] = Date.now(); try { localStorage.setItem('cozyTycoonStickers', JSON.stringify(STK)); } catch (e) {}
+  const d = STICKERS.find(x => x[0] === id); if (!d) return;
+  setTimeout(() => {
+    const t = document.createElement('div'); t.className = 'stk-pop';
+    t.innerHTML = `<div class="stk-ic">${stickerIcon(d)}</div><div><small>STICKER BARU!</small><b>${d[2]}</b></div>`;
+    document.body.appendChild(t); [784, 988, 1175, 1568].forEach((f, n) => setTimeout(() => beep(f, .12, 'triangle', .06), n * 90));
+    setTimeout(() => t.remove(), 3600);
+  }, 500);
+}
+const stickerIcon = d => ART['stk_' + d[0]] ? img('stk_' + d[0], 'si') : d[1];
+function renderStickers() {
+  const box = $('stickers'); if (!box) return;
+  const n = STICKERS.filter(d => STK[d[0]]).length;
+  $('stkCount').textContent = `${n}/${STICKERS.length}`;
+  box.innerHTML = STICKERS.map(d => `<div class="stk ${STK[d[0]] ? 'on' : ''}" title="${d[3]}"><div class="stk-ic">${STK[d[0]] ? stickerIcon(d) : '❔'}</div><b>${d[2]}</b><small>${d[3]}</small></div>`).join('');
+}
+
+/* --- Mini game: Tangkap Syiling --- */
+function coinGame() {
+  return new Promise(res => {
+    const need = 7, ov = document.createElement('div'); let score = 0, t = 7, end = false;
+    ov.className = 'mg';
+    ov.innerHTML = `<div class="mg-card"><h2>Tangkap Syiling! 🪙</h2><div class="mg-top"><span id="mgScore">🪙 0/${need}</span><span id="mgTime">⏱ ${t}</span></div><div class="mg-area" id="mgArea"><div class="mg-go">SEDIA...</div></div><p>Tap syiling yang jatuh! Jangan tap 💣</p></div>`;
+    document.body.appendChild(ov);
+    const area = ov.querySelector('#mgArea'), coinArt = ART.mg_coin ? img('mg_coin', 'mgi') : '🪙', bombArt = ART.mg_bomb ? img('mg_bomb', 'mgi') : '💣';
+    let sp, tm;
+    const spawn = () => {
+      if (end) return;
+      const bomb = Math.random() < .2, c = document.createElement('div');
+      c.className = 'mg-coin' + (bomb ? ' bomb' : ''); c.innerHTML = bomb ? bombArt : coinArt;
+      c.style.left = (4 + Math.random() * 78) + '%'; c.style.animationDuration = (1.7 + Math.random() * 1.1) + 's';
+      c.onpointerdown = e => {
+        e.preventDefault(); if (end) return;
+        if (bomb) { score = Math.max(0, score - 2); beep(180, .25, 'sawtooth', .06); area.classList.remove('shake'); void area.offsetWidth; area.classList.add('shake'); }
+        else { score++; sfx.coin(); }
+        c.remove(); ov.querySelector('#mgScore').textContent = `🪙 ${score}/${need}`;
+        if (score >= need) finish(true);
+      };
+      c.addEventListener('animationend', () => c.remove());
+      area.appendChild(c);
+    };
+    setTimeout(() => {
+      area.innerHTML = ''; sp = setInterval(spawn, 360); spawn();
+      tm = setInterval(() => { t--; ov.querySelector('#mgTime').textContent = '⏱ ' + t; if (t <= 0) finish(score >= need); }, 1000);
+    }, 1100);
+    function finish(ok) {
+      if (end) return; end = true; clearInterval(sp); clearInterval(tm);
+      ok ? sfx.win() : sfx.pay();
+      ov.querySelector('.mg-card').insertAdjacentHTML('beforeend', `<div class="mg-res ${ok ? 'win' : 'lose'}">${ok ? '🎉 BERJAYA! Sewa separuh!' : '😅 Tak cukup... bayar penuh'}</div>`);
+      setTimeout(() => { ov.remove(); res(ok); }, 1800);
+    }
+  });
+}
+
+/* --- Pasar Malam: pilih kuih --- */
+const KUIH = [['🍡', 'Kuih Lapis'], ['🥟', 'Karipap'], ['🍩', 'Donut Gula'], ['🍢', 'Sate'], ['🍧', 'ABC'], ['🌽', 'Jagung Bakar'], ['🍮', 'Puding'], ['🥞', 'Apam Balik']];
+async function pasarMalam(k) {
+  const p = G.players[k], three = shuffle(KUIH.slice()).slice(0, 3), prizes = shuffle([30, 80, 150]);
+  const ki = c => ART['kuih_' + KUIH.indexOf(c)] ? img('kuih_' + KUIH.indexOf(c), 'ki') : c[0];
+  let pickI;
+  if (p.ai === null) {
+    pickI = +(await modal(`<div class="big-ic">🏮</div><h2>Pasar Malam!</h2><p>Pilih satu kuih. Setiap kuih ada hadiah rahsia!</p><div class="kuih-row">${three.map((c, n) => `<button class="kuih" data-pick="${n}"><span>${ki(c)}</span>${c[1]}</button>`).join('')}</div>`, []));
+    if (isNaN(pickI)) pickI = 0;
+  } else { await wait(600); pickI = Math.random() * 3 | 0; }
+  const won = prizes[pickI];
+  await modal(`<div class="big-ic">${ki(three[pickI])}</div><h2>${three[pickI][1]}!</h2><p>${pname(p)} dapat <b>${rm(won)}</b>${won === 150 ? ' — paling sedap! 🤩' : won === 30 ? ' — sikit je, tapi sedap 😋' : ' 😄'}</p><div class="kuih-row">${three.map((c, n) => `<div class="kuih ${n === pickI ? 'sel' : 'dim'}"><span>${ki(c)}</span>${rm(prizes[n])}</div>`).join('')}</div>`, [{ label: 'Sedap!', cls: 'mint' }], p.ai !== null ? 10000 : 0);
+  gain(k, won); log(`🏮 ${pname(p)} pilih ${three[pickI][1]}, dapat ${rm(won)}`); sticker('pasar', k);
+}
+
+/* --- Mod Belajar Kira --- */
+async function mathQuiz(k, before, amt) {
+  const p = G.players[k], ans = before - amt, opts = new Set([ans]);
+  const ds = [10, 20, 50, 100].filter(d => d !== 0);
+  while (opts.size < 3) { const v = ans + (Math.random() < .5 ? -1 : 1) * pick(ds); if (v >= 0) opts.add(v); }
+  const list = shuffle([...opts]);
+  const v = +(await modal(`<div class="big-ic">🧮</div><h2>Jom Kira!</h2><p><b>${pname(p)}</b> ada <b>${rm(before)}</b> dan kena bayar <b>${rm(amt)}</b>.</p><div class="math-eq">${before} − ${amt} = ?</div>`, list.map(o => ({ label: rm(o), v: o, cls: 'mint' }))));
+  const ok = v === ans;
+  if (ok) { let n = +(localStorage.getItem('cozyTycoonMath') || 0) + 1; try { localStorage.setItem('cozyTycoonMath', n); } catch (e) {} if (n >= 10) sticker('math', k); sfx.win(); }
+  await modal(`<div class="big-ic">${ok ? '🎉' : '🤔'}</div><h2>${ok ? 'Betul! Pandainya!' : 'Hampir betul!'}</h2><div class="math-eq">${before} − ${amt} = <b>${ans}</b></div><p>${ok ? 'Bonus <b>RM10</b> untuk otak geliga!' : 'Takpe, cuba lagi lain kali ye!'}</p>`, [{ label: 'OK', cls: ok ? 'mint' : 'pink' }]);
+  return ok;
+}
+
+/* --- Batal beli --- */
+$('undoBtn').onclick = () => {
+  const lb = G && G.lastBuy; if (busy || !lb || lb.k !== G.turn || G.own[lb.i] !== lb.k || G.lvl[lb.i] !== 0) return;
+  const p = G.players[lb.k]; p.money += lb.price; G.own[lb.i] = null; st(lb.k).bought--; G.lastBuy = null;
+  floatText(lb.k, '+' + lb.price, '#2f9f73'); sfx.coin(); log(`↩️ ${pname(p)} batal beli ${TILES[lb.i].name}, duit dipulangkan`);
+  renderAll(); setRoll(true); save();
+};
+
+/* --- Beli tanah kawan (trade) --- */
+$('tradeBtn').onclick = async () => {
+  if (busy || !isHumanTurn()) return;
+  busy = true; setRoll(false);
+  try { await openTrade(G.turn); } finally { busy = false; renderAll(); setRoll(true); save(); }
+};
+function aiValue(k, i) {
+  const o = G.own[i], t = TILES[i], ai = AIS[G.players[o].ai] || AIS[2];
+  let v = (t.price || 0) + G.lvl[i] * (UPC[t.set] || 0);
+  let m = [1.8, 1.4, 1.55][G.players[o].ai] || 1.5;
+  if (t.set) { const mine = TILES.filter((x, j) => x.set === t.set && G.own[j] === o).length; if (mine >= 2) m += .8; }
+  if (G.players[o].money < 150) m -= .4; // need cash: more willing
+  void ai; return Math.round(v * m / 10) * 10;
+}
+async function openTrade(k) {
+  const p = G.players[k], tiles = TILES.map((t, i) => i).filter(i => G.own[i] !== null && G.own[i] !== k && !G.players[G.own[i]].out);
+  const iStr = await modal(`<h2>🤝 Beli Tanah Kawan</h2><p>Pilih tanah yang kau nak. Kawan boleh setuju atau tolak!</p><div class="tr-grid">${tiles.map(i => `<button class="tr-tile" data-pick="${i}" style="--own:${CHARS[G.players[G.own[i]].ci].color}"><span class="tr-ic">${tileIcon(i)}</span><b>${TILES[i].name}</b><small>${pname(G.players[G.own[i]])}${G.lvl[i] ? ' · ' + LVL_IC[G.lvl[i]] : ''}</small></button>`).join('')}</div>`, [{ label: 'Batal', v: null, cls: 'grey' }]);
+  if (iStr === null || iStr === undefined) return;
+  const i = +iStr, t = TILES[i], o = G.own[i], owner = G.players[o], base = (t.price || 0) + G.lvl[i] * (UPC[t.set] || 0);
+  const offers = [base, Math.round(base * 1.5 / 10) * 10, base * 2];
+  const off = await modal(propHtml(i) + `<p>Duit kau: <b>${rm(p.money)}</b>. Nak tawar berapa kat <b>${pname(owner)}</b>?</p>`,
+    [...offers.map(v => ({ label: rm(v), v, cls: 'mint', dis: v > p.money })), { label: 'Batal', v: null, cls: 'grey' }]);
+  if (!off) return;
+  let yes;
+  if (owner.ai !== null) {
+    const want = aiValue(k, i); yes = off >= want;
+    await modal(`<div class="ai-say">${avatar(owner.ci)}<span>${pname(owner)}: "${yes ? pick(['Ok deal! Ambik la 😊', 'Boleh! Duit tu aku nak beli aiskrim 🍦', 'Setuju! Jaga elok-elok ye']) : pick(['Hmm... tak nak la, sayang tanah ni 😤', 'Murah sangat! Tambah lagi la', 'Tak boleh, ni tanah kesayangan aku!'])}"</span></div><h2>${yes ? '🤝 Deal!' : '🙅 Ditolak'}</h2>`, [{ label: 'OK' }]);
+  } else {
+    yes = (await modal(`<div class="big-ic">🤝</div><h2>Hei ${pname(owner)}!</h2><p><b>${pname(p)}</b> nak beli <b>${t.name}</b> kau dengan harga <b>${rm(off)}</b>. Setuju?</p><p class="hint">Bagi phone kat ${pname(owner)} dulu 😉</p>`, [{ label: '✅ Setuju', v: true, cls: 'mint' }, { label: '❌ Tak nak', v: false, cls: 'pink' }])) === true;
+  }
+  if (!yes) { log(`🙅 ${pname(owner)} tak nak jual ${t.name}`); return; }
+  p.money -= off; owner.money += off; G.own[i] = k;
+  floatText(k, '-' + off, '#e64980'); floatText(o, '+' + off, '#2f9f73'); sfx.buy();
+  renderAll(); tileFx(i, 'buy'); sticker('trade', k);
+  log(`🤝 ${pname(p)} beli ${t.name} dari ${pname(owner)} dengan ${rm(off)}`);
+  notify('kiah', `Wah, ${pname(p)} dah beli ${t.name} dari ${pname(owner)}!`, true);
+  if (t.set && TILES.every((x, j) => x.set !== t.set || G.own[j] === k)) sticker('set', k);
+  await wait(1000);
+}
+
+/* --- Ringkasan hujung game --- */
+function statsHtml() {
+  ensureState();
+  const ps = G.players.map((p, k) => ({ p, s: G.stats[k] }));
+  const top = (f) => ps.slice().sort((a, b) => f(b.s) - f(a.s))[0];
+  const rows = [];
+  const a = top(s => s.rentPaid); if (a.s.rentPaid) rows.push(['💸', 'Paling banyak bayar sewa', `${pname(a.p)} (${rm(a.s.rentPaid)})`]);
+  const b = top(s => s.rentEarn); if (b.s.rentEarn) rows.push(['💰', 'Paling untung sewa', `${pname(b.p)} (${rm(b.s.rentEarn)})`]);
+  const c = top(s => s.bought); if (c.s.bought) rows.push(['🏠', 'Paling banyak beli', `${pname(c.p)} (${c.s.bought})`]);
+  const d = top(s => s.sleeps); if (d.s.sleeps) rows.push(['😴', 'Paling kuat tidur', `${pname(d.p)} (${d.s.sleeps}×)`]);
+  const ti = G.tileEarn.indexOf(Math.max(...G.tileEarn)); if (G.tileEarn[ti] > 0) rows.push([TILES[ti].ic, 'Tanah paling untung', `${TILES[ti].name} (${rm(G.tileEarn[ti])})`]);
+  return rows.length ? `<div class="stats">${rows.map(r => `<div><span>${r[0]}</span><small>${r[1]}</small><b>${r[2]}</b></div>`).join('')}</div>` : '';
+}
+
 /* ---------- End ---------- */
 function worth(k) {
   return G.players[k].money + TILES.reduce((s, t, i) => s + (G.own[i] === k ? (t.price || 0) + G.lvl[i] * (UPC[t.set] || 0) : 0), 0);
@@ -670,10 +871,11 @@ async function endGame() {
   G.over = true; save(); busy = true; setRoll(false);
   const rank = G.players.map((p, k) => ({ p, k, w: p.out ? -1 : worth(k) })).sort((a, b) => b.w - a.w);
   const win = rank[0].p;
+  sticker('win', G.players.indexOf(win));
   sfx.win(); confetti(); notify('ann', `Tahniah ${pname(win)}! Jutawan Comel bandar kita!`, true);
   await modal(`<div class="big-ic">🏆</div><h2>${pname(win)} ${win.ai === null && G.players.filter(x => x.ai === null).length === 1 ? 'menang! Hebat!' : 'jadi Jutawan Comel!'}</h2>
     <p>Kekayaan = duit + nilai tanah & bangunan</p>
-    <ol class="rank">${rank.map((r, n) => `<li>${['🥇', '🥈', '🥉', '4️⃣'][n]} ${avatar(r.p.ci)} ${pname(r.p)}<span>${r.w < 0 ? 'Bankrap' : rm(r.w)}</span></li>`).join('')}</ol>`,
+    <ol class="rank">${rank.map((r, n) => `<li>${['🥇', '🥈', '🥉', '4️⃣'][n]} ${avatar(r.p.ci)} ${pname(r.p)}<span>${r.w < 0 ? 'Bankrap' : rm(r.w)}</span></li>`).join('')}</ol>${statsHtml()}`,
     [{ label: '🔁 MAIN LAGI', v: 'again' }, { label: 'Menu', v: 'menu', cls: 'grey' }]).then(v => {
       if (v === 'again') { newGame(); startPlay(); }
       else { $('play').classList.add('hidden'); $('menu').classList.remove('hidden'); document.body.classList.remove('playing'); G = null; renderMenu(); }
