@@ -10,7 +10,7 @@
 <link rel="icon" href="../assets/icons/icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Patrick+Hand&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=61">
+<link rel="stylesheet" href="style.css?v=62">
 </head>
 <body>
 <div id="app">
@@ -24,7 +24,7 @@
   <main id="menu" class="view">
     <div class="title-art" id="titleArt"></div>
     <h1>Titik Titik</h1>
-    <p class="tag">Game conteng belakang buku latihan zaman sekolah ✏️</p>
+    <p class="tag">Kepung titik lawan — game conteng kertas petak zaman sekolah ✏️</p>
 
     <section class="card">
       <h3>Mod</h3>
@@ -38,9 +38,9 @@
       </div>
       <h3>Saiz kertas</h3>
       <div class="seg" id="sizeSeg">
-        <button data-v="3" type="button">Kecik<br><small>3×3</small></button>
-        <button data-v="5" type="button">Sedang<br><small>5×5</small></button>
-        <button data-v="7" type="button">Besar<br><small>7×7</small></button>
+        <button data-v="s" type="button">Kecik<br><small>10×13</small></button>
+        <button data-v="m" type="button">Sedang<br><small>15×19</small></button>
+        <button data-v="l" type="button">Besar<br><small>20×26</small></button>
       </div>
     </section>
 
@@ -49,12 +49,13 @@
     <details class="card how">
       <summary>Cara main</summary>
       <ol>
-        <li>Giliran sorang satu, lukis <b>satu garisan</b> antara dua titik sebelah-menyebelah.</li>
-        <li>Siapa tutup sisi ke-4 sesuatu plot, tulis <b>huruf depan nama</b> dalam kotak tu.</li>
-        <li>Dapat kotak = <b>main sekali lagi</b>.</li>
-        <li>Semua kotak penuh, siapa paling banyak kotak, dia menang.</li>
+        <li>Giliran sorang satu, letak <b>satu titik</b> kat persimpangan garisan kertas.</li>
+        <li>Sambung titik sendiri (tepi atau <b>pepenjuru</b>) untuk <b>kepung titik lawan</b>.</li>
+        <li>Bila dah tertutup, garisan kepungan dilukis sendiri &amp; titik lawan dalam tu <b>kena tangkap</b>.</li>
+        <li>Kawasan dah dikepung tak boleh letak titik lagi. Jangan masuk kepungan lawan — nanti kena tangkap!</li>
+        <li>Kertas penuh (atau tekan 🏁 Tamat), siapa tangkap paling banyak titik menang.</li>
       </ol>
-      <p class="tip">💡 Tip: jangan lukis garisan ke-3 sesuatu kotak, nanti lawan yang sapu!</p>
+      <p class="tip">💡 Tip: titik pepenjuru jimat — dinding cepat siap. Kalau lawan dah nak tutup, sumbat titik kat lubang dia!</p>
     </details>
   </main>
 
@@ -66,14 +67,16 @@
       <div class="pcard" id="p1"><span class="av"></span><div><b class="nm"></b><span class="sc">0</span></div></div>
     </div>
     <div class="turn" id="turnLbl"></div>
-    <div class="board-wrap">
-      <svg id="board" xmlns="http://www.w3.org/2000/svg"></svg>
+    <div class="board-outer">
+      <div class="board-wrap" id="boardWrap"><svg id="board" xmlns="http://www.w3.org/2000/svg"></svg></div>
       <div id="bubble" class="bubble hidden"></div>
       <div id="toast" class="toast"></div>
     </div>
     <div class="play-btns">
       <button id="menuBtn" class="btn small" type="button">☰ Menu</button>
-      <button id="restartBtn" class="btn small" type="button">↻ Mula semula</button>
+      <button id="zoomBtn" class="btn small" type="button">🔍 Zoom</button>
+      <button id="finishBtn" class="btn small" type="button">🏁 Tamat</button>
+      <button id="restartBtn" class="btn small" type="button">↻ Semula</button>
     </div>
   </main>
 
@@ -89,6 +92,6 @@
     </div>
   </div>
 </div>
-<script src="game.js?v=61"></script>
+<script src="game.js?v=62"></script>
 </body>
 </html>

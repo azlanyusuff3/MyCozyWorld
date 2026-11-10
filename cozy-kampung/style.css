@@ -121,3 +121,20 @@ body{background:#e9e2cf url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 .bubble{font-family:"Patrick Hand";font-weight:400;font-size:16px;border-radius:8px}
 .modal{background:#2a241888}
 .modal-card p{font-size:17px}
+
+/* ===== Kepung Titik: kertas graf ===== */
+.board-outer{position:relative}
+.board-wrap{transform:none;padding:6px;border-radius:3px;overflow:auto;max-height:68vh;-webkit-overflow-scrolling:touch;background:#fbfcff;box-shadow:0 1px 0 #e4dcc6,0 14px 28px #4a3d1f33}
+.board-wrap:before,.board-wrap:after{display:none}
+.board-outer:before,.board-outer:after{content:"";position:absolute;z-index:2;top:-10px;width:70px;height:22px;background:#f5e9b0cc;box-shadow:0 1px 2px #0002;pointer-events:none}
+.board-outer:before{left:18%;transform:rotate(-5deg)}.board-outer:after{right:16%;transform:rotate(4deg)}
+#board{width:100%;max-width:none;cursor:crosshair}
+#board.locked{cursor:default}
+.dot-in{animation:dotin .25s ease-out both}
+@keyframes dotin{from{opacity:0}}
+.dot.captured{opacity:.38}
+.wall-draw{stroke-dasharray:4000;stroke-dashoffset:4000;animation:wall 1s ease-out forwards}
+@keyframes wall{to{stroke-dashoffset:0}}
+.reg-in{animation:dotin .5s ease-out both}
+.play-btns{gap:6px;margin-top:12px}
+.play-btns .btn{font-size:15px;padding:9px 4px}
