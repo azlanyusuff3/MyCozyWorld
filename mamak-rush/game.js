@@ -428,7 +428,7 @@ function drawStations() {
     setChoose(el, m.s === 'idle' && po.length > 1 ? 'pick' : '', m.s === 'idle' && po.length > 1 ? `<button type="button" data-pan="maggi"><span class="av">${ico('item_maggi', '🍜')}</span>Maggi</button><button type="button" data-pan="mee"><span class="av">${ico('item_mee', '🍝')}</span>Mee</button>` : '');
     el.classList.toggle('ready', m.s === 'ready' || m.s === 'stir'); el.classList.toggle('burn', m.s === 'burn');
     el.querySelector('.big').innerHTML = m.s === 'idle' ? (po.length > 1 ? '' : ico('st_kuali', '🍳')) : m.s === 'burn' ? ico('st_hangus_maggi', '🍜') : m.s === 'ready' ? ico('item_' + m.k, ITEMS[m.k].e) : ico('st_kuali_masak', '🥘');
-    el.querySelector('.hint').innerHTML = m.s === 'idle' ? (po.length > 1 ? '' : 'Tap masak') : m.s === 'cook' ? (mee ? 'Mee...' : 'Goreng...') : m.s === 'stir' ? '🥄 KACAU!' : m.s === 'ready' ? '✨ Ambik!' : '🔥 Buang';
+    el.querySelector('.hint').innerHTML = m.s === 'idle' ? (po.length > 1 ? '' : 'Tap masak') : m.s === 'cook' ? (mee ? 'Mee...' : 'Goreng...') : m.s === 'stir' ? 'KACAU!' : m.s === 'ready' ? '✨ Ambik!' : '🔥 Buang';
     b.style.width = (m.s === 'cook' ? 1 - m.t / (mee ? MEE_COOK : MAGGI_COOK) : m.s === 'ready' ? m.t / READY_WIN : m.s === 'stir' ? m.st / 1.6 : 0) * 100 + '%';
   });
   if (feat(R.day, 'nasi')) {
