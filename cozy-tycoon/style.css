@@ -321,3 +321,9 @@ button.kuih:active{transform:scale(.95)}
 .toast{pointer-events:none!important;max-width:none;opacity:.97}
 .toasts .toast span{font-size:11.5px}.toasts .toast .face{width:30px;height:30px}
 .toasts{z-index:15}
+
+.char-pick{grid-template-columns:repeat(4,1fr)}
+.title-chars{flex-wrap:nowrap;overflow:hidden;height:84px}
+.title-chars img,.title-chars svg{width:46px!important;height:80px!important;flex:none}
+.name-face{position:relative;border:0;background:none;padding:0;flex:none;display:flex}
+.name-face i{position:absolute;right:-6px;bottom:-2px;font-size:12px;font-style:normal;background:#fff;border-radius:50%;box-shadow:0 1px 3px #0003;width:18px;height:18px;display:grid;place-items:center}

@@ -10,6 +10,10 @@ const CHARS = [
   { id: 'arnab', h: 'meimei', name: 'Mei Mei', color: '#ff7fa8', body: '#fff4f8', ear: 'bunny' },
   { id: 'panda', h: 'adam', name: 'Adam', color: '#6c7ae0', body: '#ffffff', ear: 'panda' },
   { id: 'ayam', h: 'ravi', name: 'Ravi', color: '#f2b705', body: '#ffe066', ear: 'chick' },
+  { id: 'sofea', h: 'sofea', name: 'Sofea', color: '#9b6bd6', body: '#f1e4ff', ear: 'none' },
+  { id: 'jason', h: 'jason', name: 'Jason', color: '#3fb27f', body: '#dcf5e8', ear: 'none' },
+  { id: 'priya', h: 'priya', name: 'Priya', color: '#17a2b8', body: '#d6f3f7', ear: 'none' },
+  { id: 'ryan', h: 'ryan', name: 'Ryan', color: '#e8504f', body: '#ffe0df', ear: 'none' },
 ];
 const SPRITES = {};
 function chibi(c) {
@@ -18,6 +22,7 @@ function chibi(c) {
   if (c.ear === 'cat') ears = `<path d="M22 30 L28 8 L42 24Z" fill="${b}" stroke="#d9772b" stroke-width="2"/><path d="M78 30 L72 8 L58 24Z" fill="${b}" stroke="#d9772b" stroke-width="2"/><path d="M27 24 L29 14 L36 22Z" fill="#ffc7c7"/><path d="M73 24 L71 14 L64 22Z" fill="#ffc7c7"/>`;
   if (c.ear === 'bunny') ears = `<ellipse cx="36" cy="14" rx="8" ry="20" fill="${b}" stroke="#f2b3c9" stroke-width="2"/><ellipse cx="64" cy="14" rx="8" ry="20" fill="${b}" stroke="#f2b3c9" stroke-width="2"/><ellipse cx="36" cy="15" rx="4" ry="14" fill="#ffc2d6"/><ellipse cx="64" cy="15" rx="4" ry="14" fill="#ffc2d6"/>`;
   if (c.ear === 'panda') ears = `<circle cx="26" cy="24" r="11" fill="#3b3b4f"/><circle cx="74" cy="24" r="11" fill="#3b3b4f"/>`;
+  if (c.ear === 'none') ears = `<path d="M18 46 Q20 14 50 14 Q80 14 82 46 Q70 26 50 26 Q30 26 18 46Z" fill="#5a3a2a"/>`;
   if (c.ear === 'chick') ears = `<path d="M44 14 Q50 0 54 14 Q60 4 58 18" fill="none" stroke="#e0a100" stroke-width="4" stroke-linecap="round"/>`;
   const eyePatch = c.id === 'panda' ? `<ellipse cx="37" cy="50" rx="9" ry="11" fill="#3b3b4f" transform="rotate(-15 37 50)"/><ellipse cx="63" cy="50" rx="9" ry="11" fill="#3b3b4f" transform="rotate(15 63 50)"/>` : '';
   const eyeCol = c.id === 'panda' ? '#fff' : '#3a2a3a';
@@ -390,7 +395,7 @@ function folkChatter() {
 
 /* ---------- State ---------- */
 let G = null, busy = false;
-const cfg = { math: localStorage.getItem('cozyTycoonMathMode') === '1', char: 0, mode: 'ai', count: 4, rounds: 20, speed: +(localStorage.getItem('cozyTycoonSpeed') || 1.15) };
+const cfg = { math: localStorage.getItem('cozyTycoonMathMode') === '1', char: Math.min(7, +(localStorage.getItem('cozyTycoonChar') || 0)), mode: 'ai', count: 4, rounds: 20, speed: +(localStorage.getItem('cozyTycoonSpeed') || 1.15) };
 const SPD = () => cfg.speed;
 const wait = ms => new Promise(r => setTimeout(r, ms * SPD()));
 let camOn = localStorage.getItem('cozyTycoonCam') !== '0';
@@ -402,11 +407,11 @@ const rm = n => 'RM' + n;
 function newGame() {
   const players = [];
   if (cfg.mode === 'ai') {
-    const others = [0, 1, 2, 3].filter(i => i !== cfg.char);
+    const others = shuffle(CHARS.map((c, i) => i).filter(i => i !== cfg.char)).slice(0, 3);
     players.push({ name: getName(0, 'Kau'), ci: cfg.char, ai: null });
     others.forEach((ci, k) => players.push({ name: CHARS[ci].name, ci, ai: k }));
   } else {
-    const order = [cfg.char, ...[0, 1, 2, 3].filter(i => i !== cfg.char)].slice(0, cfg.count);
+    const order = localOrder();
     order.forEach((ci, k) => players.push({ name: getName(k, CHARS[ci].name), ci, ai: null }));
   }
   players.forEach(p => Object.assign(p, { money: 1500, pos: 0, out: false, sleep: 0 }));
@@ -424,17 +429,36 @@ function load() { try { return JSON.parse(localStorage.getItem(SAVE)); } catch (
 let NAMES = []; try { NAMES = JSON.parse(localStorage.getItem('cozyTycoonNames')) || []; } catch (e) {}
 const esc = t => String(t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 function getName(k, def) { const v = (NAMES[k] || '').trim(); return v ? v.slice(0, 12) : def; }
+// Main Bersama: each player picks a character (tap the face to change)
+let LC = []; try { LC = JSON.parse(localStorage.getItem('cozyTycoonLocalChars')) || []; } catch (e) {}
+function localOrder() {
+  const out = [cfg.char];
+  for (let k = 1; k < cfg.count; k++) {
+    let c = LC[k];
+    if (c === undefined || c >= CHARS.length || out.includes(c)) c = CHARS.map((x, i) => i).find(i => !out.includes(i));
+    out.push(c);
+  }
+  LC = out.slice(); try { localStorage.setItem('cozyTycoonLocalChars', JSON.stringify(LC)); } catch (e) {}
+  return out;
+}
+function cycleChar(k) {
+  const order = localOrder(); let c = order[k];
+  do { c = (c + 1) % CHARS.length; } while (order.includes(c) && c !== order[k]);
+  if (k === 0) { cfg.char = c; localStorage.setItem('cozyTycoonChar', c); } else { LC[k] = c; }
+  beep(700); renderMenu();
+}
 function renderNames() {
   const box = $('nameInputs'); if (!box) return;
-  const order = cfg.mode === 'ai' ? [cfg.char] : [cfg.char, ...[0, 1, 2, 3].filter(i => i !== cfg.char)].slice(0, cfg.count);
-  box.innerHTML = order.map((ci, k) => `<label class="name-row">${avatar(ci)}<input data-k="${k}" maxlength="12" autocomplete="off" placeholder="${cfg.mode === 'ai' ? 'Nama kau' : 'Pemain ' + (k + 1) + ' (' + CHARS[ci].name + ')'}" value="${esc(NAMES[k] || '')}"></label>`).join('');
+  const order = cfg.mode === 'ai' ? [cfg.char] : localOrder();
+  box.innerHTML = order.map((ci, k) => `<label class="name-row"><button type="button" class="name-face" data-k="${k}" title="Tukar watak">${avatar(ci)}${cfg.mode === 'local' ? '<i>🔄</i>' : ''}</button><input data-k="${k}" maxlength="12" autocomplete="off" placeholder="${cfg.mode === 'ai' ? 'Nama kau' : 'Pemain ' + (k + 1) + ' (' + CHARS[ci].name + ')'}" value="${esc(NAMES[k] || '')}"></label>`).join('');
+  box.querySelectorAll('.name-face').forEach(b => b.onclick = e => { e.preventDefault(); if (cfg.mode === 'local') cycleChar(+b.dataset.k); });
   box.querySelectorAll('input').forEach(inp => inp.oninput = () => { NAMES[+inp.dataset.k] = inp.value; try { localStorage.setItem('cozyTycoonNames', JSON.stringify(NAMES)); } catch (e) {} });
 }
 function renderMenu() {
   renderNames(); renderStickers();
   $('titleChars').innerHTML = CHARS.map((c, i) => avatar(i)).join('');
   $('charPick').innerHTML = CHARS.map((c, i) => `<button data-i="${i}" class="${i === cfg.char ? 'on' : ''}">${avatar(i)}${c.name}</button>`).join('');
-  [...$('charPick').children].forEach(b => b.onclick = () => { cfg.char = +b.dataset.i; beep(700); renderMenu(); });
+  [...$('charPick').children].forEach(b => b.onclick = () => { cfg.char = +b.dataset.i; localStorage.setItem('cozyTycoonChar', cfg.char); beep(700); renderMenu(); });
   $('resumeBtn').classList.toggle('hidden', !load());
 }
 function seg(id, key, num, after) {

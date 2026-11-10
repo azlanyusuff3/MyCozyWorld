@@ -178,3 +178,17 @@ Do this **after Batch 9**, and use the four new kid tokens (`token_aina`, `token
 |---|---|---|---|
 | `assets/hub/card_tycoon.webp` | same size as the current file (landscape 4:3) | opaque | Aina, Mei Mei, Adam and Ravi standing happily around a colourful Monopoly-style board with Malaysian landmarks (KLCC, Menara KL, kampung house, pasar malam stall), big pink dice and gold coins, pastel pink and sky blue background. **No animals, no text.** |
 | `cozy-tycoon/sprites/bg_menu.webp` | 1080×1920 portrait | opaque | Same dreamy pastel kampung-and-city scene as the current file, but replace any animal characters with the four kids (small, placed near the bottom corners, playing with dice and coins). Keep the **middle 60% calm and low detail** for the UI. **No animals, no text.** |
+
+---
+
+## Batch 11 — 4 more player kids (4 images)
+Same rules and style as Batch 9: **512×600 portrait, transparent**, full body chibi kid about 8 years old, standing, facing the viewer, very big head, thick soft brown outline, happy pose. Use `token_aina.webp`, `token_adam.webp` as the exact style and size reference so all 8 kids look like one set. Each kid wears the colour shown.
+
+| File | Character |
+|---|---|
+| `token_sofea.webp` | **Sofea**, Malay girl, lavender-purple tudung and purple baju kurung with small flower pattern, holding a little paper house, sweet smile |
+| `token_jason.webp` | **Jason**, Chinese boy, short neat hair, green hoodie and khaki shorts, holding a toy train, cheerful wave |
+| `token_priya.webp` | **Priya**, Indian girl, long braided hair with a small flower clip, teal/turquoise dress, small bindi optional, hands clasped happily |
+| `token_ryan.webp` | **Ryan**, Kadazan-Dusun boy from Sabah, spiky hair, red t-shirt with a small Mount Kinabalu print (no text), blue shorts, peace sign |
+
+Register `token_sofea`, `token_jason`, `token_priya`, `token_ryan` in `list.json` (keep everything already there).
