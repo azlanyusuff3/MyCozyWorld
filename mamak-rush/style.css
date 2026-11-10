@@ -225,3 +225,7 @@ body.has-bg_dinding .wall{height:64px;box-shadow:0 4px 0 #5b3a22}
 body.has-kaunter .counter{background:var(--kaunter) center/100% 100% no-repeat;box-shadow:none;height:96px;border-radius:0}
 body.has-dulang .tray{background:var(--dulang) center/100% 100% no-repeat;box-shadow:none;height:66px}
 body.has-dulang .tray .slot:not(.full){background:transparent}
+.table{--th:clamp(160px,25vh,240px);height:var(--th)}
+.table.spr .meja{height:calc(var(--th)*.66);width:auto;max-width:none;bottom:-10px}
+.table.spr .cust{margin-bottom:calc(var(--th)*.56)}
+.table.spr .cust>.av{margin-bottom:-40px!important}
