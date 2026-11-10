@@ -267,3 +267,8 @@ body.has-dulang .tray .slot:not(.full){background:transparent}
 .pan .choose button{flex-direction:row;gap:2px;font-size:10px}
 .st .pan .choose button .av{width:24px!important;height:24px!important;font-size:18px!important;line-height:24px!important;flex:none}
 .st .pan .choose button{font-size:9px;justify-content:center}
+.cust .order{max-width:190px;flex-wrap:nowrap;gap:4px}
+.order .it{max-width:76px}
+.tag{white-space:normal;text-align:center;line-height:1.05;max-width:76px}
+.st .pan .choose button{flex-direction:column;gap:0;font-size:9px}
+.st .pan .choose button .av{width:22px!important;height:22px!important}
