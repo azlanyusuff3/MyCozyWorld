@@ -64,6 +64,18 @@ Ini yang buat semua art nampak sebati. Gaya umum sama, **tapi saiz ikut jadual**
 
 > Tips: `bg_dinding` dan `kaunter` kena **lebar dan nipis** (nisbah 6:1). Kalau ChatGPT tak boleh terus jana saiz tu, jana landscape biasa dan crop bahagian tengah ikut nisbah.
 
+## Batch 6 — Menu baru (Hari 9–17)
+512×512, transparent, gaya sama macam Batch 1 (makanan atas pinggan/gelas, pandang depan sikit dari atas).
+| Fail | Prompt tambahan |
+|---|---|
+| `item_milo.webp` | A tall glass of iced Milo chocolate malt drink with ice cubes and a red straw, light brown colour, a little condensation on the glass |
+| `item_rotitelur.webp` | A golden roti telur (roti canai folded with egg inside, egg yolk slightly visible at the edge) on a small round steel plate with a little bowl of yellow dhal curry |
+| `item_mee.webp` | A plate of red-orange mee goreng mamak (fried yellow noodles) with tofu cubes, potato slices, bean sprouts, a fried egg on top and a lime wedge |
+| `item_murtabak.webp` | Thick square murtabak cut into pieces showing minced meat and egg filling, on a steel plate with sliced pickled onions and a small bowl of curry |
+| `item_tosai.webp` | A thin crispy golden tosai (dosa) folded into a big triangle on a steel plate with small bowls of coconut chutney and sambar |
+| `st_telur.webp` | A single white chicken egg with a small crack and a tiny bit of yolk peeking out, cute and simple |
+| `st_milo.webp` | A plastic shaker cup half full of chocolate Milo drink with motion lines, being shaken (no hands) |
+
 ## Kad hub (pilihan)
 Simpan `assets/hub/card_mamak.webp` (landscape 4:3), tambah `"card_mamak"` dalam `assets/hub/list.json`:
 > Cute chibi busy Malaysian mamak restaurant at night with green walls, marble round tables and red plastic stools, a chef stretching roti canai in the air, teh tarik being pulled high, cute chibi Malaysian customers of different races eating happily, a delivery rider on a scooter and an orange cat sneaking near the counter, warm lights and a TV showing football, kawaii mobile game key art, no text.

@@ -32,8 +32,15 @@ const ITEMS = {
   roti: { name: 'Roti canai', e: '🫓', price: 3 },
   teh: { name: 'Teh tarik', e: '☕', price: 2 },
   maggi: { name: 'Maggi goreng', e: '🍜', price: 5 },
-  nasi: { name: 'Nasi lemak', e: '🍛', price: 4 }
+  nasi: { name: 'Nasi lemak', e: '🍛', price: 4 },
+  milo: { name: 'Milo ais', e: '🥤', price: 3 },
+  rotitelur: { name: 'Roti telur', e: '🍳', price: 4 },
+  mee: { name: 'Mee goreng mamak', e: '🍝', price: 6 },
+  murtabak: { name: 'Murtabak', e: '🥙', price: 9 },
+  tosai: { name: 'Tosai', e: '🥞', price: 4 }
 };
+// mod yang boleh diminta untuk setiap menu
+const ITEM_MODS = { teh: ['kaw', 'kurang', 'ikat'], milo: ['kurang', 'ikat', 'dino'], roti: ['garing'], rotitelur: ['garing'] };
 const CUSTS = [
   { k: 'jamal', e: '🧑🏽', n: 'Abang Jamal' }, { k: 'lina', e: '🧕🏽', n: 'Kak Lina' }, { k: 'rahman', e: '👴🏽', n: 'Pakcik Rahman' },
   { k: 'amir', e: '👦🏽', n: 'Adik Amir' }, { k: 'lim', e: '👨🏻', n: 'Uncle Lim' }, { k: 'devi', e: '👩🏾', n: 'Aunty Devi' },
@@ -49,9 +56,19 @@ const UNLOCK = {
   4: { ic: '😤', t: 'Pelanggan tak sabar', d: 'Ada yang cepat marah. Tap dia untuk "Sabar ye bang!", sabar dia naik balik (sekali je).' },
   5: { ic: '🛵', t: 'Abang Grab', d: 'Order bungkus kat kaunter. Sabar dia pendek, tapi tip besar!' },
   6: { ic: '🐈', t: 'Oyen si pencuri', d: 'Kucing kedai nak curi makanan atas dulang. Tap dia untuk halau!' },
-  7: { ic: '🍛', t: 'Menu baru: Nasi lemak', d: 'Ambik terus dari periuk. Bila habis, tap untuk masak periuk baru.' }
+  7: { ic: '🍛', t: 'Menu baru: Nasi lemak', d: 'Ambik terus dari periuk. Bila habis, tap untuk masak periuk baru.' },
+  8: { ic: '☕✨', t: 'Order custom: "Teh tarik kaw"', d: 'Ada order dengan tag <b>kaw</b>. Kena lepas tepat kat zon hijau, kalau tak dia tak nak!' },
+  9: { ic: '🥤', t: 'Menu baru: Milo ais', d: 'Pilih Milo, lepas tu swipe atas-bawah untuk goncang. Lepas jari bila jarum kat hijau. Lebih goncang, melimpah!' },
+  10: { ic: '🍬', t: 'Order custom: "Kurang manis"', d: 'Tekan butang 🍬 Kurang sebelum buat air. Air biasa tak boleh bagi pada orang yang nak kurang manis (dan sebaliknya)!' },
+  11: { ic: '🍳', t: 'Menu baru: Roti telur', d: 'Pilih Telur kat tawa, tebar macam biasa, lepas tu tap untuk pecah telur.' },
+  12: { ic: '🔥', t: 'Order custom: "Roti garing"', d: 'Biar roti lama sikit atas tawa. Ambik masa bar masuk zon merah (sebelum hangus)!' },
+  13: { ic: '🍝', t: 'Menu baru: Mee goreng mamak', d: 'Pilih Mee kat kuali. Separuh jalan, tap <b>KACAU!</b> cepat, kalau tak dia melekat hangus.' },
+  14: { ic: '🛍️', t: 'Order custom: "Ikat tepi"', d: 'Air bungkus dalam plastik. Tekan 🛍️ Ikat sebelum buat air.' },
+  15: { ic: '🥙', t: 'Menu baru: Murtabak', d: 'Paling mahal! Tebar, pecah 2 telur, dan tunggu lama sikit.' },
+  16: { ic: '🦕', t: 'Order custom: "Milo Dinosaur"', d: 'Tekan 🦕 Dino sebelum goncang Milo, tabur serbuk Milo lebih kat atas.' },
+  17: { ic: '🥞', t: 'Menu baru: Tosai', d: 'Pilih Tosai, swipe bulat-bulat atas tawa untuk ratakan adunan.' }
 };
-const feat = (d, f) => d >= { maggi: 2, tambah: 3, sabar: 4, grab: 5, cat: 6, nasi: 7 }[f];
+const feat = (d, f) => d >= { maggi: 2, tambah: 3, sabar: 4, grab: 5, cat: 6, nasi: 7, kaw: 8, milo: 9, kurang: 10, telur: 11, garing: 12, mee: 13, ikat: 14, murtabak: 15, dino: 16, tosai: 17 }[f];
 const UPS = [
   { k: 'tables', ic: '🪑', n: 'Meja tambahan', d: 'Lebih ramai pelanggan serentak', cost: [40, 120], max: 2 },
   { k: 'fan', ic: '🌀', n: 'Kipas siling', d: 'Pelanggan lebih sabar (-20% cepat marah)', cost: [35], max: 1 },
@@ -165,9 +182,9 @@ function startDay(d) {
     day: d, t: DUR, earned: 0, served: 0, lost: 0, perfect: 0, paused: true, over: false,
     tables: Array(nTables).fill(null), grab: null, tray: [], trayMax: 4 + up('tray'), cat: null,
     spawnT: 1.2, grabT: rand(15, 25), catT: rand(14, 22), uid: 0,
-    roti: { s: 'idle', t: 0, prog: 0 },
-    teh: { s: 'idle', lvl: 0, hold: false, dir: 1 },
-    maggi: Array.from({ length: feat(d, 'maggi') ? 1 + up('kuali') : 1 }, () => ({ s: 'idle', t: 0 })),
+    roti: { s: 'idle', t: 0, prog: 0, k: 'roti', eggs: 0 },
+    teh: { s: 'idle', lvl: 0, hold: false, dir: 1, prog: 0 }, chips: {},
+    maggi: Array.from({ length: feat(d, 'maggi') ? 1 + up('kuali') : 1 }, () => ({ s: 'idle', t: 0, k: 'maggi' })),
     nasi: { stock: 6, s: 'idle', t: 0 }
   };
   $('#menu').classList.add('hidden'); $('#game').classList.remove('hidden');
@@ -182,7 +199,7 @@ function startDay(d) {
   $('#modalCard').onclick = e => { if (e.target.id === 'goBtn') { closeModal(); R.paused = false; SFX.bell(); lastT = performance.now(); } };
   cancelAnimationFrame(raf); lastT = performance.now(); raf = requestAnimationFrame(loop);
 }
-const menuItems = () => ['roti', 'teh', ...(feat(R.day, 'maggi') ? ['maggi'] : []), ...(feat(R.day, 'nasi') ? ['nasi'] : [])];
+const menuItems = () => ['roti', 'teh', ...[['maggi', 'maggi'], ['nasi', 'nasi'], ['milo', 'milo'], ['telur', 'rotitelur'], ['mee', 'mee'], ['murtabak', 'murtabak'], ['tosai', 'tosai']].filter(([f]) => feat(R.day, f)).map(x => x[1])];
 
 $('#pauseBtn').onclick = () => {
   if (!R || R.over) return; R.paused = true;
@@ -198,7 +215,12 @@ function toMenu() { cancelAnimationFrame(raf); $('#game').classList.add('hidden'
 /* ---------- Pelanggan ---------- */
 function makeOrder(n) {
   const opts = menuItems(), its = [];
-  for (let i = 0; i < n; i++) its.push({ k: pick(opts), done: false });
+  for (let i = 0; i < n; i++) {
+    const k = pick(opts), m = {}, avail = (ITEM_MODS[k] || []).filter(x => feat(R.day, x));
+    if (avail.length && Math.random() < .45) { m[pick(avail)] = true; if (R.day >= 15 && Math.random() < .25) m[pick(avail)] = true; }
+    if (m.dino && m.kurang) delete m.kurang;
+    its.push({ k, m, done: false });
+  }
   return its;
 }
 function patMax() { return Math.max(16, 34 - R.day * 1.1); }
@@ -232,7 +254,7 @@ function custDone(c) {
   const el = custEl(c); floatAt(el, '+' + rm(pay)); emote(el, c.grab ? '👍' : pick(['😋', '🥰', '😄', '❤️']));
   // Tambah satu!
   if (!c.grab && !c.asked && feat(R.day, 'tambah') && Math.random() < .35) {
-    c.asked = true; const k = pick(menuItems()); c.items = [{ k, done: false }]; c.pat = Math.min(c.max, c.pat + c.max * .35); c.perf = 0;
+    c.asked = true; const k = pick(menuItems()); c.items = [{ k, m: {}, done: false }]; c.pat = Math.min(c.max, c.pat + c.max * .35); c.perf = 0;
     notify(`🙋 <b>${c.who.n}:</b> ${pick(['Eh, tambah', 'Bos! Tambah', 'Sedap la, nak tambah'])} ${ITEMS[k].name.toLowerCase()} satu!`, 'good');
     setTimeout(() => { renderTables(); serveFromTray(); }, 500);
     return;
@@ -262,17 +284,28 @@ $('#tables').addEventListener('pointerdown', e => {
 });
 
 /* ---------- Dulang & hantar ---------- */
-function needers(k) {
+// Mod "binari" mesti sama tepat; mod "kualiti" cuma wajib kalau pelanggan minta
+const BIN_MODS = ['kurang', 'ikat', 'dino'], Q_MODS = ['kaw', 'garing'];
+const MOD_TXT = { kaw: 'kaw', kurang: 'kurang manis', ikat: 'ikat tepi', garing: 'garing', dino: 'dinosaur' };
+function matches(item, ord) {
+  if (item.k !== ord.k) return false;
+  for (const m of BIN_MODS) if (!!item.m[m] !== !!ord.m[m]) return false;
+  for (const m of Q_MODS) if (ord.m[m] && !item.m[m]) return false;
+  return true;
+}
+function needers(item) {
   const list = [];
   if (R.grab && !R.grab.gone) list.push(R.grab);
   R.tables.forEach(c => c && !c.gone && list.push(c));
-  return list.filter(c => c.items.some(i => !i.done && i.k === k)).sort((a, b) => (b.grab ? 1 : 0) - (a.grab ? 1 : 0) || a.pat / a.max - b.pat / b.max);
+  return list.filter(c => c.items.some(i => !i.done && matches(item, i))).sort((a, b) => (b.grab ? 1 : 0) - (a.grab ? 1 : 0) || a.pat / a.max - b.pat / b.max);
 }
-function deliver(k, perf, fromEl) {
-  const c = needers(k)[0];
+const wantsK = k => [R.grab, ...R.tables].some(c => c && !c.gone && c.items.some(i => !i.done && i.k === k));
+function deliver(item, fromEl) {
+  const c = needers(item)[0];
   if (c) {
-    const it = c.items.find(i => !i.done && i.k === k); it.done = true; if (perf) c.perf = (c.perf || 0) + 2;
-    flyItem(fromEl, custEl(c), k);
+    const it = c.items.find(i => !i.done && matches(item, i)); it.done = true;
+    if (item.m.kaw || item.m.garing) c.perf = (c.perf || 0) + 2;
+    flyItem(fromEl, custEl(c), item.k);
     setTimeout(() => {
       if (!R) return;
       c.grab ? renderSide() : renderTables();
@@ -280,29 +313,36 @@ function deliver(k, perf, fromEl) {
     }, 460);
     return true;
   }
-  if (R.tray.length >= R.trayMax) { notify('🍽️ Dulang dah penuh!', 'bad'); return false; }
-  R.tray.push({ k, perf }); flyItem(fromEl, $('#tray'), k); setTimeout(renderTray, 300);
+  if (wantsK(item.k)) notify(`🤔 Ada yang order ${ITEMS[item.k].name.toLowerCase()}, tapi bukan macam ni. Tengok tag dia!`, 'bad');
+  if (R.tray.length >= R.trayMax) { notify('🍽️ Dulang dah penuh! Tap makanan atas dulang untuk buang.', 'bad'); return false; }
+  R.tray.push(item); flyItem(fromEl, $('#tray'), item.k); setTimeout(renderTray, 300);
   return true;
 }
 function serveFromTray() {
   let moved = false;
   for (let i = R.tray.length - 1; i >= 0; i--) {
     const t = R.tray[i];
-    if (needers(t.k).length) { R.tray.splice(i, 1); const slot = $('#tray').children[i]; deliver(t.k, t.perf, slot); moved = true; }
+    if (needers(t).length) { R.tray.splice(i, 1); const slot = $('#tray').children[i]; deliver(t, slot); moved = true; }
   }
   if (moved) renderTray();
 }
+const tagHTML = m => { const t = Object.keys(m || {}).filter(x => m[x]).map(x => MOD_TXT[x]); return t.length ? `<i class="tag">${t.join(' · ')}</i>` : ''; };
 function renderTray() {
   if (!R) return;
-  $('#tray').innerHTML = Array.from({ length: R.trayMax }, (_, i) => { const t = R.tray[i]; return t ? `<div class="slot full av">${ico('item_' + t.k, ITEMS[t.k].e)}${t.perf ? '<span class="star">✨</span>' : ''}</div>` : '<div class="slot"></div>'; }).join('');
+  $('#tray').innerHTML = Array.from({ length: R.trayMax }, (_, i) => { const t = R.tray[i]; return t ? `<div class="slot full av" data-i="${i}">${ico('item_' + t.k, ITEMS[t.k].e)}${t.m.kaw || t.m.garing ? '<span class="star">✨</span>' : ''}${tagHTML({ kurang: t.m.kurang, ikat: t.m.ikat, dino: t.m.dino })}</div>` : '<div class="slot"></div>'; }).join('');
 }
+$('#tray').addEventListener('pointerdown', e => {
+  const s = e.target.closest('.slot.full'); if (!s || !live()) return;
+  const t = R.tray.splice(+s.dataset.i, 1)[0]; renderTray(); SFX.tap();
+  notify(`🗑️ Buang ${ITEMS[t.k].name.toLowerCase()}`, '');
+});
 
 /* ---------- Render meja ---------- */
-function orderHTML(c) { return `<div class="order">${c.items.map(i => `<span class="it av ${i.done ? 'done' : ''}">${ico('item_' + i.k, ITEMS[i.k].e)}</span>`).join('')}<div class="pat"><b class="${patCls(c)}" style="width:${c.pat / c.max * 100}%"></b></div></div>`; }
+function orderHTML(c) { return `<div class="order">${c.items.map(i => `<span class="it ${i.done ? 'done' : ''}"><span class="av">${ico('item_' + i.k, ITEMS[i.k].e)}</span>${tagHTML(i.m)}</span>`).join('')}<div class="pat"><b class="${patCls(c)}" style="width:${c.pat / c.max * 100}%"></b></div></div>`; }
 function patCls(c) { const f = c.pat / c.max; return f > .5 ? '' : f > .25 ? 'mid' : 'low'; }
 function renderTables() {
   if (!R) return;
-  $('#tables').innerHTML = R.tables.map(c => `<div class="table${SPR.meja ? ' spr' : ''}"><span class="shadow"></span>${SPR.meja ? `<img class="meja" src="${SPR.meja}" alt="">` : '<span class="top"></span><span class="stool l"></span><span class="stool r"></span>'}${c ? `
+  $('#tables').innerHTML = R.tables.map((c, ti) => `<div class="table${SPR.meja ? ' spr' : ''}" style="z-index:${ti + 1}"><span class="shadow"></span>${SPR.meja ? `<img class="meja" src="${SPR.meja}" alt="">` : '<span class="top"></span><span class="stool l"></span><span class="stool r"></span>'}${c ? `
     <div class="cust ${c.angry ? 'angry' : ''}" data-id="${c.id}">${orderHTML(c)}<span class="av">${ico('cust_' + c.who.k, c.who.e)}</span>${c.angry ? '<span class="calm-tag">TAP: Sabar!</span>' : ''}</div>` : ''}</div>`).join('');
 }
 function renderSide() {
@@ -317,90 +357,182 @@ $('#catSpot').addEventListener('pointerdown', () => {
 });
 
 /* ---------- Stesen ---------- */
+const ROTI_KINDS = [
+  { k: 'roti', f: null, n: 'Kosong', e: '🫓', eggs: 0, cook: () => up('tawa') ? 2.4 : 3.5 },
+  { k: 'rotitelur', f: 'telur', n: 'Telur', e: '🍳', eggs: 1, cook: () => up('tawa') ? 3 : 4.2 },
+  { k: 'murtabak', f: 'murtabak', n: 'Murtabak', e: '🥙', eggs: 2, cook: () => up('tawa') ? 4.5 : 6 },
+  { k: 'tosai', f: 'tosai', n: 'Tosai', e: '🥞', eggs: 0, circle: true, cook: () => up('tawa') ? 2.2 : 3 }
+];
+const READY_WIN = 5, MAGGI_COOK = 4.2, MEE_COOK = 5.5, NASI_COOK = 5, GARING_AT = .4;
+const tehZone = () => { const w = .14 + up('teko') * .06; return [.72 - w / 2, .72 + w / 2]; };
+const MILO_ZONE = [.75, 1.1];
+const rotiOpts = () => ROTI_KINDS.filter(x => !x.f || feat(R.day, x.f));
+const panOpts = () => feat(R.day, 'mee') ? ['maggi', 'mee'] : ['maggi'];
+
 function renderStations() {
   if (!R) return;
   const d = R.day, h = [];
-  h.push(`<div class="st" id="stRoti"><span class="lbl">ROTI CANAI</span><span class="big av"></span><span class="hint"></span><span class="bar"><b></b></span></div>`);
-  h.push(`<div class="st" id="stTeh"><span class="lbl">TEH TARIK</span><span class="teh-stream"></span><span class="big av"></span><span class="hint"></span><div class="meter"><span class="zone"></span><span class="lvl"></span></div></div>`);
-  if (feat(d, 'maggi')) h.push(`<div class="st sub" id="stMaggi"><span class="lbl">MAGGI</span>${R.maggi.map((_, i) => `<div class="pan" data-i="${i}"><span class="big av"></span><span class="hint"></span><span class="bar"><b></b></span></div>`).join('')}</div>`);
+  h.push(`<div class="st" id="stRoti"><span class="lbl">TAWA ROTI</span><span class="big av"></span><span class="hint"></span><div class="choose"></div><span class="bar"><b></b><em class="gz"></em></span></div>`);
+  const chips = [feat(d, 'kurang') && ['kurang', '🍬'], feat(d, 'ikat') && ['ikat', '🛍️'], feat(d, 'dino') && ['dino', '🦕']].filter(Boolean);
+  h.push(`<div class="st" id="stTeh"><span class="lbl">${feat(d, 'milo') ? 'AIR' : 'TEH TARIK'}</span><span class="teh-stream"></span><span class="big av"></span><span class="hint"></span><div class="choose"></div>
+    <div class="chips">${chips.map(([k, t]) => `<button type="button" class="chip" data-chip="${k}" title="${MOD_TXT[k]}">${t}</button>`).join('')}</div><div class="meter"><span class="zone"></span><span class="lvl"></span></div></div>`);
+  if (feat(d, 'maggi')) h.push(`<div class="st sub" id="stMaggi"><span class="lbl">${feat(d, 'mee') ? 'KUALI' : 'MAGGI'}</span>${R.maggi.map((_, i) => `<div class="pan" data-i="${i}"><span class="big av"></span><span class="hint"></span><div class="choose"></div><span class="bar"><b></b></span></div>`).join('')}</div>`);
   if (feat(d, 'nasi')) h.push(`<div class="st" id="stNasi"><span class="lbl">NASI LEMAK</span><span class="cnt"></span><span class="big av"></span><span class="hint"></span><span class="bar"><b></b></span></div>`);
   $('#stations').innerHTML = h.join('');
   $('#stTeh').classList.toggle('has-tarik', !!SPR.st_tarik);
-  const z = tehZone(); const zone = $('#stTeh .zone'); zone.style.bottom = (z[0] * 100) + '%'; zone.style.height = ((z[1] - z[0]) * 100) + '%';
+  $('#stTeh').classList.toggle('has-chips', chips.length > 0);
+  R.chooseKeys = {};
   bindStations(); drawStations();
 }
-const tehZone = () => { const w = .14 + up('teko') * .06; return [.72 - w / 2, .72 + w / 2]; };
-const ROTI_COOK = () => up('tawa') ? 2.4 : 3.5, READY_WIN = 5, MAGGI_COOK = 4.2, NASI_COOK = 5;
+function setChoose(el, key, html) {
+  if (!el) return; const box = el.querySelector(':scope > .choose'); if (!box) return;
+  if (R.chooseKeys[el.id || el.dataset.i] === key) return;
+  R.chooseKeys[el.id || el.dataset.i] = key; box.innerHTML = html || ''; el.classList.toggle('choosing', !!html);
+}
 function setSt(el, big, hint, bar, cls) {
   if (!el) return;
   el.querySelector('.big').innerHTML = big; el.querySelector('.hint').innerHTML = hint;
-  const b = el.querySelector('.bar b'); if (b) b.style.width = (bar * 100) + '%';
+  const b = el.querySelector('.bar b'); if (b) b.style.width = (Math.max(0, Math.min(1, bar)) * 100) + '%';
   el.classList.toggle('ready', cls === 'ready'); el.classList.toggle('burn', cls === 'burn');
 }
 function drawStations() {
   if (!R) return;
-  const r = R.roti, rEl = $('#stRoti');
-  if (r.s === 'idle') setSt(rEl, ico('st_doh', '⚪'), 'Tap ambik doh', 0);
-  else if (r.s === 'tebar') { setSt(rEl, ico('st_doh', '⚪'), '<span class="swipe-arrow">👉</span> Swipe tebar!', r.prog); rEl.querySelector('.big').style.transform = `scale(${1 + r.prog * .5}) rotate(${r.prog * 200}deg)`; }
-  else { rEl.querySelector('.big').style.transform = ''; }
-  if (r.s === 'cook') setSt(rEl, ico('st_roti_masak', '🫓'), 'Tengah masak...', 1 - r.t / ROTI_COOK());
-  if (r.s === 'ready') setSt(rEl, ico('item_roti', '🫓'), '✨ Tap ambik!', r.t / READY_WIN, 'ready');
-  if (r.s === 'burn') setSt(rEl, ico('st_hangus', '🫓'), '🔥 Hangus! Tap buang', 0, 'burn');
+  // TAWA
+  const r = R.roti, rEl = $('#stRoti'), kind = ROTI_KINDS.find(x => x.k === r.k) || ROTI_KINDS[0], opts = rotiOpts();
+  setChoose(rEl, r.s === 'idle' && opts.length > 1 ? 'pick' : '', r.s === 'idle' && opts.length > 1 ? opts.map(o => `<button type="button" data-roti="${o.k}"><span class="av">${ico('item_' + o.k, o.e)}</span>${o.n}</button>`).join('') : '');
+  rEl.querySelector('.big').style.transform = '';
+  const gz = rEl.querySelector('.gz'); gz.style.display = r.s === 'ready' && feat(R.day, 'garing') && (r.k === 'roti' || r.k === 'rotitelur') ? 'block' : 'none';
+  if (r.s === 'idle') setSt(rEl, opts.length > 1 ? '' : ico('st_doh', '⚪'), opts.length > 1 ? '' : 'Tap ambik doh', 0);
+  else if (r.s === 'tebar') { setSt(rEl, ico('st_doh', '⚪'), kind.circle ? '🔄 Swipe bulat-bulat!' : '<span class="swipe-arrow">👉</span> Swipe tebar!', r.prog); rEl.querySelector('.big').style.transform = `scale(${1 + r.prog * .5}) rotate(${r.prog * 200}deg)`; }
+  else if (r.s === 'egg') setSt(rEl, ico('st_telur', '🥚'), `Tap pecah telur! (${r.eggs})`, 0, 'ready');
+  else if (r.s === 'cook') setSt(rEl, ico('st_roti_masak', '🫓'), `Masak ${kind.n.toLowerCase()}...`, 1 - r.t / kind.cook());
+  else if (r.s === 'ready') { const g = r.t / READY_WIN < GARING_AT && gz.style.display === 'block'; setSt(rEl, ico('item_' + r.k, kind.e), g ? '🔥 Garing! Tap ambik' : '✨ Tap ambik!', r.t / READY_WIN, 'ready'); }
+  else if (r.s === 'burn') setSt(rEl, ico('st_hangus', '🫓'), '🔥 Hangus! Tap buang', 0, 'burn');
 
-  const t = R.teh, tEl = $('#stTeh');
-  tEl.querySelector('.lvl').style.height = (t.lvl * 100) + '%';
+  // AIR
+  const t = R.teh, tEl = $('#stTeh'), milo = feat(R.day, 'milo');
+  tEl.querySelectorAll('.chip').forEach(c => c.classList.toggle('on', !!R.chips[c.dataset.chip]));
+  const z = t.s === 'shake' ? MILO_ZONE.map(v => v / 1.25) : tehZone(), zone = tEl.querySelector('.zone');
+  zone.style.bottom = (z[0] * 100) + '%'; zone.style.height = ((z[1] - z[0]) * 100) + '%';
+  tEl.querySelector('.meter').style.visibility = t.s === 'idle' && milo ? 'hidden' : 'visible';
+  tEl.querySelector('.lvl').style.height = ((t.s === 'shake' ? t.prog / 1.25 : t.lvl) * 100) + '%';
   tEl.querySelector('.teh-stream').style.height = t.hold ? (20 + t.lvl * 60) + 'px' : '0';
-  if (t.s === 'idle') { tEl.querySelector('.big').innerHTML = ico('st_teko', '🫖'); tEl.querySelector('.hint').innerHTML = 'Tekan & tahan, lepas kat hijau'; }
+  setChoose(tEl, t.s === 'idle' && milo ? 'pick' : '', t.s === 'idle' && milo ? `<button type="button" data-air="teh"><span class="av">${ico('item_teh', '☕')}</span>Teh<small>tahan</small></button><button type="button" data-air="milo"><span class="av">${ico('item_milo', '🥤')}</span>Milo<small>goncang</small></button>` : '');
+  if (t.s === 'idle') { tEl.querySelector('.big').innerHTML = milo ? '' : ico('st_teko', '🫖'); tEl.querySelector('.hint').innerHTML = milo ? '' : 'Tekan & tahan, lepas kat hijau'; }
+  else if (t.s === 'shake') { tEl.querySelector('.big').innerHTML = ico('st_milo', '🥤'); tEl.querySelector('.hint').innerHTML = '↕️ Swipe atas-bawah, lepas kat hijau'; }
 
+  // KUALI
   if (feat(R.day, 'maggi')) R.maggi.forEach((m, i) => {
     const el = document.querySelector(`#stMaggi .pan[data-i="${i}"]`); if (!el) return;
-    const b = el.querySelector('.bar b');
-    el.classList.toggle('ready', m.s === 'ready'); el.classList.toggle('burn', m.s === 'burn');
-    el.querySelector('.big').innerHTML = m.s === 'idle' ? ico('st_kuali', '🍳') : m.s === 'burn' ? ico('st_hangus_maggi', '🍜') : m.s === 'ready' ? ico('item_maggi', '🍜') : ico('st_kuali_masak', '🥘');
-    el.querySelector('.hint').innerHTML = m.s === 'idle' ? 'Tap masak' : m.s === 'cook' ? 'Goreng...' : m.s === 'ready' ? '✨ Ambik!' : '🔥 Buang';
-    b.style.width = (m.s === 'cook' ? 1 - m.t / MAGGI_COOK : m.s === 'ready' ? m.t / READY_WIN : 0) * 100 + '%';
+    const po = panOpts(), b = el.querySelector('.bar b'), mee = m.k === 'mee';
+    setChoose(el, m.s === 'idle' && po.length > 1 ? 'pick' : '', m.s === 'idle' && po.length > 1 ? `<button type="button" data-pan="maggi"><span class="av">${ico('item_maggi', '🍜')}</span>Maggi</button><button type="button" data-pan="mee"><span class="av">${ico('item_mee', '🍝')}</span>Mee</button>` : '');
+    el.classList.toggle('ready', m.s === 'ready' || m.s === 'stir'); el.classList.toggle('burn', m.s === 'burn');
+    el.querySelector('.big').innerHTML = m.s === 'idle' ? (po.length > 1 ? '' : ico('st_kuali', '🍳')) : m.s === 'burn' ? ico('st_hangus_maggi', '🍜') : m.s === 'ready' ? ico('item_' + m.k, ITEMS[m.k].e) : ico('st_kuali_masak', '🥘');
+    el.querySelector('.hint').innerHTML = m.s === 'idle' ? (po.length > 1 ? '' : 'Tap masak') : m.s === 'cook' ? (mee ? 'Mee...' : 'Goreng...') : m.s === 'stir' ? '🥄 KACAU!' : m.s === 'ready' ? '✨ Ambik!' : '🔥 Buang';
+    b.style.width = (m.s === 'cook' ? 1 - m.t / (mee ? MEE_COOK : MAGGI_COOK) : m.s === 'ready' ? m.t / READY_WIN : m.s === 'stir' ? m.st / 1.6 : 0) * 100 + '%';
   });
   if (feat(R.day, 'nasi')) {
     const n = R.nasi, el = $('#stNasi');
     el.querySelector('.cnt').textContent = n.s === 'cook' ? '...' : n.stock + ' bungkus';
-    setSt(el, n.s === 'cook' ? ico('st_periuk', '♨️') : ico('item_nasi', '🍛'), n.s === 'cook' ? 'Masak nasi...' : n.stock ? 'Tap ambik' : 'Habis! Tap masak', n.s === 'cook' ? 1 - n.t / NASI_COOK : 0, n.stock && n.s !== 'cook' ? '' : '');
+    setSt(el, n.s === 'cook' ? ico('st_periuk', '♨️') : ico('item_nasi', '🍛'), n.s === 'cook' ? 'Masak nasi...' : n.stock ? 'Tap ambik' : 'Habis! Tap masak', n.s === 'cook' ? 1 - n.t / NASI_COOK : 0);
   }
 }
+function drinkMods(k) {
+  const m = {};
+  if (R.chips.kurang) m.kurang = true;
+  if (R.chips.ikat) m.ikat = true;
+  if (k === 'milo' && R.chips.dino) m.dino = true;
+  R.chips = {};
+  return m;
+}
+function startRoti(k) {
+  const r = R.roti; r.k = k; r.s = 'tebar'; r.prog = 0; r.ang = null; SFX.tap();
+  const kind = ROTI_KINDS.find(x => x.k === k); r.eggs = kind.eggs;
+}
+function afterTebar() {
+  const r = R.roti, kind = ROTI_KINDS.find(x => x.k === r.k);
+  if (r.eggs > 0) { r.s = 'egg'; } else { r.s = 'cook'; r.t = kind.cook(); }
+  tone(300, .2, 'sawtooth', .05, 500);
+}
 function bindStations() {
-  // Roti
-  const rEl = $('#stRoti'); let lastX = null;
+  // TAWA
+  const rEl = $('#stRoti'); let lastX = null, lastY = null;
   rEl.addEventListener('pointerdown', e => {
     if (!live()) return; const r = R.roti;
-    if (r.s === 'idle') { r.s = 'tebar'; r.prog = 0; SFX.tap(); }
-    else if (r.s === 'tebar') { r.prog = Math.min(1, r.prog + .08); lastX = e.clientX; rEl.setPointerCapture(e.pointerId); }
-    else if (r.s === 'ready') { if (deliver('roti', false, rEl)) { r.s = 'idle'; SFX.tap(); } }
+    const pickB = e.target.closest('[data-roti]');
+    if (r.s === 'idle') { if (pickB) startRoti(pickB.dataset.roti); else if (rotiOpts().length === 1) startRoti('roti'); drawStations(); return; }
+    if (r.s === 'tebar') { r.prog = Math.min(1, r.prog + .06); lastX = e.clientX; lastY = e.clientY; r.ang = null; rEl.setPointerCapture(e.pointerId); }
+    else if (r.s === 'egg') { r.eggs--; tone(900, .06, 'square', .08); emote(rEl, '🥚'); if (r.eggs <= 0) { r.s = 'cook'; r.t = ROTI_KINDS.find(x => x.k === r.k).cook(); } }
+    else if (r.s === 'ready') {
+      const garing = feat(R.day, 'garing') && (r.k === 'roti' || r.k === 'rotitelur') && r.t / READY_WIN < GARING_AT;
+      if (deliver({ k: r.k, m: garing ? { garing: true } : {} }, rEl)) { r.s = 'idle'; SFX.tap(); if (garing) { SFX.perfect(); notify('🔥 Roti garing rangup!', 'good'); } }
+    }
     else if (r.s === 'burn') { r.s = 'idle'; SFX.tap(); }
+    if (r.s !== 'tebar' && r.prog >= 1) r.prog = 0;
     drawStations();
   });
   rEl.addEventListener('pointermove', e => {
     const r = R && R.roti; if (!r || r.s !== 'tebar' || lastX == null) return;
-    r.prog = Math.min(1, r.prog + Math.abs(e.clientX - lastX) / 520); lastX = e.clientX;
-    if (r.prog >= 1) { r.s = 'cook'; r.t = ROTI_COOK(); lastX = null; tone(300, .2, 'sawtooth', .05, 500); }
+    const kind = ROTI_KINDS.find(x => x.k === r.k);
+    if (kind.circle) {
+      const bx = rEl.getBoundingClientRect(), cx = bx.left + bx.width / 2, cy = bx.top + bx.height / 2, a = Math.atan2(e.clientY - cy, e.clientX - cx);
+      if (r.ang != null) { let da = a - r.ang; if (da > Math.PI) da -= 2 * Math.PI; if (da < -Math.PI) da += 2 * Math.PI; r.prog = Math.min(1, r.prog + Math.abs(da) / (Math.PI * 4)); }
+      r.ang = a;
+    } else r.prog = Math.min(1, r.prog + Math.abs(e.clientX - lastX) / 520);
+    lastX = e.clientX; lastY = e.clientY;
+    if (r.prog >= 1) { lastX = null; afterTebar(); }
     drawStations();
   });
-  rEl.addEventListener('pointerup', () => { lastX = null; const r = R && R.roti; if (r && r.s === 'tebar' && r.prog >= 1) { r.s = 'cook'; r.t = ROTI_COOK(); } });
-  // Teh
-  const tEl = $('#stTeh');
-  tEl.addEventListener('pointerdown', e => { if (!live()) return; const t = R.teh; t.hold = true; t.lvl = 0; t.dir = 1; t.s = 'tarik'; tEl.setPointerCapture(e.pointerId); tEl.querySelector('.big').innerHTML = ico('st_tarik', '🫖'); tEl.querySelector('.hint').innerHTML = 'Tariiik...'; });
+  rEl.addEventListener('pointerup', () => { lastX = null; const r = R && R.roti; if (r && r.s === 'tebar' && r.prog >= 1) afterTebar(); });
+
+  // AIR
+  const tEl = $('#stTeh'); let lastShakeY = null;
+  const startTeh = e => { const t = R.teh; t.hold = true; t.lvl = 0; t.dir = 1; t.s = 'tarik'; tEl.setPointerCapture(e.pointerId); tEl.querySelector('.big').innerHTML = ico('st_tarik', '🫖'); tEl.querySelector('.hint').innerHTML = 'Tariiik...'; };
+  tEl.addEventListener('pointerdown', e => {
+    if (!live()) return; const t = R.teh;
+    const chip = e.target.closest('[data-chip]');
+    if (chip) { R.chips[chip.dataset.chip] = !R.chips[chip.dataset.chip]; SFX.tap(); drawStations(); return; }
+    if (t.s === 'idle') {
+      if (!feat(R.day, 'milo')) { startTeh(e); return; }
+      const b = e.target.closest('[data-air]'); if (!b) return;
+      if (b.dataset.air === 'teh') { startTeh(e); drawStations(); return; }
+      t.s = 'shake'; t.prog = 0; SFX.tap(); drawStations(); return;
+    }
+    if (t.s === 'shake') { lastShakeY = e.clientY; tEl.setPointerCapture(e.pointerId); }
+  });
+  tEl.addEventListener('pointermove', e => {
+    const t = R && R.teh; if (!t || t.s !== 'shake' || lastShakeY == null) return;
+    t.prog += Math.abs(e.clientY - lastShakeY) / 700; lastShakeY = e.clientY;
+    if (Math.random() < .15) tone(500 + Math.random() * 300, .03, 'triangle', .05);
+    if (t.prog > 1.25) { t.prog = 0; t.s = 'idle'; lastShakeY = null; SFX.burn(); notify('🥤 Alamak, Milo melimpah! Goncang perlahan sikit.', 'bad'); }
+    drawStations();
+  });
   const rel = () => {
-    const t = R && R.teh; if (!t || !t.hold) return; t.hold = false; t.s = 'idle';
+    const t = R && R.teh; if (!t) return;
+    if (t.s === 'shake') {
+      lastShakeY = null;
+      if (t.prog >= MILO_ZONE[0] && t.prog <= MILO_ZONE[1]) { deliver({ k: 'milo', m: drinkMods('milo') }, tEl); t.s = 'idle'; t.prog = 0; SFX.ready(); }
+      drawStations(); return;
+    }
+    if (!t.hold) return; t.hold = false; t.s = 'idle';
     const [a, b] = tehZone(), perf = t.lvl >= a && t.lvl <= b, ok = t.lvl >= .3;
     if (!ok) { notify('☕ Tarik tak cukup tinggi, cuba lagi!', 'bad'); t.lvl = 0; drawStations(); return; }
-    if (perf) { R.perfect++; SFX.perfect(); notify('✨ Teh tarik buih tebal! Perfect!', 'good'); buzz(20); } else SFX.tap();
-    deliver('teh', perf, tEl); t.lvl = 0; drawStations();
+    if (perf) { R.perfect++; SFX.perfect(); notify(feat(R.day, 'kaw') ? '✨ Teh tarik KAW! Buih tebal!' : '✨ Teh tarik buih tebal! Perfect!', 'good'); buzz(20); } else SFX.tap();
+    const m = drinkMods('teh'); if (perf) m.kaw = true;
+    deliver({ k: 'teh', m }, tEl); t.lvl = 0; drawStations();
   };
   tEl.addEventListener('pointerup', rel); tEl.addEventListener('pointercancel', rel);
-  // Maggi
+
+  // KUALI
   const mEl = $('#stMaggi');
   if (mEl) mEl.addEventListener('pointerdown', e => {
     const p = e.target.closest('.pan'); if (!p || !live()) return; const m = R.maggi[+p.dataset.i];
-    if (m.s === 'idle') { m.s = 'cook'; m.t = MAGGI_COOK; tone(200, .3, 'sawtooth', .04, 260); }
-    else if (m.s === 'ready') { if (deliver('maggi', false, p)) m.s = 'idle'; }
+    if (m.s === 'idle') {
+      const b = e.target.closest('[data-pan]'), k = panOpts().length > 1 ? (b && b.dataset.pan) : 'maggi'; if (!k) return;
+      m.k = k; m.s = 'cook'; m.t = k === 'mee' ? MEE_COOK : MAGGI_COOK; m.stir = false; tone(200, .3, 'sawtooth', .04, 260);
+    }
+    else if (m.s === 'stir') { m.stir = true; m.s = 'cook'; tone(700, .08, 'triangle', .1); emote(p, '🥄'); }
+    else if (m.s === 'ready') { if (deliver({ k: m.k, m: {} }, p)) m.s = 'idle'; }
     else if (m.s === 'burn') m.s = 'idle';
     drawStations();
   });
@@ -408,10 +540,27 @@ function bindStations() {
   if (nEl) nEl.addEventListener('pointerdown', () => {
     if (!live()) return; const n = R.nasi;
     if (n.s === 'cook') return;
-    if (n.stock > 0) { if (deliver('nasi', false, nEl)) n.stock--; }
+    if (n.stock > 0) { if (deliver({ k: 'nasi', m: {} }, nEl)) n.stock--; }
     else { n.s = 'cook'; n.t = NASI_COOK; SFX.tap(); }
     drawStations();
   });
+}
+function stepStations(dt) {
+  const r = R.roti;
+  if (r.s === 'cook' && (r.t -= dt) <= 0) { r.s = 'ready'; r.t = READY_WIN; SFX.ready(); }
+  else if (r.s === 'ready' && (r.t -= dt) <= 0) { r.s = 'burn'; SFX.burn(); notify('🔥 Alamak, roti hangus!', 'bad'); }
+  const t = R.teh;
+  if (t.hold) { const sp = 1 / (1.25 + up('teko') * .2); t.lvl += t.dir * dt * sp; if (t.lvl >= 1) { t.lvl = 1; t.dir = -1; } if (t.lvl <= 0) { t.lvl = 0; t.dir = 1; } }
+  R.maggi.forEach(m => {
+    if (m.s === 'cook') {
+      m.t -= dt;
+      if (m.k === 'mee' && !m.stir && m.t <= MEE_COOK / 2) { m.s = 'stir'; m.st = 1.6; SFX.notif(); }
+      else if (m.t <= 0) { m.s = 'ready'; m.t = READY_WIN; SFX.ready(); }
+    }
+    else if (m.s === 'stir' && (m.st -= dt) <= 0) { m.s = 'burn'; SFX.burn(); notify('🔥 Mee tak kacau, melekat hangus!', 'bad'); }
+    else if (m.s === 'ready' && (m.t -= dt) <= 0) { m.s = 'burn'; SFX.burn(); notify(`🔥 ${m.k === 'mee' ? 'Mee' : 'Maggi'} hangus! Bau satu kedai...`, 'bad'); }
+  });
+  const n = R.nasi; if (n.s === 'cook' && (n.t -= dt) <= 0) { n.s = 'idle'; n.stock = 6; SFX.ready(); }
 }
 const live = () => R && !R.paused && !R.over;
 
@@ -442,17 +591,7 @@ function loop(now) {
     const b = el.querySelector('.pat b'); b.style.width = Math.max(0, c.pat / c.max * 100) + '%'; b.className = patCls(c);
   });
   const gb = $('#grabSpot .pat b'); if (gb && R.grab) { gb.style.width = Math.max(0, R.grab.pat / R.grab.max * 100) + '%'; gb.className = patCls(R.grab); }
-  // stesen
-  const r = R.roti;
-  if (r.s === 'cook' && (r.t -= dt) <= 0) { r.s = 'ready'; r.t = READY_WIN; SFX.ready(); }
-  else if (r.s === 'ready' && (r.t -= dt) <= 0) { r.s = 'burn'; SFX.burn(); notify('🔥 Alamak, roti hangus!', 'bad'); }
-  const t = R.teh;
-  if (t.hold) { const sp = 1 / (1.25 + up('teko') * .2); t.lvl += t.dir * dt * sp; if (t.lvl >= 1) { t.lvl = 1; t.dir = -1; } if (t.lvl <= 0) { t.lvl = 0; t.dir = 1; } }
-  R.maggi.forEach(m => {
-    if (m.s === 'cook' && (m.t -= dt) <= 0) { m.s = 'ready'; m.t = READY_WIN; SFX.ready(); }
-    else if (m.s === 'ready' && (m.t -= dt) <= 0) { m.s = 'burn'; SFX.burn(); notify('🔥 Maggi hangus! Bau satu kedai...', 'bad'); }
-  });
-  const n = R.nasi; if (n.s === 'cook' && (n.t -= dt) <= 0) { n.s = 'idle'; n.stock = 6; SFX.ready(); }
+  stepStations(dt);
   drawStations(); hud();
   if (R.t <= 0) endDay();
 }
