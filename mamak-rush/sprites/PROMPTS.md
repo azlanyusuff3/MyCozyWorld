@@ -51,6 +51,19 @@ Tambahan gaya: *cute chibi Malaysian person, big round head, huge sparkly eyes, 
 | `st_hangus_maggi.webp` | A wok of burnt black noodles with smoke puffs |
 | `st_periuk.webp` | A big steaming rice pot with lid slightly open |
 
+## Batch 5 — Kedai (meja, dinding, lantai, kaunter, dulang)
+Ini yang buat semua art nampak sebati. Gaya umum sama, **tapi saiz ikut jadual** (bukan semua 512×512).
+
+| Fail | Saiz | Background | Prompt tambahan |
+|---|---|---|---|
+| `meja.webp` | 512×384 | transparent | A round white marble mamak table on a thin steel stand, viewed from the front at a slight top-down angle so the table top is a wide oval, with two red plastic stools tucked in front on the left and right. Empty table top. The table top should sit in the upper half of the image and the stools in the lower half |
+| `bg_dinding.webp` | 1536×256 (lebar, nipis) | **penuh, tak transparent** | Wide strip of a Malaysian mamak restaurant wall seen straight on: mint green ceramic tiles, a wooden ledge at the bottom, a blank dark chalkboard menu (no writing), a round wall clock, a small framed picture and a hanging string of warm lights. No people, no text |
+| `bg_lantai.webp` | 512×512 | **penuh, seamless tile** | Seamless tileable top-down floor texture of cream and beige terrazzo floor tiles with subtle speckles, soft and light so characters stand out, no shadows, must tile perfectly on all edges |
+| `kaunter.webp` | 1536×256 (lebar, nipis) | transparent | Front view of a long mamak restaurant counter: warm wooden front panel with a stainless steel top edge, a few small details like a napkin box and sauce bottles at the far left and far right ends only, the middle area kept clean and empty. No text |
+| `dulang.webp` | 768×192 | transparent | Top-down view of a long oval stainless steel serving tray, empty, shiny with soft highlights |
+
+> Tips: `bg_dinding` dan `kaunter` kena **lebar dan nipis** (nisbah 6:1). Kalau ChatGPT tak boleh terus jana saiz tu, jana landscape biasa dan crop bahagian tengah ikut nisbah.
+
 ## Kad hub (pilihan)
 Simpan `assets/hub/card_mamak.webp` (landscape 4:3), tambah `"card_mamak"` dalam `assets/hub/list.json`:
 > Cute chibi busy Malaysian mamak restaurant at night with green walls, marble round tables and red plastic stools, a chef stretching roti canai in the air, teh tarik being pulled high, cute chibi Malaysian customers of different races eating happily, a delivery rider on a scooter and an orange cat sneaking near the counter, warm lights and a TV showing football, kawaii mobile game key art, no text.

@@ -16,8 +16,16 @@ const SPR = {};
 function ico(key, emoji) { return SPR[key] ? `<img src="${SPR[key]}" alt="">` : emoji; }
 fetch('sprites/list.json', { cache: 'no-cache' }).then(r => r.ok ? r.json() : []).catch(() => []).then(l => {
   l.forEach(n => { SPR[n] = 'sprites/' + n + '.webp'; new Image().src = SPR[n]; });
-  renderMenu(); if (R) { renderStations(); renderTables(); renderTray(); }
+  applyScene(); renderMenu(); if (R) { renderStations(); renderTables(); renderTray(); }
 });
+
+function applyScene() {
+  const b = document.body.classList, set = (k, v) => document.documentElement.style.setProperty(k, `url(${v})`);
+  ['bg_dinding', 'bg_lantai', 'kaunter', 'dulang'].forEach(n => { if (SPR[n]) { b.add('has-' + n); set('--' + n, SPR[n]); } });
+}
+// Elak menu "save image" bila tekan lama atas gambar (iOS/Android)
+document.addEventListener('contextmenu', e => e.preventDefault());
+document.addEventListener('dragstart', e => e.preventDefault());
 
 /* ---------- Data ---------- */
 const ITEMS = {
@@ -294,7 +302,7 @@ function orderHTML(c) { return `<div class="order">${c.items.map(i => `<span cla
 function patCls(c) { const f = c.pat / c.max; return f > .5 ? '' : f > .25 ? 'mid' : 'low'; }
 function renderTables() {
   if (!R) return;
-  $('#tables').innerHTML = R.tables.map(c => `<div class="table"><span class="shadow"></span><span class="top"></span><span class="stool l"></span><span class="stool r"></span>${c ? `
+  $('#tables').innerHTML = R.tables.map(c => `<div class="table${SPR.meja ? ' spr' : ''}"><span class="shadow"></span>${SPR.meja ? `<img class="meja" src="${SPR.meja}" alt="">` : '<span class="top"></span><span class="stool l"></span><span class="stool r"></span>'}${c ? `
     <div class="cust ${c.angry ? 'angry' : ''}" data-id="${c.id}">${orderHTML(c)}<span class="av">${ico('cust_' + c.who.k, c.who.e)}</span>${c.angry ? '<span class="calm-tag">TAP: Sabar!</span>' : ''}</div>` : ''}</div>`).join('');
 }
 function renderSide() {

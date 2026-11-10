@@ -206,3 +206,22 @@ img{-webkit-user-drag:none}
 .st .pan{min-width:0}
 .st .pan .big{width:46px;height:46px}
 .st .pan .hint{white-space:nowrap;overflow:hidden;max-width:100%}
+
+/* tekan lama: jangan keluar menu save gambar */
+img{-webkit-touch-callout:none;pointer-events:none;-webkit-user-select:none;user-select:none}
+.st,.cust,.cat,.grab,.stations{-webkit-touch-callout:none}
+
+/* ===== Batch 5 scene sprites ===== */
+.table.spr .meja{position:absolute;bottom:-14px;left:50%;transform:translateX(-50%);width:108%;max-width:250px;z-index:3;filter:drop-shadow(0 6px 4px #0002)}
+.table.spr .shadow{display:none}
+.table.spr .cust{margin-bottom:clamp(40px,7vh,64px)}
+body.has-bg_dinding .wall{background:var(--bg_dinding) center/cover no-repeat}
+body.has-bg_dinding .shop-floor{background-image:none}
+body.has-bg_dinding .wall .menu-board{opacity:0;pointer-events:none}
+body.has-bg_lantai .shop-floor{background:var(--bg_lantai) 0 0/128px 128px repeat}
+body.has-bg_lantai .shop-floor:before{display:none}
+body.has-bg_dinding.has-bg_lantai .shop-floor{background:var(--bg_lantai) 0 0/128px 128px repeat}
+body.has-bg_dinding .wall{height:64px;box-shadow:0 4px 0 #5b3a22}
+body.has-kaunter .counter{background:var(--kaunter) center/100% 100% no-repeat;box-shadow:none;height:96px;border-radius:0}
+body.has-dulang .tray{background:var(--dulang) center/100% 100% no-repeat;box-shadow:none;height:66px}
+body.has-dulang .tray .slot:not(.full){background:transparent}
