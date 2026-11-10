@@ -445,7 +445,9 @@ function setChoose(el, key, html) {
 }
 function setSt(el, big, hint, bar, cls) {
   if (!el) return;
-  el.querySelector('.big').innerHTML = big; el.querySelector('.hint').innerHTML = hint;
+  const bg = el.querySelector('.big'), ht = el.querySelector('.hint');
+  if (bg._v !== big) { bg._v = big; bg.innerHTML = big; }
+  if (ht._v !== hint) { ht._v = hint; ht.innerHTML = hint; }
   const b = el.querySelector('.bar b'); if (b) b.style.width = (Math.max(0, Math.min(1, bar)) * 100) + '%';
   el.classList.toggle('ready', cls === 'ready'); el.classList.toggle('burn', cls === 'burn');
 }
@@ -460,7 +462,12 @@ function drawStations() {
   else if (r.s === 'tebar') { setSt(rEl, ico('st_doh', '⚪'), kind.circle ? '🔄 Swipe bulat-bulat!' : '<span class="swipe-arrow">👉</span> Swipe tebar!', r.prog); rEl.querySelector('.big').style.transform = `scale(${1 + r.prog * .5}) rotate(${r.prog * 200}deg)`; }
   else if (r.s === 'egg') setSt(rEl, ico('st_telur', '🥚'), `Tap pecah telur! (${r.eggs})`, 0, 'ready');
   else if (r.s === 'cook') setSt(rEl, ico('st_roti_masak', '🫓'), `Masak ${kind.n.toLowerCase()}...`, 1 - r.t / kind.cook());
-  else if (r.s === 'ready') { const g = r.t / READY_WIN < GARING_AT && gz.style.display === 'block'; setSt(rEl, ico('item_' + r.k, kind.e), g ? '🔥 Garing! Tap ambik' : '✨ Tap ambik!', r.t / READY_WIN, 'ready'); }
+  else if (r.s === 'ready') {
+    const canG = gz.style.display === 'block', g = canG && r.t / READY_WIN < GARING_AT;
+    const wantG = canG && [R.grab, ...R.tables].some(c => c && !c.gone && c.items.some(i => !i.done && i.k === r.k && i.m.garing));
+    setSt(rEl, ico('item_' + r.k, kind.e), g ? '🔥 GARING! Tap!' : wantG ? '⏳ Tunggu garing...' : '✨ Tap ambik!', r.t / READY_WIN, 'ready');
+    rEl.classList.toggle('garing', g);
+  }
   else if (r.s === 'burn') setSt(rEl, ico('st_hangus', '🫓'), '🔥 Hangus! Tap buang', 0, 'burn');
 
   // AIR
@@ -472,8 +479,9 @@ function drawStations() {
   tEl.querySelector('.lvl').style.height = ((t.s === 'shake' ? t.prog / 1.25 : t.lvl) * 100) + '%';
   tEl.querySelector('.teh-stream').style.height = t.hold ? (20 + t.lvl * 60) + 'px' : '0';
   setChoose(tEl, t.s === 'idle' && milo ? 'pick' : '', t.s === 'idle' && milo ? `<button type="button" data-air="teh"><span class="av">${ico('item_teh', '☕')}</span>Teh<small>tahan</small></button><button type="button" data-air="milo"><span class="av">${ico('item_milo', '🥤')}</span>Milo<small>goncang</small></button>` : '');
-  if (t.s === 'idle') { tEl.querySelector('.big').innerHTML = milo ? '' : ico('st_teko', '🫖'); tEl.querySelector('.hint').innerHTML = milo ? '' : 'Tekan & tahan, lepas kat hijau'; }
-  else if (t.s === 'shake') { tEl.querySelector('.big').innerHTML = ico('st_milo', '🥤'); tEl.querySelector('.hint').innerHTML = '↕️ Swipe atas-bawah, lepas kat hijau'; }
+  const setTxt = (e, v) => { if (e._v !== v) { e._v = v; e.innerHTML = v; } };
+  if (t.s === 'idle') { setTxt(tEl.querySelector('.big'), milo ? '' : ico('st_teko', '🫖')); setTxt(tEl.querySelector('.hint'), milo ? '' : 'Tekan & tahan, lepas kat hijau'); }
+  else if (t.s === 'shake') { setTxt(tEl.querySelector('.big'), ico('st_milo', '🥤')); setTxt(tEl.querySelector('.hint'), '↕️ Swipe atas-bawah, lepas kat hijau'); }
 
   // KUALI
   if (feat(R.day, 'maggi')) R.maggi.forEach((m, i) => {
@@ -481,8 +489,10 @@ function drawStations() {
     const po = panOpts(), b = el.querySelector('.bar b'), mee = m.k === 'mee';
     setChoose(el, m.s === 'idle' && po.length > 1 ? 'pick' : '', m.s === 'idle' && po.length > 1 ? `<button type="button" data-pan="maggi"><span class="av">${ico('item_maggi', '🍜')}</span>Maggi</button><button type="button" data-pan="mee"><span class="av">${ico('item_mee', '🍝')}</span>Mee</button>` : '');
     el.classList.toggle('ready', m.s === 'ready' || m.s === 'stir'); el.classList.toggle('burn', m.s === 'burn');
-    el.querySelector('.big').innerHTML = m.s === 'idle' ? (po.length > 1 ? '' : ico('st_kuali', '🍳')) : m.s === 'burn' ? ico('st_hangus_maggi', '🍜') : m.s === 'ready' ? ico('item_' + m.k, ITEMS[m.k].e) : ico('st_kuali_masak', '🥘');
-    el.querySelector('.hint').innerHTML = m.s === 'idle' ? (po.length > 1 ? '' : 'Tap masak') : m.s === 'cook' ? (mee ? 'Mee...' : 'Goreng...') : m.s === 'stir' ? 'KACAU!' : m.s === 'ready' ? '✨ Ambik!' : '🔥 Buang';
+    const pb = el.querySelector('.big'), pv = m.s === 'idle' ? (po.length > 1 ? '' : ico('st_kuali', '🍳')) : m.s === 'burn' ? ico('st_hangus_maggi', '🍜') : m.s === 'ready' ? ico('item_' + m.k, ITEMS[m.k].e) : ico('st_kuali_masak', '🥘');
+    if (pb._v !== pv) { pb._v = pv; pb.innerHTML = pv; }
+    const ph = el.querySelector('.hint'), hv = m.s === 'idle' ? (po.length > 1 ? '' : 'Tap masak') : m.s === 'cook' ? (mee ? 'Mee...' : 'Goreng...') : m.s === 'stir' ? 'KACAU!' : m.s === 'ready' ? '✨ Ambik!' : '🔥 Buang';
+    if (ph._v !== hv) { ph._v = hv; ph.innerHTML = hv; }
     b.style.width = (m.s === 'cook' ? 1 - m.t / (mee ? MEE_COOK : MAGGI_COOK) : m.s === 'ready' ? m.t / READY_WIN : m.s === 'stir' ? m.st / 1.6 : 0) * 100 + '%';
   });
   if (feat(R.day, 'nasi')) {
@@ -541,7 +551,7 @@ function bindStations() {
 
   // AIR
   const tEl = $('#stTeh'); let lastShakeY = null;
-  const startTeh = e => { const t = R.teh; t.hold = true; t.lvl = 0; t.dir = 1; t.s = 'tarik'; tEl.setPointerCapture(e.pointerId); tEl.querySelector('.big').innerHTML = ico('st_tarik', '🫖'); tEl.querySelector('.hint').innerHTML = 'Tariiik...'; };
+  const startTeh = e => { const t = R.teh; t.hold = true; t.lvl = 0; t.dir = 1; t.s = 'tarik'; tEl.setPointerCapture(e.pointerId); const bb = tEl.querySelector('.big'), hh = tEl.querySelector('.hint'); bb.innerHTML = ico('st_tarik', '🫖'); hh.innerHTML = 'Tariiik...'; bb._v = hh._v = null; };
   tEl.addEventListener('pointerdown', e => {
     if (!live()) return; const t = R.teh;
     const chip = e.target.closest('[data-chip]');
