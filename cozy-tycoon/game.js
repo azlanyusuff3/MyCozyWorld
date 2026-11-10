@@ -6,10 +6,10 @@ const SAVE = 'cozyTycoonSave_v1';
 
 /* ---------- Chibi characters (SVG fallback; swap with sprites/token_<id>.webp) ---------- */
 const CHARS = [
-  { id: 'kucing', name: 'Mimi', color: '#ff9f43', body: '#ffb86b', ear: 'cat' },
-  { id: 'arnab', name: 'Bubu', color: '#ff7fa8', body: '#fff4f8', ear: 'bunny' },
-  { id: 'panda', name: 'Pipi', color: '#6c7ae0', body: '#ffffff', ear: 'panda' },
-  { id: 'ayam', name: 'Koko', color: '#f2b705', body: '#ffe066', ear: 'chick' },
+  { id: 'kucing', h: 'aina', name: 'Aina', color: '#ff9f43', body: '#ffb86b', ear: 'cat' },
+  { id: 'arnab', h: 'meimei', name: 'Mei Mei', color: '#ff7fa8', body: '#fff4f8', ear: 'bunny' },
+  { id: 'panda', h: 'adam', name: 'Adam', color: '#6c7ae0', body: '#ffffff', ear: 'panda' },
+  { id: 'ayam', h: 'ravi', name: 'Ravi', color: '#f2b705', body: '#ffe066', ear: 'chick' },
 ];
 const SPRITES = {};
 function chibi(c) {
@@ -39,7 +39,8 @@ function chibi(c) {
 }
 function avatar(ci) { const c = CHARS[ci]; return SPRITES[c.id] ? `<img src="${SPRITES[c.id]}" alt="">` : chibi(c); }
 fetch('sprites/list.json').then(r => r.ok ? r.json() : []).then(l => {
-  CHARS.forEach(c => { if (l.indexOf('token_' + c.id) >= 0) SPRITES[c.id] = 'sprites/token_' + c.id + '.webp'; });
+  // human chibi kids (token_aina...) if available, else old animal tokens
+  CHARS.forEach(c => { const n = l.indexOf('token_' + c.h) >= 0 ? 'token_' + c.h : (l.indexOf('token_' + c.id) >= 0 ? 'token_' + c.id : null); if (n) SPRITES[c.id] = 'sprites/' + n + '.webp'; });
   for (let n = 1; n <= 6; n++) if (l.indexOf('dice_' + n) >= 0) { DICE_IMG[n] = 'sprites/dice_' + n + '.webp'; new Image().src = DICE_IMG[n]; }
   l.forEach(n => { ART[n] = 'sprites/' + n + '.webp'; });
   applyArt();
@@ -261,24 +262,130 @@ function festStart() {
   notify('ann', 'Musim Perayaan dah bermula! Mulai sekarang sewa naik setiap pusingan!', true);
   modal(`<div class="big-ic">🎉</div><h2>Musim Perayaan!</h2><p>Bandar makin meriah dan ramai pelancong! Mulai pusingan ni, <b>sewa naik 10% setiap pusingan</b> (paling tinggi ×4).</p><p>Siapa paling banyak tanah, dia untung besar!</p>`, [{ label: 'Jom!' }], 10000);
 }
-function festMore() { notify('abu', `Sewa dah naik ×${festMult().toFixed(1)}! Tak puas hati betul, mahal sangat!`, true); }
+function festMore() { say2('fest', { x: festMult().toFixed(1) }); }
+/* ---------- Ayat penduduk (rawak, ikut situasi) ---------- */
+const fill = (t, v) => t.replace(/\{(\w+)\}/g, (_, k) => v[k] ?? '');
+const LINES = {
+  buy: [
+    ['kiah', 'Wah, {p} dah jadi tuan {t}! Tahniah, nak!', true],
+    ['kiah', '{t} ada tuan baru: {p}. Nanti mak cik singgah ye!', false],
+    ['mira', 'Yeay! {p} beli {t}! Boleh Mira main kat situ tak?', false],
+    ['abu', '{p} beli {t}? Hmm... jangan naikkan sewa mahal-mahal sudah.', true],
+    ['abu', 'Muda-muda dah beli {t}. Pak Abu dulu umur macam tu jual surat khabar je!', false],
+    ['ann', '{p} kini pemilik {t}. Tahniah!', true],
+    ['polis', 'Tahniah {p}. Jaga {t} elok-elok, jangan bagi orang parking merata.', false],
+  ],
+  buyBig: [
+    ['ann', 'Berita besar! {p} beli {t} dengan harga {m}!', true],
+    ['kiah', 'Ya Allah, {t}! Kayanya {p} ni!', true],
+    ['abu', '{m} untuk {t}?! Dulu harga tanah murah je...', false],
+  ],
+  upgrade: [
+    ['mira', 'Cantiknya! {t} dah jadi {l}!', true],
+    ['kiah', 'Wah, {t} makin cantik sekarang. {p} pandai berniaga!', false],
+    ['abu', '{t} dah jadi {l}. Mesti sewa naik lepas ni... hmm.', true],
+    ['polis', 'Pembinaan {l} kat {t} dah siap. Selamat berniaga, {p}!', false],
+  ],
+  bangunan: [
+    ['ann', '{t} kini ada bangunan tinggi milik {p}! Hebat!', true],
+    ['mira', 'Tingginya bangunan {p} kat {t}! Boleh nampak sampai rumah Mira!', true],
+    ['abu', 'Bangunan tinggi lagi kat {t}. Langit pun dah tak nampak!', false],
+  ],
+  rentHigh: [
+    ['abu', 'Mahalnya sewa {t}, {m}! Tak puas hati betul!', true],
+    ['abu', '{m} sewa {t}? Ini rompakan siang hari ni!', true],
+    ['kiah', 'Kesian {p}, kena bayar {m} kat {o}. Sabar ye nak.', false],
+    ['mira', 'Alamak {p}, {m}! Banyaknya duit!', false],
+  ],
+  rentLow: [
+    ['abu', 'Sewa {t} {m}. Bolehlah, tak mahal sangat.', false],
+    ['kiah', '{p} bayar {m} kat {o}. Murah je tu!', false],
+    ['mira', '{p} singgah {t} dan bayar {m}. Ok la tu!', false],
+  ],
+  go: [
+    ['ann', '{p} lalu MULA dan dapat RM200!', false],
+    ['kiah', '{p} dapat gaji RM200! Jangan boros ye!', false],
+    ['mira', '{p} dapat RM200! Belanja Mira aiskrim boleh?', false],
+  ],
+  sleep: [
+    ['polis', 'Shhh... {p} tengah tidur kat Rumah Tok Wan. Jangan bising!', true],
+    ['kiah', '{p} penat sangat agaknya. Tidur je kat rumah Tok Wan.', false],
+    ['mira', 'Hihi, {p} tertidur! Tok Wan bagi selimut tak?', false],
+  ],
+  kenduri: [
+    ['ann', 'Semua dijemput ke kenduri kahwin {p}!', true],
+    ['kiah', 'Jom ke kenduri {p}! Nasi minyak dia sedap!', true],
+    ['abu', 'Kenduri {p} meriah betul. Pak Abu nak tambah nasi!', false],
+  ],
+  minigame: [
+    ['mira', 'Hebatnya {p}! Tangkap syiling laju gila!', false],
+    ['kiah', 'Pandai {p}! Sewa dapat separuh harga!', false],
+  ],
+  sell: [
+    ['kiah', 'Alamak, {p} tak cukup duit! Terpaksa jual harta kat bank.', false],
+    ['abu', 'Itulah, belanja tak ingat dunia. Kan dah kena jual harta, {p}!', false],
+  ],
+  bankrupt: [
+    ['ann', 'Berita sedih. {p} dah bankrap!', true],
+    ['kiah', 'Kesian {p}... takpe nak, lain kali cuba lagi ye.', true],
+  ],
+  trade: [
+    ['kiah', 'Wah, {p} dah beli {t} dari {o}!', true],
+    ['abu', '{o} jual {t} kat {p}? Hmm, harap-harap untung la.', false],
+    ['ann', 'Urusan jual beli selesai: {t} kini milik {p}!', true],
+  ],
+  win: [
+    ['ann', 'Tahniah {p}! Jutawan Comel bandar kita!', true],
+  ],
+  fest: [
+    ['abu', 'Sewa dah naik ×{x}! Mahal sangat, nak beli kuih pun tak lepas!', true],
+    ['kiah', 'Musim perayaan, semua benda naik harga... sewa dah ×{x}.', true],
+    ['ann', 'Perhatian: sewa kini ×{x}. Selamat berbelanja!', true],
+  ],
+  // berbual biasa (kena dengan tempat dalam board)
+  chatter: [
+    ['polis', 'Jalan sesak kat KLCC hari ni. Naik LRT lagi senang!', true],
+    ['polis', 'Ingat! Jangan parking merata-rata. Nanti kena saman!', false],
+    ['polis', 'Pakai tali pinggang keledar bila naik kereta ye adik-adik.', false],
+    ['mira', 'Cendol kat Gerai Cendol sedap gila! Nak lagi!', false],
+    ['mira', 'Esok cuti sekolah! Jom pergi Langkawi!', false],
+    ['mira', 'Mira dah siap kerja sekolah. Boleh main dah!', false],
+    ['kiah', 'Kedai Mamak penuh malam ni, semua tengok bola.', false],
+    ['kiah', 'Strawberi Cameron tengah musim. Manis-manis belaka!', false],
+    ['kiah', 'Harga barang naik lagi... mak cik pening kepala.', false],
+    ['abu', 'Hujan lebat kat Kuantan. Bawa payung kalau nak keluar.', false],
+    ['abu', 'Zaman Pak Abu dulu, roti canai sekeping 20 sen je!', false],
+    ['abu', 'Bising betul bunyi pembinaan kat bandar ni. Hmm...', false],
+    ['ann', 'Pasar malam dibuka malam ini. Jemput datang semua!', true],
+    ['ann', 'Peringatan: jimat air dan elektrik untuk bumi kita!', false],
+  ],
+};
+let lastLine = '';
+const AI_SAY = {
+  buy: ['Yeay! Aku beli {t}!', '{t} ni cantik, aku ambil!', 'Lama dah aku berkenan dengan {t}!', 'Beli! Nanti kawan-kawan kena bayar sewa, hehe.', 'Ok, {t} jadi milik aku sekarang!'],
+  skip: ['Hmm... mahal la, tak nak.', 'Simpan duit dulu la.', 'Tak berkenan sangat dengan {t}.', 'Nanti-nantilah aku fikir.', 'Duit aku nak guna benda lain.'],
+  up: ['{t} aku dah jadi {l}!', 'Siap! {t} sekarang {l}!', 'Upgrade {t}! Mesti ramai pelanggan!', 'Tengok {l} baru aku kat {t}!'],
+  pay: ['Alamak, kena bayar {m} kat {o}!', 'Ok la, {m} je. Nah {o}!', 'Hmm, terpaksa bayar {m}...', 'Takpe, {m} tak banyak.'],
+  payBig: ['Alamak! {m}?! Mahalnya!', 'Habislah duit aku... {m}!', '{o}, kurangkan sikit boleh tak? {m} mahal la!', 'Aduh, {m}! Kenapa aku singgah {t} ni...'],
+};
+function say2(kind, v) {
+  const pool = LINES[kind]; if (!pool) return;
+  let l, n = 0; do { l = pick(pool); n++; } while (fill(l[1], v || {}) === lastLine && n < 5);
+  const txt = fill(l[1], v || {}); lastLine = txt; notify(l[0], txt, l[2]);
+}
 function folkChatter() {
   if (!G || Math.random() > .55) return;
   const ps = alive().map(p => ({ p, n: G.own.filter(o => o === G.players.indexOf(p)).length }));
   const rich = ps.slice().sort((a, b) => b.n - a.n)[0], poor = ps.slice().sort((a, b) => a.p.money - b.p.money)[0];
   const opts = [];
-  if (rich && rich.n >= 4) opts.push(['abu', `Tak puas hati betul! ${pname(rich.p)} dah borong ${rich.n} tempat. Tinggal apa untuk orang lain?`, true]);
-  if (poor && poor.p.money < 300) opts.push(['kiah', `Kesian ${pname(poor.p)}, tinggal ${rm(poor.p.money)} je. Jimat-jimat ye nak!`, false]);
-  opts.push(pick([
-    ['polis', 'Hari ni jalan sesak kat KLCC. Sila guna LRT ye!', true],
-    ['mira', 'Cendol kat Gerai Cendol sedap gila! Nak lagi!', false],
-    ['kiah', 'Harga barang naik lagi... mak cik pening kepala.', false],
-    ['abu', 'Bila nak buat taman permainan baru ni? Budak-budak bosan!', true],
-    ['polis', 'Ingat! Jangan parking merata-rata. Nanti kena saman!', false],
-    ['mira', 'Yeay! Esok cuti sekolah, jom pergi Langkawi!', false],
-    ['ann', 'Pasar malam dibuka malam ini. Jemput datang semua!', true],
-  ]));
-  const o = pick(opts); notify(o[0], o[1], o[2]);
+  if (rich && rich.n >= 4) opts.push(pick([['abu', `Tak puas hati betul! ${pname(rich.p)} dah borong ${rich.n} tempat. Tinggal apa untuk orang lain?`, true], ['kiah', `${pname(rich.p)} dah ada ${rich.n} tanah. Dah macam tauke besar!`, false]]));
+  if (poor && poor.p.money < 300) opts.push(pick([['kiah', `Kesian ${pname(poor.p)}, tinggal ${rm(poor.p.money)} je. Jimat-jimat ye nak!`, false], ['mira', `${pname(poor.p)} tinggal ${rm(poor.p.money)}... Mira boleh pinjamkan duit tabung!`, false]]));
+  const lead = alive().slice().sort((a, b) => worth(G.players.indexOf(b)) - worth(G.players.indexOf(a)))[0];
+  if (lead && G.round > 5 && Math.random() < .4) opts.push(['ann', `Setakat ini, ${pname(lead)} paling kaya di bandar kita!`, true]);
+  const blds = G.lvl.filter(x => x === 2).length;
+  if (blds >= 3) opts.push(['abu', `Dah ada ${blds} bangunan tinggi. Bandar kita dah macam KL!`, false]);
+  const c = pick(LINES.chatter); if (c[1] !== lastLine) opts.push(c);
+  const o = pick(opts); lastLine = o[1]; notify(o[0], o[1], o[2]);
 }
 
 /* ---------- State ---------- */
@@ -519,12 +626,12 @@ async function raiseCash(k, owed) {
   renderAll();
   if (sold.length) {
     log(`🏦 ${pname(p)} tak cukup duit, bank beli: ${sold.join(', ')}`);
-    notify('kiah', `Alamak, ${pname(p)} tak cukup duit! Terpaksa jual ${sold.length > 1 ? sold.length + ' harta' : 'harta'} kat bank.`, false);
+    say2('sell', { p: pname(p) });
     await modal(`<div class="big-ic">🏦</div><h2>Duit tak cukup!</h2><p>${pname(p)} kena bayar <b>${rm(owed)}</b> tapi duit tak cukup. Bank beli harta ni separuh harga:</p><div class="sold-list">${sold.map(x => `<div>${x}</div>`).join('')}</div><p>Baki duit sekarang: <b>${rm(Math.max(0, p.money))}</b></p>`, [{ label: 'OK' }], p.ai !== null ? 10000 : 0);
   }
   if (p.money < 0) {
     p.out = true; p.money = 0; log(`💸 ${pname(p)} dah bankrap!`);
-    notify('ann', `Berita sedih. ${pname(p)} dah bankrap!`, true);
+    say2('bankrupt', { p: pname(p) });
     await modal(`<div class="big-ic">😭</div><h2>${pname(p)} Bankrap!</h2><p>Duit habis... takpe, lain kali cuba lagi!</p>`, [{ label: 'OK' }], p.ai !== null ? 10000 : 0);
   }
   return raised;
@@ -587,7 +694,7 @@ async function moveSteps(k, n) {
   const p = G.players[k], dir = n < 0 ? -1 : 1;
   for (let s = 0; s < Math.abs(n); s++) {
     p.pos = (p.pos + dir + 40) % 40;
-    if (p.pos === 0 && dir > 0) { gain(k, 200); log(`🏁 ${pname(p)} lalu MULA, dapat RM200!`); notify('ann', `${pname(p)} lalu MULA dan dapat RM200!`, false); }
+    if (p.pos === 0 && dir > 0) { gain(k, 200); log(`🏁 ${pname(p)} lalu MULA, dapat RM200!`); if (Math.random() < .5) say2('go', { p: pname(p) }); }
     const tok = $('tok' + k); tok.classList.remove('hop'); void tok.offsetWidth; tok.classList.add('hop');
     G.players.forEach((q, j) => placeToken(j, q.pos)); cam(p.pos); sfx.step();
     await wait(230);
@@ -603,7 +710,7 @@ async function sendSleep(k) {
   const p = G.players[k];
   p.pos = 10; p.sleep = 1; st(k).sleeps++; sticker('tidur', k); renderAll();
   log(`😴 ${pname(p)} tertidur kat Rumah Tok Wan (rehat 1 giliran)`);
-  notify('polis', `Shhh... ${pname(p)} tengah tidur kat Rumah Tok Wan. Jangan bising!`, true);
+  say2('sleep', { p: pname(p) });
 }
 
 async function landOn(k, sum) {
@@ -620,33 +727,33 @@ async function landOn(k, sum) {
       if (want) {
         p.money -= t.price; G.own[i] = k; sfx.buy(); st(k).bought++; if (!ai) G.lastBuy = { k, i, price: t.price }; sticker('first_buy', k); if (i === 39) sticker('klcc', k); if (t.set && TILES.every((x, j) => x.set !== t.set || G.own[j] === k)) sticker('set', k); floatText(k, '-' + t.price, '#e64980');
         log(`🛒 ${pname(p)} beli ${t.name}!`); renderAll(); tileFx(i, 'buy'); await wait(1000);
-        notify(pick(['kiah', 'mira', 'ann']), pick([`${pname(p)} dah beli ${t.name}! Tahniah!`, `Wah, ${t.name} ada tuan baru: ${pname(p)}!`]), true);
-        if (ai) await modal(say(`${pname(p)}: "Yeay! Aku beli ${t.name}!"`) + propHtml(i), [{ label: 'OK' }], auto);
-      } else { log(`${pname(p)} tak beli ${t.name}`); if (ai) await modal(say(`${pname(p)}: "Hmm... mahal la, tak nak."`) + propHtml(i), [{ label: 'OK' }], 10000); }
+        say2(t.price >= 300 ? 'buyBig' : 'buy', { p: pname(p), t: t.name, m: rm(t.price) });
+        if (ai) await modal(say(`${pname(p)}: "${fill(pick(AI_SAY.buy), { t: t.name })}"`) + propHtml(i), [{ label: 'OK' }], auto);
+      } else { log(`${pname(p)} tak beli ${t.name}`); if (ai) await modal(say(`${pname(p)}: "${fill(pick(AI_SAY.skip), { t: t.name })}"`) + propHtml(i), [{ label: 'OK' }], 10000); }
     } else if (o === k) {
       if (t.t === 'prop' && G.lvl[i] < 2) {
         const cost = UPC[t.set], can = p.money >= cost, nx = G.lvl[i] + 1;
         let up;
         if (ai) up = can && p.money - cost >= ai.upReserve;
         else up = await modal(propHtml(i) + `<p>Ni tempat kau! Nak naik taraf jadi <b>${LVL_IC[nx]} ${LVL[nx]}</b>?</p>`, [{ label: `🔨 UPGRADE ${rm(cost)}`, v: true, cls: 'mint', dis: !can }, { label: 'Nanti dulu', v: false, cls: 'grey' }]);
-        if (up) { p.money -= cost; G.lvl[i] = nx; sfx.buy(); if (nx === 2) sticker('bangunan', k); renderAll(); tileFx(i, nx === 2 ? 'big' : 'up'); await wait(1100); log(`🔨 ${pname(p)} naik taraf ${t.name} jadi ${LVL[nx]}!`); renderAll(); notify('mira', `Cantiknya! ${t.name} dah jadi ${LVL[nx]} ${LVL_IC[nx]}`, true); if (ai) await modal(say(`${pname(p)}: "${t.name} aku dah jadi ${LVL[nx]}! ${LVL_IC[nx]}"`) + propHtml(i), [{ label: 'OK' }], auto); }
+        if (up) { p.money -= cost; G.lvl[i] = nx; sfx.buy(); if (nx === 2) sticker('bangunan', k); renderAll(); tileFx(i, nx === 2 ? 'big' : 'up'); await wait(1100); log(`🔨 ${pname(p)} naik taraf ${t.name} jadi ${LVL[nx]}!`); renderAll(); say2(nx === 2 ? 'bangunan' : 'upgrade', { p: pname(p), t: t.name, l: LVL[nx] }); if (ai) await modal(say(`${pname(p)}: "${fill(pick(AI_SAY.up), { t: t.name, l: LVL[nx] })} ${LVL_IC[nx]}"`) + propHtml(i), [{ label: 'OK' }], auto); }
       } else log(`${pname(p)} rehat kat ${t.name} sendiri 😌`);
     } else {
       let r = rentOf(i, sum); const owner = G.players[o];
       if (G.lastBuy && G.lastBuy.i === i) G.lastBuy = null;
       log(`🏠 ${pname(p)} bayar sewa ${rm(r)} kat ${pname(owner)}`);
-      if (r >= 100) notify('abu', `Mahalnya sewa ${t.name}, ${rm(r)}! Tak puas hati betul!`, true); else notify('abu', pick([`Sewa ${t.name} ${rm(r)}. Bolehlah...`, `${pname(p)} bayar sewa kat ${pname(owner)}.`]), false);
+      if (r >= 100) say2('rentHigh', { p: pname(p), o: pname(owner), t: t.name, m: rm(r) }); else if (Math.random() < .6) say2('rentLow', { p: pname(p), o: pname(owner), t: t.name, m: rm(r) });
       if (!ai) {
         const big = r >= 20;
         const v = await modal(propHtml(i) + `<p>Alamak! Ni tempat <b>${pname(owner)}</b>. Kena bayar sewa:</p><h2>${rm(r)}</h2>${big ? '<p class="mg-hint">🎮 Main <b>Tangkap Syiling</b>! Dapat 7 syiling, sewa jadi separuh.</p>' : ''}`,
           big ? [{ label: '🎮 CUBA NASIB', v: 'mg', cls: 'mint' }, { label: '💸 Bayar je', v: 'pay', cls: 'pink' }] : [{ label: '💸 BAYAR', v: 'pay', cls: 'pink' }]);
         if (v === 'mg') {
           const ok = await coinGame();
-          if (ok) { r = Math.ceil(r / 2); sticker('minigame', k); log(`🪙 ${pname(p)} menang Tangkap Syiling! Sewa jadi ${rm(r)}`); notify('mira', `Hebatnya ${pname(p)}! Sewa dapat separuh harga!`, false); }
+          if (ok) { r = Math.ceil(r / 2); sticker('minigame', k); log(`🪙 ${pname(p)} menang Tangkap Syiling! Sewa jadi ${rm(r)}`); say2('minigame', { p: pname(p) }); }
           else log(`🪙 ${pname(p)} tak sempat... bayar penuh ${rm(r)}`);
         }
       }
-      else await modal(say(`${pname(p)}: "Alamak, kena bayar ${rm(r)} kat ${pname(owner)}!"`) + propHtml(i), [{ label: 'OK' }], 10000);
+      else await modal(say(`${pname(p)}: "${fill(pick(r >= 100 ? AI_SAY.payBig : AI_SAY.pay), { m: rm(r), o: pname(owner), t: t.name })}"`) + propHtml(i), [{ label: 'OK' }], 10000);
       st(k).rentPaid += r; st(o).rentEarn += r; G.tileEarn[i] += r;
       await pay(k, r, o);
     }
@@ -662,7 +769,7 @@ async function landOn(k, sum) {
     for (let j = 0; j < G.players.length; j++) if (j !== k && !G.players[j].out) { tot += 20; await pay(j, 20, k); }
     log(`💐 Kenduri ${pname(p)}! Dapat salam berisi ${rm(tot)}`); sfx.coin();
     st(k).kenduri++; if (st(k).kenduri >= 3) sticker('kenduri3', k);
-    notify('ann', `Semua dijemput ke kenduri kahwin ${pname(p)}!`, true);
+    say2('kenduri', { p: pname(p) });
     await modal(`<div class="big-ic">💐</div><h2>Kenduri Kahwin!</h2><p>Semua orang datang bagi salam berisi. ${pname(p)} dapat <b>${rm(tot)}</b>!</p>`, [{ label: 'Yeay!' }], auto || 0);
   } else if (t.t === 'rezeki' || t.t === 'musibah') {
     await drawCard(k, t.t);
@@ -857,7 +964,7 @@ async function openTrade(k) {
   floatText(k, '-' + off, '#e64980'); floatText(o, '+' + off, '#2f9f73'); sfx.buy();
   renderAll(); tileFx(i, 'buy'); sticker('trade', k);
   log(`🤝 ${pname(p)} beli ${t.name} dari ${pname(owner)} dengan ${rm(off)}`);
-  notify('kiah', `Wah, ${pname(p)} dah beli ${t.name} dari ${pname(owner)}!`, true);
+  say2('trade', { p: pname(p), o: pname(owner), t: t.name });
   if (t.set && TILES.every((x, j) => x.set !== t.set || G.own[j] === k)) sticker('set', k);
   await wait(1000);
 }
@@ -886,7 +993,7 @@ async function endGame() {
   const rank = G.players.map((p, k) => ({ p, k, w: p.out ? -1 : worth(k) })).sort((a, b) => b.w - a.w);
   const win = rank[0].p;
   sticker('win', G.players.indexOf(win));
-  sfx.win(); confetti(); notify('ann', `Tahniah ${pname(win)}! Jutawan Comel bandar kita!`, true);
+  sfx.win(); confetti(); say2('win', { p: pname(win) });
   await modal(`<div class="big-ic">🏆</div><h2>${pname(win)} ${win.ai === null && G.players.filter(x => x.ai === null).length === 1 ? 'menang! Hebat!' : 'jadi Jutawan Comel!'}</h2>
     <p>Kekayaan = duit + nilai tanah & bangunan</p>
     <ol class="rank">${rank.map((r, n) => `<li>${['🥇', '🥈', '🥉', '4️⃣'][n]} ${avatar(r.p.ci)} ${pname(r.p)}<span>${r.w < 0 ? 'Bankrap' : rm(r.w)}</span></li>`).join('')}</ol>${statsHtml()}`,

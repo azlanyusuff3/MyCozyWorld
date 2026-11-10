@@ -155,3 +155,18 @@ All: **256×256, transparent**, round collectible sticker badge with a thick whi
 | `stk_trade.webp` | Two cute paws doing a handshake |
 | `stk_math.webp` | Smiling brain with plus and minus symbols (+ and − allowed) |
 | `stk_pasar.webp` | Red paper lantern with a kuih on a stick |
+
+---
+
+## Batch 9 — Human player tokens (4 images) — replaces the animal tokens
+The players are now cute chibi **Malaysian kids**, same style as the townsfolk portraits (`folk_kiah.webp`, `folk_mira.webp`) but **full body**. Keep the old `token_kucing/arnab/panda/ayam` files (do not delete them).
+All: **512×600 portrait, transparent**, full body standing, facing the viewer, very big head (half of body height), tiny body, big sparkly eyes, rosy cheeks, thick soft brown outline, happy pose. Each kid wears the colour shown so players can be told apart on the board.
+
+| File | Character |
+|---|---|
+| `token_aina.webp` | **Aina**, Malay girl about 8 years old, peach-orange tudung and orange baju kurung, holding a small gold coin, cheerful smile |
+| `token_meimei.webp` | **Mei Mei**, Chinese girl about 8, two hair buns with pink ribbons, pink cheongsam-style top and skirt, waving |
+| `token_adam.webp` | **Adam**, Malay boy about 8, blue backwards cap, blue t-shirt and shorts, thumbs up |
+| `token_ravi.webp` | **Ravi**, Indian boy about 8, round glasses, curly hair, yellow polo shirt and shorts, holding a toy dice, big grin |
+
+Important: all four must have the same size, proportions and line style. Register `token_aina`, `token_meimei`, `token_adam`, `token_ravi` in `list.json` (keep everything already there).
