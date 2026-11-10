@@ -76,10 +76,16 @@ Ini yang buat semua art nampak sebati. Gaya umum sama, **tapi saiz ikut jadual**
 | `st_telur.webp` | A single white chicken egg with a small crack and a tiny bit of yolk peeking out, cute and simple |
 | `st_milo.webp` | A plastic shaker cup half full of chocolate Milo drink with motion lines, being shaken (no hands) |
 
-## Batch 7 — Event
-| Fail | Prompt tambahan (gaya sama macam Batch 2, manusia chibi separuh badan) |
-|---|---|
-| `cust_datuk.webp` | Datuk Seri, a distinguished Malay VIP man with a neat moustache, wearing a black songkok and an elegant gold-and-maroon songket baju Melayu, a small gold brooch, confident proud smile, one hand adjusting his collar, looks important but still cute |
+## Batch 7 — Datuk VIP + Pekerja kedai
+512×512, transparent, gaya sama macam pelanggan Batch 2 (manusia chibi, separuh badan atas, pandang depan).
+| Fail | Watak | Prompt tambahan |
+|---|---|---|
+| `cust_datuk.webp` | Datuk Seri (event VIP) | A distinguished Malay VIP man with a neat moustache, wearing a black songkok and an elegant gold-and-maroon songket baju Melayu with a small gold brooch, confident proud smile, one hand adjusting his collar, looks important but still cute |
+| `staff_siti.webp` | Kak Siti (pelayan) | A friendly young Malay waitress wearing a plain lavender tudung and a green mamak restaurant apron, holding a notepad and pen, warm helpful smile |
+| `staff_anne.webp` | Anne (tukang teh) | A cheerful Indian Malaysian man with a thick moustache, white short-sleeve shirt, a small towel over one shoulder, holding a steel teh tarik pitcher, proud grin (in Malaysia "Anne" means big brother) |
+| `staff_ravi.webp` | Ravi (tukang roti) | A young Indian Malaysian roti chef wearing a white chef cap and white singlet with a green apron, spinning a thin roti canai dough in the air above one hand, energetic smile |
+
+> Pelanggan tetap (Uncle Lim, Pakcik Rahman, Kak Lina) guna gambar Batch 2 yang dah ada. Tak perlu gambar baru.
 
 ## Kad hub (pilihan)
 Simpan `assets/hub/card_mamak.webp` (landscape 4:3), tambah `"card_mamak"` dalam `assets/hub/list.json`:

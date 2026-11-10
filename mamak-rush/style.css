@@ -280,3 +280,14 @@ body.has-dulang .tray .slot:not(.full){background:transparent}
 @keyframes rain{to{background-position:-30px 120px}}
 .shop-floor.rain{filter:saturate(.8) brightness(.95)}
 .shop-floor.senja:after{opacity:1;background:linear-gradient(180deg,#ff9a4a55,#7a3fa033)}
+
+/* ===== Pelanggan tetap & pekerja ===== */
+.order.reg{box-shadow:0 0 0 2px #ffc93c,0 3px 6px #0002}
+.biasa{position:absolute;top:-11px;left:50%;transform:translateX(-50%);background:#ffc93c;color:#5a3608;font-style:normal;font-size:9px;font-weight:900;border-radius:7px;padding:1px 6px;white-space:nowrap}
+.order .av.q{font-size:20px;animation:pulse 1.2s infinite}
+.staff-bar{position:absolute;left:6px;bottom:96px;display:flex;gap:4px;z-index:5;pointer-events:none}
+.staff{position:relative;width:52px;display:flex;flex-direction:column;align-items:center;background:#fff8e8dd;border-radius:12px;padding:2px 2px 3px;box-shadow:0 2px 4px #0002;overflow:hidden}
+.staff:before{content:"";position:absolute;left:0;bottom:0;height:4px;width:var(--p,0%);background:#3fbf6f}
+.staff .av{width:40px;height:40px;font-size:30px;line-height:40px;text-align:center}
+.staff b{font-size:8.5px;line-height:1;white-space:nowrap}
+.up .ic.av{width:40px;height:40px;display:flex;align-items:center;justify-content:center}
