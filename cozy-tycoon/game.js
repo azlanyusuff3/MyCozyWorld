@@ -239,7 +239,12 @@ function placeToasts() {
 }
 window.addEventListener('resize', placeToasts);
 window.addEventListener('scroll', placeToasts, { passive: true });
+const NQ = [];
+function flushNotify() { while (NQ.length && $('modal').classList.contains('hidden') && !document.querySelector('.mg')) { const n = NQ.shift(); notify(n[0], n[1], n[2]); } }
+setInterval(flushNotify, 400);
 function notify(who, msg, voice) {
+  // don't cover popups: wait until they close
+  if (!$('modal').classList.contains('hidden') || document.querySelector('.mg')) { NQ.push([who, msg, voice]); if (NQ.length > 3) NQ.shift(); return; }
   const F = FOLK[who] || FOLK.kiah, box = $('toasts'); if (!box) return;
   const t = document.createElement('div');
   t.className = 'toast' + (who === 'ann' ? ' ann' : ''); t.style.setProperty('--c', F.c);
@@ -423,7 +428,7 @@ function modal(html, buttons, autoMs) {
     $('modalCard').innerHTML = html + (ms ? `<div class="auto-bar"><i style="animation-duration:${ms}ms"></i></div><div class="tap-hint">tap untuk teruskan</div>` : (buttons.length ? `<div class="btns">${buttons.map((b, i) => `<button class="btn ${b.cls || 'pink'}" data-i="${i}" ${b.dis ? 'disabled' : ''}>${b.label}</button>`).join('')}</div>` : ''));
     $('modal').classList.remove('hidden');
     let done = false;
-    const close = v => { if (done) return; done = true; $('modal').classList.add('hidden'); res(v); };
+    const close = v => { if (done) return; done = true; $('modal').classList.add('hidden'); res(v); setTimeout(flushNotify, 250); };
     $('modalCard').querySelectorAll('button[data-i]').forEach(b => b.onclick = () => { beep(700); close(buttons[+b.dataset.i].v); });
     $('modalCard').querySelectorAll('[data-pick]').forEach(b => b.onclick = e => { e.stopPropagation(); if (b.disabled) return; beep(700); close(b.dataset.pick); });
     const fin = () => close(buttons.length ? buttons[0].v : null);
