@@ -230,3 +230,9 @@ img.logo{max-width:92%;max-height:110px;object-fit:contain;display:block;margin:
 .toasts{top:auto;bottom:calc(10px + env(safe-area-inset-bottom));flex-direction:column-reverse}
 .hint{background:#fffc;border-radius:12px;padding:5px 10px;display:inline-block;color:#8d7086}
 .tag{background:#fffb;border-radius:12px;padding:4px 10px;display:inline-block}
+
+.names{display:flex;flex-direction:column;gap:7px;margin-top:10px}
+.name-row{display:flex;align-items:center;gap:8px;background:#fff;border:3px solid #f3dce7;border-radius:14px;padding:3px 10px 3px 4px}
+.name-row img,.name-row svg{width:34px;height:36px;object-fit:contain;flex:none}
+.name-row input{flex:1;border:0;outline:0;background:transparent;font:800 16px "Nunito",sans-serif;color:#5a3d55;min-width:0;padding:7px 0;-webkit-user-select:text;user-select:text}
+.name-row:focus-within{border-color:#ff9fbf}

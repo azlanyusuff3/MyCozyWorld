@@ -244,11 +244,11 @@ function newGame() {
   const players = [];
   if (cfg.mode === 'ai') {
     const others = [0, 1, 2, 3].filter(i => i !== cfg.char);
-    players.push({ name: 'Kau', ci: cfg.char, ai: null });
+    players.push({ name: getName(0, 'Kau'), ci: cfg.char, ai: null });
     others.forEach((ci, k) => players.push({ name: CHARS[ci].name, ci, ai: k }));
   } else {
     const order = [cfg.char, ...[0, 1, 2, 3].filter(i => i !== cfg.char)].slice(0, cfg.count);
-    order.forEach((ci, k) => players.push({ name: 'Pemain ' + (k + 1) + ' · ' + CHARS[ci].name, ci, ai: null }));
+    order.forEach((ci, k) => players.push({ name: getName(k, CHARS[ci].name), ci, ai: null }));
   }
   players.forEach(p => Object.assign(p, { money: 1500, pos: 0, out: false, sleep: 0 }));
   G = {
@@ -262,7 +262,17 @@ function save() { try { if (G && !G.over) localStorage.setItem(SAVE, JSON.string
 function load() { try { return JSON.parse(localStorage.getItem(SAVE)); } catch (e) { return null; } }
 
 /* ---------- Menu ---------- */
+let NAMES = []; try { NAMES = JSON.parse(localStorage.getItem('cozyTycoonNames')) || []; } catch (e) {}
+const esc = t => String(t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+function getName(k, def) { const v = (NAMES[k] || '').trim(); return v ? v.slice(0, 12) : def; }
+function renderNames() {
+  const box = $('nameInputs'); if (!box) return;
+  const order = cfg.mode === 'ai' ? [cfg.char] : [cfg.char, ...[0, 1, 2, 3].filter(i => i !== cfg.char)].slice(0, cfg.count);
+  box.innerHTML = order.map((ci, k) => `<label class="name-row">${avatar(ci)}<input data-k="${k}" maxlength="12" autocomplete="off" placeholder="${cfg.mode === 'ai' ? 'Nama kau' : 'Pemain ' + (k + 1) + ' (' + CHARS[ci].name + ')'}" value="${esc(NAMES[k] || '')}"></label>`).join('');
+  box.querySelectorAll('input').forEach(inp => inp.oninput = () => { NAMES[+inp.dataset.k] = inp.value; try { localStorage.setItem('cozyTycoonNames', JSON.stringify(NAMES)); } catch (e) {} });
+}
 function renderMenu() {
+  renderNames();
   $('titleChars').innerHTML = CHARS.map((c, i) => avatar(i)).join('');
   $('charPick').innerHTML = CHARS.map((c, i) => `<button data-i="${i}" class="${i === cfg.char ? 'on' : ''}">${avatar(i)}${c.name}</button>`).join('');
   [...$('charPick').children].forEach(b => b.onclick = () => { cfg.char = +b.dataset.i; beep(700); renderMenu(); });
@@ -274,11 +284,11 @@ function seg(id, key, num, after) {
     cfg[key] = num ? +b.dataset.v : b.dataset.v; beep(650); after && after();
   });
 }
-seg('modeSeg', 'mode', false, () => $('countRow').classList.toggle('hidden', cfg.mode !== 'local'));
-seg('countSeg', 'count', true); seg('speedSeg', 'speed', true, () => localStorage.setItem('cozyTycoonSpeed', cfg.speed));
+seg('modeSeg', 'mode', false, () => { $('countRow').classList.toggle('hidden', cfg.mode !== 'local'); renderNames(); });
+seg('countSeg', 'count', true, renderNames); seg('speedSeg', 'speed', true, () => localStorage.setItem('cozyTycoonSpeed', cfg.speed));
 [...$('speedSeg').children].forEach(b => b.classList.toggle('on', +b.dataset.v === cfg.speed)); seg('roundSeg', 'rounds', true);
 $('startBtn').onclick = () => { newGame(); startPlay(); };
-$('resumeBtn').onclick = () => { G = load(); if (G) startPlay(); };
+$('resumeBtn').onclick = () => { G = load(); if (G) { G.players.forEach(p => { if (p.ai === null && /^Pemain \d/.test(p.name || '')) p.name = CHARS[p.ci].name; }); startPlay(); } };
 
 function startPlay() {
   $('menu').classList.add('hidden'); $('play').classList.remove('hidden'); document.body.classList.add('playing');
@@ -324,7 +334,7 @@ function renderAll() {
   if (!G || !$('board').querySelector('.tile')) return;
   $('players').style.gridTemplateColumns = `repeat(${G.players.length},1fr)`;
   $('players').innerHTML = G.players.map((p, k) =>
-    `<div class="pchip ${k === G.turn ? 'turn' : ''} ${p.out ? 'out' : ''}" style="border-color:${k === G.turn ? CHARS[p.ci].color : '#fff'}">${p.sleep ? '<i class="zz">💤</i>' : ''}${avatar(p.ci)}<b>${p.ai !== null ? CHARS[p.ci].name : (G.players.filter(x => x.ai === null).length > 1 ? CHARS[p.ci].name : 'Kau')}</b><span>${p.out ? 'Bankrap' : rm(p.money)}</span></div>`).join('');
+    `<div class="pchip ${k === G.turn ? 'turn' : ''} ${p.out ? 'out' : ''}" style="border-color:${k === G.turn ? CHARS[p.ci].color : '#fff'}">${p.sleep ? '<i class="zz">💤</i>' : ''}${avatar(p.ci)}<b>${pname(p)}</b><span>${p.out ? 'Bankrap' : rm(p.money)}</span></div>`).join('');
   TILES.forEach((t, i) => {
     const el = $('tile' + i), o = G.own[i];
     el.classList.toggle('owned', o !== null);
@@ -334,7 +344,7 @@ function renderAll() {
   G.players.forEach((p, k) => placeToken(k, p.pos));
   const p = cur();
   $('roundTxt').textContent = G.maxRounds ? `Pusingan ${Math.min(G.round, G.maxRounds)}/${G.maxRounds}` : `Pusingan ${G.round} · sampai tinggal sorang`;
-  $('turnTxt').innerHTML = `${avatar(p.ci)} Giliran ${p.ai === null && G.players.filter(x => x.ai === null).length === 1 ? 'kau!' : (p.ai !== null ? CHARS[p.ci].name : CHARS[p.ci].name)}`;
+  $('turnTxt').innerHTML = `${avatar(p.ci)} Giliran ${pname(p)}!`;
   $('log').innerHTML = G.log.slice(0, 3).map(l => `<div>${l}</div>`).join('');
   [...$('dice').children].forEach((d, i) => { if (!d.classList.contains('spin')) setDie(d, G.dice[i]); });
   $('hudTurn').innerHTML = $('turnTxt').innerHTML;
@@ -390,7 +400,7 @@ function propHtml(i) {
 function tileDesc(t) {
   return { go: 'Lalu sini dapat RM200!', rezeki: 'Ambil kad Rezeki — selalunya best!', musibah: 'Ambil kad Musibah — alamak...', tax: `Bayar ${rm(t.amt)}.`, jail: 'Rumah Tok Wan. Kalau singgah je, takpe. Kalau tertidur, rehat 1 giliran.', gojail: 'Mengantuk! Terus pergi tidur kat Rumah Tok Wan.', kenduri: 'Kenduri kahwin! Semua orang bagi salam berisi RM20 kat kau.' }[t.t] || '';
 }
-const pname = p => p.ai !== null ? CHARS[p.ci].name : (G.players.filter(x => x.ai === null).length === 1 ? 'Kau' : CHARS[p.ci].name);
+const pname = p => p.ai !== null ? CHARS[p.ci].name : esc(p.name || CHARS[p.ci].name);
 function showTileInfo(i) { if (!G) return; modal(propHtml(i), []); }
 
 /* ---------- Money ---------- */
