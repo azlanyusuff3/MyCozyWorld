@@ -384,8 +384,15 @@ $('#tray').addEventListener('pointerdown', e => {
 /* ---------- Render meja ---------- */
 function orderHTML(c) { return `<div class="order${c.reg ? ' reg' : ''}">${c.hidden ? '<i class="biasa">macam biasa</i>' : ''}${c.items.map(i => c.hidden && !i.done ? '<span class="it"><span class="av q">❓</span></span>' : `<span class="it ${i.done ? 'done' : ''}"><span class="av">${ico('item_' + i.k, ITEMS[i.k].e)}</span>${tagHTML(i.m)}</span>`).join('')}<div class="pat"><b class="${patCls(c)}" style="width:${c.pat / c.max * 100}%"></b></div></div>`; }
 function patCls(c) { const f = c.pat / c.max; return f > .5 ? '' : f > .25 ? 'mid' : 'low'; }
+function fitTables() {
+  const box = $('#tables'); if (!box || !R) return;
+  const n = R.tables.length, rows = n === 5 ? 2 : Math.ceil(n / 2), h = box.clientHeight - 30;
+  if (h > 50) box.style.setProperty('--th', Math.max(110, Math.min(240, h / rows - 6)) + 'px');
+}
+addEventListener('resize', fitTables);
 function renderTables() {
   if (!R) return;
+  requestAnimationFrame(fitTables);
   $('#tables').innerHTML = R.tables.map((c, ti) => `<div class="table${SPR.meja ? ' spr' : ''}" style="z-index:${ti + 1}"><span class="shadow"></span>${SPR.meja ? `<img class="meja" src="${SPR.meja}" alt="">` : '<span class="top"></span><span class="stool l"></span><span class="stool r"></span>'}${c ? `
     <div class="cust ${c.angry ? 'angry' : ''}" data-id="${c.id}">${orderHTML(c)}<span class="av">${ico('cust_' + c.who.k, c.who.e)}</span>${c.angry ? '<span class="calm-tag">TAP: Sabar!</span>' : ''}</div>` : ''}</div>`).join('');
 }
