@@ -19,23 +19,23 @@ Buat ikut batch. Lepas setiap batch, commit dan tunjuk dulu.
 | `item_maggi.webp` | A plate of spicy Maggi goreng (fried instant noodles) with a fried egg on top, lime wedge and green vegetables |
 | `item_nasi.webp` | Nasi lemak on a banana leaf: white coconut rice, red sambal, fried anchovies, peanuts, cucumber slices and half a boiled egg |
 
-## Batch 2 — Pelanggan (badan penuh, duduk/berdiri, pandang depan, muka gembira)
-Tambahan gaya: *big round head, huge sparkly eyes, pink blush cheeks, tiny body, sitting pose.*
-| Fail | Prompt tambahan |
-|---|---|
-| `cust_beruang.webp` | Abang Beruang, a brown bear cub wearing a red football jersey |
-| `cust_arnab.webp` | Kak Arnab, a white bunny wearing a pastel pink baju kurung |
-| `cust_panda.webp` | Pakcik Panda, a baby panda wearing a white kopiah cap and small round glasses |
-| `cust_musang.webp` | Kak Musang, a cute orange fox wearing an office lanyard and holding a phone |
-| `cust_koala.webp` | Encik Koala, a grey koala wearing a blue office shirt and tie, sleepy eyes |
-| `cust_penyu.webp` | Tok Penyu, a green sea turtle grandpa with a white beard and a walking stick |
-| `cust_landak.webp` | Adik Landak, a small hedgehog kid wearing a school uniform (white shirt) and backpack |
-| `cust_kambing.webp` | Makcik Kambing, a goat auntie wearing a colourful tudung and holding a shopping bag |
+## Batch 2 — Pelanggan (manusia chibi, separuh badan atas / duduk, pandang depan)
+Tambahan gaya: *cute chibi Malaysian person, big round head, huge sparkly eyes, pink blush cheeks, tiny body, friendly expression, upper body visible.*
+| Fail | Watak | Prompt tambahan |
+|---|---|---|
+| `cust_jamal.webp` | Abang Jamal | A young Malay man with short messy hair wearing a red football jersey, excited grin |
+| `cust_lina.webp` | Kak Lina | A young Malay woman wearing a pastel pink tudung and office blouse with a lanyard ID card, holding a phone |
+| `cust_rahman.webp` | Pakcik Rahman | An old Malay uncle with a white kopiah cap, small round glasses, grey moustache and batik shirt, warm smile |
+| `cust_amir.webp` | Adik Amir | A Malay schoolboy in white school shirt and dark blue shorts with a backpack, cheeky smile |
+| `cust_lim.webp` | Uncle Lim | A chubby Chinese Malaysian uncle in a white singlet holding a folded newspaper, relaxed happy face |
+| `cust_devi.webp` | Aunty Devi | An Indian Malaysian aunty wearing a colourful saree with a small bindi and gold bangles, cheerful |
+| `cust_raju.webp` | Abang Raju | A young Indian Malaysian man wearing an orange safety vest and a yellow hard hat, tired but happy |
+| `cust_kiah.webp` | Makcik Kiah | A Malay auntie wearing a colourful floral tudung and baju kurung, holding a market shopping bag with vegetables |
 
 ## Batch 3 — Watak khas
 | Fail | Prompt tambahan |
 |---|---|
-| `cust_grab.webp` | Abang Grab, a cheerful green frog riding a small green delivery scooter with a delivery box on the back, wearing a green helmet (no logos) |
+| `cust_grab.webp` | Abang Grab, a cheerful young delivery rider in a green jacket and green helmet riding a small green scooter with a delivery box on the back (no logos, no text) |
 | `cust_oyen.webp` | Oyen, a chubby orange tabby cat crouching sneakily with a mischievous grin, one paw raised |
 
 ## Batch 4 — Stesen masak
@@ -53,4 +53,4 @@ Tambahan gaya: *big round head, huge sparkly eyes, pink blush cheeks, tiny body,
 
 ## Kad hub (pilihan)
 Simpan `assets/hub/card_mamak.webp` (landscape 4:3), tambah `"card_mamak"` dalam `assets/hub/list.json`:
-> Cute chibi busy Malaysian mamak restaurant at night with green walls, marble round tables and red plastic stools, a chef stretching roti canai in the air, teh tarik being pulled high, cute animal customers (bear, bunny, panda, fox) eating happily, a frog delivery rider on a scooter and an orange cat sneaking near the counter, warm lights and a TV showing football, kawaii mobile game key art, no text.
+> Cute chibi busy Malaysian mamak restaurant at night with green walls, marble round tables and red plastic stools, a chef stretching roti canai in the air, teh tarik being pulled high, cute chibi Malaysian customers of different races eating happily, a delivery rider on a scooter and an orange cat sneaking near the counter, warm lights and a TV showing football, kawaii mobile game key art, no text.

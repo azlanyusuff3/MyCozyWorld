@@ -27,11 +27,11 @@ const ITEMS = {
   nasi: { name: 'Nasi lemak', e: '🍛', price: 4 }
 };
 const CUSTS = [
-  { k: 'beruang', e: '🐻', n: 'Abang Beruang' }, { k: 'arnab', e: '🐰', n: 'Kak Arnab' }, { k: 'panda', e: '🐼', n: 'Pakcik Panda' },
-  { k: 'musang', e: '🦊', n: 'Kak Musang' }, { k: 'koala', e: '🐨', n: 'Encik Koala' }, { k: 'penyu', e: '🐢', n: 'Tok Penyu' },
-  { k: 'landak', e: '🦔', n: 'Adik Landak' }, { k: 'kambing', e: '🐐', n: 'Makcik Kambing' }
+  { k: 'jamal', e: '🧑🏽', n: 'Abang Jamal' }, { k: 'lina', e: '🧕🏽', n: 'Kak Lina' }, { k: 'rahman', e: '👴🏽', n: 'Pakcik Rahman' },
+  { k: 'amir', e: '👦🏽', n: 'Adik Amir' }, { k: 'lim', e: '👨🏻', n: 'Uncle Lim' }, { k: 'devi', e: '👩🏾', n: 'Aunty Devi' },
+  { k: 'raju', e: '👷🏾', n: 'Abang Raju' }, { k: 'kiah', e: '👵🏽', n: 'Makcik Kiah' }
 ];
-const GRAB = { k: 'grab', e: '🐸', n: 'Abang Grab' };
+const GRAB = { k: 'grab', e: '🛵', n: 'Abang Grab' };
 const CAT = { k: 'oyen', e: '🐈', n: 'Oyen' };
 // Benda baru yang dibuka ikut hari
 const UNLOCK = {
@@ -114,7 +114,7 @@ function renderMenu() {
   $('#soundBtn').textContent = soundOn ? '🔊' : '🔇';
   $('#menuCoins').textContent = rm(P.coins);
   $('#playBtn').textContent = '▶ BUKA KEDAI · HARI ' + P.day;
-  $('#menuArt').innerHTML = `<span class="av">${ico('item_teh', '☕')}</span><span class="av">${ico('cust_beruang', '🐻')}</span><span class="av">${ico('item_roti', '🫓')}</span>`;
+  $('#menuArt').innerHTML = `<span class="av">${ico('item_teh', '☕')}</span><span class="av">${ico('cust_jamal', '🧑🏽')}</span><span class="av">${ico('item_roti', '🫓')}</span>`;
   const n = Math.max(7, Math.ceil(P.day / 7) * 7);
   $('#daysList').innerHTML = Array.from({ length: n }, (_, i) => {
     const d = i + 1, st = P.stars[d] || 0;
