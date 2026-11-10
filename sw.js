@@ -1,5 +1,5 @@
 // Tukar VERSION setiap kali update game supaya phone ambil versi baru.
-const VERSION = 'mycozyworld-v85';
+const VERSION = 'mycozyworld-v86';
 const ASSETS = [
   './', 'index.html', 'game.js', 'manifest.json', 'salon/index.html', 'salon/style.css', 'salon/game.js', 'salon/sprites/list.json', 'cozy-chess/', 'cozy-chess/index.html', 'cozy-chess/style.css', 'cozy-chess/chess-core.js', 'cozy-chess/ai-worker.js', 'cozy-chess/game.js', 'cozy-chess/sprites/list.json', 'cozy-tycoon/', 'cozy-tycoon/index.html', 'cozy-tycoon/style.css', 'cozy-tycoon/game.js', 'cozy-tycoon/sprites/list.json', 'cozy-kampung/', 'cozy-kampung/index.html', 'cozy-kampung/style.css', 'cozy-kampung/game.js', 'cozy-kampung/sprites/list.json', 'mamak-rush/', 'mamak-rush/index.html', 'mamak-rush/style.css', 'mamak-rush/game.js', 'mamak-rush/sprites/list.json',
   ...['white', 'black'].flatMap(c => ['king', 'queen', 'rook', 'bishop', 'knight', 'pawn'].flatMap(t => ['idle', 'attack', 'hurt'].map(n => `cozy-chess/sprites/${c}_${t}_${n}.webp`))),
@@ -9,7 +9,7 @@ const ASSETS = [
   ...['windup', 'hurt', 'walk1', 'walk2', 'victory', 'cast'].map(n => `assets/heroes/opt/mage_${n}.webp`),
   ...['assassin', 'bear', 'pyro', 'gunner'].flatMap(t => ['idle', 'attack', 'windup', 'hurt', 'walk1', 'walk2', 'victory', 'cast'].map(n => `assets/heroes/opt/${t}_${n}.webp`)),
   ...['back', 'side'].flatMap(d => ['idle', 'walk1', 'walk2', 'windup', 'attack', 'hurt'].map(n => ['knight', 'archer', 'mage', 'healer', 'assassin', 'bear', 'pyro', 'gunner'].map(t => `assets/heroes/opt/${t}_${d}_${n}.webp`)).flat()),
-  'assets/ui/logo.webp', 'assets/ios-audio.js',
+  'assets/ui/logo.webp', 'assets/ios-audio.js', 'assets/version.js',
   ...['sword', 'bow', 'staff', 'shield', 'heart', 'claw', 'leaf', 'boots'].map(n => `assets/ui/items/item_${n}.webp`),
   ...['bg_forest_night', 'panel_wood', 'card_frame', 'btn_gold', 'btn_purple', 'icon_coin', 'icon_heart', 'icon_dice', 'icon_swords', 'icon_star', 'tile_stone_light', 'tile_stone_dark'].map(n => `assets/ui/${n}.webp`),
   ...['knight', 'archer', 'mage', 'healer', 'assassin', 'bear', 'pyro', 'gunner'].map(t => `assets/ui/portrait_${t}.webp`),
