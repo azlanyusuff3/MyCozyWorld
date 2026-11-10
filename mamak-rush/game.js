@@ -79,6 +79,18 @@ const UPS = [
   { k: 'tv', ic: '📺', n: 'TV bola', d: 'Tip +25% (pelanggan seronok tengok bola)', cost: [80], max: 1 }
 ];
 const DUR = 90;
+const EVENTS = {
+  bola: { ic: '⚽', t: 'Malam Liga Juara!', d: 'Semua orang datang tengok bola. Kedai sesak gila, pelanggan datang laju!' },
+  hujan: { ic: '🌧️', t: 'Hujan lebat!', d: 'Orang malas keluar rumah. Pelanggan dalam kedai kurang, tapi order Grab mencurah-curah, dan rider bagi tip lebih!' },
+  berbuka: { ic: '🌙', t: 'Waktu berbuka!', d: '15 saat pertama semua orang tunggu azan. Masak siap-siap dulu, letak atas dulang. Lepas azan, semua meja penuh serentak!' },
+  datuk: { ic: '🎩', t: 'Datuk VIP datang!', d: 'Tengah hari nanti, Datuk singgah. Order banyak dan cerewet, sabar nipis, tapi bayar 2.5 kali ganda!' }
+};
+const DATUK = { k: 'datuk', e: '🤵🏽', n: 'Datuk Seri' };
+function eventFor(d) {
+  if (d % 5 === 0) return 'bola';
+  if (d < 6) return null;
+  return [null, 'hujan', null, 'datuk', null, 'berbuka'][d % 6];
+}
 const P = Object.assign({ day: 1, coins: 0, stars: {}, up: {} }, store.get('save', {}));
 const up = k => P.up[k] || 0;
 const save = () => store.set('save', P);
@@ -181,7 +193,7 @@ function startDay(d) {
   R = {
     day: d, t: DUR, earned: 0, served: 0, lost: 0, perfect: 0, paused: true, over: false,
     tables: Array(nTables).fill(null), grab: null, tray: [], trayMax: 4 + up('tray'), cat: null,
-    spawnT: 1.2, grabT: rand(15, 25), catT: rand(14, 22), uid: 0,
+    spawnT: 1.2, grabT: rand(15, 25), catT: rand(14, 22), uid: 0, ev: eventFor(d), datukDone: false, azan: false,
     roti: { s: 'idle', t: 0, prog: 0, k: 'roti', eggs: 0 },
     teh: { s: 'idle', lvl: 0, hold: false, dir: 1, prog: 0 }, chips: {},
     maggi: Array.from({ length: feat(d, 'maggi') ? 1 + up('kuali') : 1 }, () => ({ s: 'idle', t: 0, k: 'maggi' })),
@@ -192,9 +204,13 @@ function startDay(d) {
   $('#tv').classList.toggle('hidden', !up('tv')); $('#fan').classList.toggle('hidden', !up('fan'));
   $('#menuBoard').textContent = menuItems().map(k => ITEMS[k].e).join(' ');
   $('#notifs').innerHTML = '';
+  const fl = document.querySelector('.shop-floor'); fl.classList.toggle('rain', R.ev === 'hujan'); fl.classList.toggle('senja', R.ev === 'berbuka');
+  if (R.ev === 'bola') $('#tv').classList.remove('hidden');
+  if (R.ev === 'hujan' && feat(d, 'grab')) R.grabT = 3;
+  if (R.ev === 'berbuka') R.spawnT = 999;
   renderStations(); renderTables(); renderTray(); renderSide(); hud();
   const u = UNLOCK[d];
-  modal(`<h2>Hari ${d}</h2>${u ? `<div class="new-box"><div class="ic">${u.ic}</div><b>${u.t}</b><span>${u.d}</span></div>` : `<p>${d % 5 === 0 ? '⚽ <b>Malam Liga Juara!</b> Kedai sesak gila, siap sedia!' : 'Pelanggan makin ramai. Gerak laju!'}</p>`}
+  modal(`<h2>Hari ${d}</h2>${u ? `<div class="new-box"><div class="ic">${u.ic}</div><b>${u.t}</b><span>${u.d}</span></div>` : (R.ev ? '' : '<p>Pelanggan makin ramai. Gerak laju!</p>')}${R.ev ? `<div class="new-box ev"><div class="ic">${EVENTS[R.ev].ic}</div><b>${u ? 'Event: ' : ''}${EVENTS[R.ev].t}</b><span>${EVENTS[R.ev].d}</span></div>` : ''}
     <p>Sasaran hari ni: <b>${rm(target(d))}</b></p><button class="btn gold" id="goBtn" type="button">▶ JOM BUKA!</button>`);
   $('#modalCard').onclick = e => { if (e.target.id === 'goBtn') { closeModal(); R.paused = false; SFX.bell(); lastT = performance.now(); } };
   cancelAnimationFrame(raf); lastT = performance.now(); raf = requestAnimationFrame(loop);
@@ -213,30 +229,31 @@ document.addEventListener('visibilitychange', () => { if (document.hidden && R &
 function toMenu() { cancelAnimationFrame(raf); $('#game').classList.add('hidden'); $('#menu').classList.remove('hidden'); renderMenu(); }
 
 /* ---------- Pelanggan ---------- */
-function makeOrder(n) {
+function makeOrder(n, vip) {
   const opts = menuItems(), its = [];
   for (let i = 0; i < n; i++) {
     const k = pick(opts), m = {}, avail = (ITEM_MODS[k] || []).filter(x => feat(R.day, x));
-    if (avail.length && Math.random() < .45) { m[pick(avail)] = true; if (R.day >= 15 && Math.random() < .25) m[pick(avail)] = true; }
+    if (avail.length && (vip || Math.random() < .45)) { m[pick(avail)] = true; if (R.day >= 15 && Math.random() < .25) m[pick(avail)] = true; }
     if (m.dino && m.kurang) delete m.kurang;
     its.push({ k, m, done: false });
   }
   return its;
 }
 function patMax() { return Math.max(16, 34 - R.day * 1.1); }
-function spawnCustomer() {
+function spawnCustomer(at, vip) {
   const free = R.tables.map((c, i) => c ? -1 : i).filter(i => i >= 0);
   if (!free.length) return;
   const used = R.tables.filter(Boolean).map(c => c.who.k);
-  const who = pick(CUSTS.filter(c => !used.includes(c.k)));
+  const who = vip ? DATUK : pick(CUSTS.filter(c => !used.includes(c.k)));
   const d = R.day, r = Math.random();
-  const n = d >= 8 && r < .15 ? 3 : r < Math.min(.65, .12 + d * .08) ? 2 : 1;
-  const c = { id: ++R.uid, who, items: makeOrder(n), pat: patMax(), max: patMax(), angry: false, calmed: false, asked: false };
-  if (feat(d, 'sabar') && Math.random() < Math.min(.45, .2 + (d - 4) * .04)) {
+  const n = vip ? 3 : d >= 8 && r < .15 ? 3 : r < Math.min(.65, .12 + d * .08) ? 2 : 1;
+  const c = { id: ++R.uid, who, items: makeOrder(n, vip), pat: patMax() * (vip ? .75 : 1), max: patMax() * (vip ? .75 : 1), angry: false, calmed: false, asked: vip, vip };
+  if (vip) { notify('🎩 <b>Datuk Seri</b> dah sampai! Layan baik-baik, tip besar menanti!', 'info'); SFX.bell(); }
+  if (!vip && feat(d, 'sabar') && Math.random() < Math.min(.45, .2 + (d - 4) * .04)) {
     c.angry = true;
     setTimeout(() => R && c === R.tables[R.tables.indexOf(c)] && notify(`😤 <b>${who.n}:</b> ${pick(['Lama lagi ke ni?!', 'Cepat sikit boleh tak?', 'Woi, order aku mana?', 'Aku nak cepat ni!'])}`, 'bad'), 400);
   }
-  R.tables[pick(free)] = c;
+  R.tables[at != null && at >= 0 && !R.tables[at] ? at : pick(free)] = c;
   renderTables(); serveFromTray();
 }
 function spawnGrab() {
@@ -248,8 +265,9 @@ function spawnGrab() {
 function custEl(c) { return c.grab ? $('#grabSpot .grab') : document.querySelector(`.cust[data-id="${c.id}"]`); }
 function custDone(c) {
   const sum = c.items.reduce((s, i) => s + ITEMS[i.k].price, 0);
-  const tipRate = (.15 + .6 * (c.pat / c.max)) * (up('tv') ? 1.25 : 1) * (c.grab ? 1.8 : 1);
-  const pay = sum + Math.round(sum * tipRate) + (c.perf || 0);
+  const tipRate = (.15 + .6 * (c.pat / c.max)) * (up('tv') ? 1.25 : 1) * (c.grab ? (R.ev === 'hujan' ? 2.3 : 1.8) : 1);
+  const pay = Math.round((sum + Math.round(sum * tipRate) + (c.perf || 0)) * (c.vip ? 2.5 : 1));
+  if (c.vip) { notify(`🎩 Datuk puas hati! Bayar ${rm(pay)}!`, 'good'); SFX.perfect(); }
   R.earned += pay; R.served++; SFX.coin(); buzz(15);
   const el = custEl(c); floatAt(el, '+' + rm(pay)); emote(el, c.grab ? '👍' : pick(['😋', '🥰', '😄', '❤️']));
   // Tambah satu!
@@ -573,9 +591,18 @@ function loop(now) {
   R.t -= dt;
   // spawn
   R.spawnT -= dt;
-  const rush = d % 5 === 0 ? .7 : 1;
+  const rush = R.ev === 'bola' ? .7 : R.ev === 'hujan' ? 1.7 : 1;
+  if (R.ev === 'berbuka' && !R.azan) {
+    if (R.t <= DUR - 15) {
+      R.azan = true; R.spawnT = 6; SFX.bell(); buzz([60, 60, 60]);
+      document.querySelector('.shop-floor').classList.remove('senja');
+      notify('🌙 <b>Azan Maghrib!</b> Semua serbu nak berbuka!', 'info');
+      R.tables.forEach((c, i) => { if (!c) { spawnCustomer(i); const n = R.tables[i]; if (n) { n.max *= 1.3; n.pat = n.max; } } });
+    } else if (!R.berbukaHint) { R.berbukaHint = true; setTimeout(() => R && notify('⏳ Pelanggan tengah tunggu azan... masak siap-siap dulu!', 'info'), 600); }
+  }
   if (R.spawnT <= 0 && R.t > 6) { spawnCustomer(); R.spawnT = Math.max(2.2, 7.5 - d * .45) * rush * rand(.8, 1.25); }
-  if (feat(d, 'grab') && !R.grab) { R.grabT -= dt; if (R.grabT <= 0 && R.t > 12) { spawnGrab(); R.grabT = rand(18, 30); } }
+  if (R.ev === 'datuk' && !R.datukDone && R.t <= DUR * .55 && R.t > 15 && R.tables.some(x => !x)) { R.datukDone = true; spawnCustomer(R.tables.findIndex(x => !x), true); }
+  if (feat(d, 'grab') && !R.grab) { R.grabT -= dt; if (R.grabT <= 0 && R.t > 12) { spawnGrab(); R.grabT = R.ev === 'hujan' ? rand(5, 9) : rand(18, 30); } }
   if (feat(d, 'cat') && !R.cat) { R.catT -= dt; if (R.catT <= 0 && R.tray.length && R.t > 5) { R.cat = { t: 4 }; renderSide(); notify('🐈 <b>Oyen</b> nak curi makanan! Tap halau cepat!', 'bad'); R.catT = rand(16, 26); } }
   if (R.cat) { R.cat.t -= dt; if (R.cat.t <= 0) { R.cat = null; if (R.tray.length) { const s = R.tray.splice(Math.floor(Math.random() * R.tray.length), 1)[0]; notify(`🐈 Alamak! Oyen curi ${ITEMS[s.k].name.toLowerCase()}! 😾`, 'bad'); SFX.bad(); renderTray(); } renderSide(); } }
   // sabar
@@ -597,7 +624,7 @@ function loop(now) {
 }
 function hud() {
   const s = Math.max(0, Math.ceil(R.t));
-  $('#hudDay').textContent = 'Hari ' + R.day;
+  $('#hudDay').textContent = 'Hari ' + R.day + (R.ev ? ' ' + EVENTS[R.ev].ic : '');
   $('#hudTime').textContent = Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
   $('#timeBar').style.width = Math.max(0, R.t / DUR * 100) + '%';
   $('#hudCoin').textContent = rm(R.earned);

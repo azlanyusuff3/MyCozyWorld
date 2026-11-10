@@ -76,6 +76,11 @@ Ini yang buat semua art nampak sebati. Gaya umum sama, **tapi saiz ikut jadual**
 | `st_telur.webp` | A single white chicken egg with a small crack and a tiny bit of yolk peeking out, cute and simple |
 | `st_milo.webp` | A plastic shaker cup half full of chocolate Milo drink with motion lines, being shaken (no hands) |
 
+## Batch 7 — Event
+| Fail | Prompt tambahan (gaya sama macam Batch 2, manusia chibi separuh badan) |
+|---|---|
+| `cust_datuk.webp` | Datuk Seri, a distinguished Malay VIP man with a neat moustache, wearing a black songkok and an elegant gold-and-maroon songket baju Melayu, a small gold brooch, confident proud smile, one hand adjusting his collar, looks important but still cute |
+
 ## Kad hub (pilihan)
 Simpan `assets/hub/card_mamak.webp` (landscape 4:3), tambah `"card_mamak"` dalam `assets/hub/list.json`:
 > Cute chibi busy Malaysian mamak restaurant at night with green walls, marble round tables and red plastic stools, a chef stretching roti canai in the air, teh tarik being pulled high, cute chibi Malaysian customers of different races eating happily, a delivery rider on a scooter and an orange cat sneaking near the counter, warm lights and a TV showing football, kawaii mobile game key art, no text.

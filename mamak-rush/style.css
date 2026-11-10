@@ -272,3 +272,11 @@ body.has-dulang .tray .slot:not(.full){background:transparent}
 .tag{white-space:normal;text-align:center;line-height:1.05;max-width:76px}
 .st .pan .choose button{flex-direction:column;gap:0;font-size:9px}
 .st .pan .choose button .av{width:22px!important;height:22px!important}
+
+/* ===== Event ===== */
+.new-box.ev{border-color:#4a8fe7;background:#f2f7ff}
+.shop-floor:after{content:"";position:absolute;inset:0;pointer-events:none;z-index:6;opacity:0;transition:opacity 1.5s}
+.shop-floor.rain:after{opacity:.55;background:repeating-linear-gradient(105deg,transparent 0 14px,#9fc3ea66 14px 16px,transparent 16px 34px);background-size:120px 120px;animation:rain .45s linear infinite}
+@keyframes rain{to{background-position:-30px 120px}}
+.shop-floor.rain{filter:saturate(.8) brightness(.95)}
+.shop-floor.senja:after{opacity:1;background:linear-gradient(180deg,#ff9a4a55,#7a3fa033)}
