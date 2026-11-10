@@ -238,3 +238,11 @@ img.logo{max-width:92%;max-height:110px;object-fit:contain;display:block;margin:
 .name-row:focus-within{border-color:#ff9fbf}
 
 .sold-list{background:#fff4f8;border-radius:12px;padding:6px 10px;margin:4px 0 8px;font-weight:800;font-size:13px;text-align:left}.sold-list div{padding:2px 0}
+
+/* owner marker */
+.tile.owned{background:linear-gradient(var(--own-bg),var(--own-bg)),#fffaf2;box-shadow:inset 0 0 0 3px var(--own),0 3px 0 #e2b6ca}
+.tile .own{position:absolute;bottom:1px;left:1px;width:46%;height:46%;border-radius:50%;background:#fff;box-shadow:0 0 0 2px var(--own);overflow:hidden;display:none;z-index:2}
+.tile.owned .own{display:block}
+.tile .own img,.tile .own svg{width:150%;height:150%;margin:-6% 0 0 -25%;object-fit:cover;object-position:50% 0}
+.tile.owned .pr{visibility:hidden}
+.tile .own{width:40%;height:40%}.pchip i.cnt{display:block;font-style:normal;font-size:10px;font-weight:900;color:#a07e95}

@@ -324,7 +324,7 @@ function buildBoard() {
     el.className = 'tile' + (i % 10 === 0 ? ' corner' : ''); el.id = 'tile' + i;
     el.style.gridRow = r + 1; el.style.gridColumn = c + 1;
     el.innerHTML = (t.set ? `<div class="strip" style="background:${SET[t.set]}"></div>` : '') +
-      `<div class="ic">${tileIcon(i)}</div>` + (t.price ? `<div class="pr">${t.price}</div>` : (i % 10 === 0 ? '' : `<div class="pr">${t.amt ? '-' + t.amt : ''}</div>`)) + '<div class="bld"></div>';
+      `<div class="ic">${tileIcon(i)}</div>` + (t.price ? `<div class="pr">${t.price}</div>` : (i % 10 === 0 ? '' : `<div class="pr">${t.amt ? '-' + t.amt : ''}</div>`)) + '<div class="bld"></div><div class="own"></div>';
     el.onclick = () => { if (!busy && $('modal').classList.contains('hidden')) showTileInfo(i); };
     bd.appendChild(el);
   });
@@ -334,11 +334,13 @@ function renderAll() {
   if (!G || !$('board').querySelector('.tile')) return;
   $('players').style.gridTemplateColumns = `repeat(${G.players.length},1fr)`;
   $('players').innerHTML = G.players.map((p, k) =>
-    `<div class="pchip ${k === G.turn ? 'turn' : ''} ${p.out ? 'out' : ''}" style="border-color:${k === G.turn ? CHARS[p.ci].color : '#fff'}">${p.sleep ? '<i class="zz">💤</i>' : ''}${avatar(p.ci)}<b>${pname(p)}</b><span>${p.out ? 'Bankrap' : rm(p.money)}</span></div>`).join('');
+    `<div class="pchip ${k === G.turn ? 'turn' : ''} ${p.out ? 'out' : ''}" style="border-color:${k === G.turn ? CHARS[p.ci].color : '#fff'}">${p.sleep ? '<i class="zz">💤</i>' : ''}${avatar(p.ci)}<b>${pname(p)}</b><span>${p.out ? 'Bankrap' : rm(p.money)}</span><i class="cnt">🏠 ${G.own.filter(o => o === k).length} tanah</i></div>`).join('');
   TILES.forEach((t, i) => {
     const el = $('tile' + i), o = G.own[i];
     el.classList.toggle('owned', o !== null);
-    if (o !== null) el.style.setProperty('--own', CHARS[G.players[o].ci].color);
+    if (o !== null) { el.style.setProperty('--own', CHARS[G.players[o].ci].color); el.style.setProperty('--own-bg', CHARS[G.players[o].ci].color + '40'); }
+    const ow = el.querySelector('.own'), key = o === null ? '' : 'o' + G.players[o].ci;
+    if (ow.dataset.k !== key) { ow.dataset.k = key; ow.innerHTML = o === null ? '' : avatar(G.players[o].ci); }
     el.querySelector('.bld').innerHTML = o !== null && t.t === 'prop' ? bldIcon(G.lvl[i]) : (o !== null ? (ART.bld_owned ? img('bld_owned', 'bi') : '⭐') : '');
   });
   G.players.forEach((p, k) => placeToken(k, p.pos));
