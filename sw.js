@@ -1,5 +1,5 @@
 // Tukar VERSION setiap kali update game supaya phone ambil versi baru.
-const VERSION = 'mycozyworld-v60';
+const VERSION = 'mycozyworld-v61';
 const ASSETS = [
   './', 'index.html', 'game.js', 'manifest.json', 'salon/index.html', 'salon/style.css', 'salon/game.js', 'salon/sprites/list.json', 'cozy-chess/', 'cozy-chess/index.html', 'cozy-chess/style.css', 'cozy-chess/chess-core.js', 'cozy-chess/ai-worker.js', 'cozy-chess/game.js', 'cozy-chess/sprites/list.json', 'cozy-tycoon/', 'cozy-tycoon/index.html', 'cozy-tycoon/style.css', 'cozy-tycoon/game.js', 'cozy-tycoon/sprites/list.json', 'cozy-kampung/', 'cozy-kampung/index.html', 'cozy-kampung/style.css', 'cozy-kampung/game.js', 'cozy-kampung/sprites/list.json',
   ...['white', 'black'].flatMap(c => ['king', 'queen', 'rook', 'bishop', 'knight', 'pawn'].flatMap(t => ['idle', 'attack', 'hurt'].map(n => `cozy-chess/sprites/${c}_${t}_${n}.webp`))),
@@ -28,9 +28,9 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
   const url = new URL(e.request.url);
-  const code = e.request.mode === 'navigate' || /\/(index\.html|game\.js|manifest\.json)?$/.test(url.pathname) || url.pathname.endsWith('.js');
+  const code = e.request.mode === 'navigate' || /\/(index\.html|game\.js|manifest\.json)?$/.test(url.pathname) || /\.(js|css|json|html)$/.test(url.pathname);
   if (code) {
-    // game code: network first (always newest when online), cache when offline
+    // game code + css + json: network first (always newest when online), cache when offline
     e.respondWith(fetch(new Request(e.request, { cache: 'no-cache' })).then(res => {
       if (res.ok) { const copy = res.clone(); caches.open(VERSION).then(c => c.put(e.request, copy)); }
       return res;
