@@ -73,7 +73,7 @@ const UPS = [
   { k: 'tables', ic: '🪑', n: 'Meja tambahan', d: 'Lebih ramai pelanggan serentak', cost: [40, 120], max: 2 },
   { k: 'fan', ic: '🌀', n: 'Kipas siling', d: 'Pelanggan lebih sabar (-20% cepat marah)', cost: [35], max: 1 },
   { k: 'teko', ic: '🫖', n: 'Teko besar', d: 'Zon hijau teh tarik lebih lebar', cost: [30, 90], max: 2 },
-  { k: 'kuali', ic: '🍳', n: 'Kuali kedua', d: 'Masak 2 Maggi serentak', cost: [60], max: 1, need: 2 },
+  { k: 'kuali', ic: '🍳', n: 'Kuali kedua', d: 'Masak 2 kuali serentak (Maggi/Mee)', cost: [60], max: 1, need: 2 },
   { k: 'tawa', ic: '🔥', n: 'Tawa panas', d: 'Roti canai masak lebih laju', cost: [45], max: 1 },
   { k: 'tray', ic: '🍽️', n: 'Dulang besar', d: 'Dulang muat 5 makanan', cost: [40], max: 1 },
   { k: 'tv', ic: '📺', n: 'TV bola', d: 'Tip +25% (pelanggan seronok tengok bola)', cost: [80], max: 1 },
@@ -179,7 +179,7 @@ let resetArm = 0;
 function confirmReset() { if (Date.now() - resetArm < 3000) return true; resetArm = Date.now(); $('#resetBtn').textContent = 'Tap sekali lagi untuk reset'; setTimeout(() => $('#resetBtn').textContent = 'Reset progress', 3000); return false; }
 
 /* ---------- Modal ---------- */
-function modal(html) { $('#modalCard').innerHTML = html; $('#modal').classList.remove('hidden'); }
+function modal(html) { $('#modalCard').classList.remove('shop'); $('#modalCard').innerHTML = html; $('#modal').classList.remove('hidden'); }
 function closeModal() { $('#modal').classList.add('hidden'); }
 
 function openShop(nextDay) {
@@ -188,9 +188,12 @@ function openShop(nextDay) {
     return `<div class="up ${max ? 'max' : ''}"><span class="ic av">${u.spr ? ico(u.spr, u.ic) : u.ic}</span><div><b>${u.n}${u.max > 1 ? ` (${lv}/${u.max})` : ''}</b><small>${locked ? 'Buka lepas Hari ' + u.need : u.d}${u.staff ? ` · <b>gaji ${rm(u.wage)}/hari</b>` : ''}</small></div>
       <button type="button" data-k="${u.k}" ${max || locked || P.coins < cost ? 'disabled' : ''}>${max ? (u.staff ? 'KERJA ✓' : 'ADA ✓') : rm(cost)}</button></div>`;
   }).join('');
-  modal(`<h2>🛠️ Upgrade</h2><p>Duit: <b>${rm(P.coins)}</b></p>${rows}
-    <button class="btn gold" id="shopDone" type="button">${nextDay ? '▶ HARI ' + nextDay : 'Siap'}</button>`);
+  const sc = $('#modalCard').classList.contains('shop') ? $('#modalCard').scrollTop : 0;
+  modal(`<div class="sheet-head"><h2>🛠️ Upgrade</h2><span class="coins">💰 ${rm(P.coins)}</span><button class="x-btn" id="shopX" type="button" aria-label="Tutup">✕</button></div>${rows}
+    <div class="sheet-foot"><button class="btn gold" id="shopDone" type="button">${nextDay ? '▶ HARI ' + nextDay : 'Siap'}</button></div>`);
+  $('#modalCard').classList.add('shop'); $('#modalCard').scrollTop = sc;
   $('#modalCard').onclick = e => {
+    if (e.target.closest('#shopX')) { closeModal(); if (nextDay) toMenu(); return; }
     const b = e.target.closest('button[data-k]');
     if (b) { const u = UPS.find(x => x.k === b.dataset.k), c = u.cost[up(u.k)]; if (P.coins >= c) { P.coins -= c; P.up[u.k] = up(u.k) + 1; save(); SFX.coin(); openShop(nextDay); renderMenu(); } return; }
     if (e.target.id === 'shopDone') { closeModal(); if (nextDay) startDay(nextDay); }
