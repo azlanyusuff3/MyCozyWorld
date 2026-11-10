@@ -103,7 +103,7 @@ function flyItem(fromEl, toEl, k) {
   const a = fromEl.getBoundingClientRect(), b = toEl.getBoundingClientRect(), f = document.createElement('div');
   f.className = 'fly'; f.innerHTML = ico('item_' + k, ITEMS[k].e);
   f.style.left = (a.left + a.width / 2 - 15) + 'px'; f.style.top = (a.top + a.height / 2 - 15) + 'px';
-  if (SPR['item_' + k]) { f.style.width = f.style.height = '34px'; }
+  
   document.body.appendChild(f);
   requestAnimationFrame(() => { f.style.transform = `translate(${b.left + b.width / 2 - a.left - a.width / 2}px,${b.top + b.height / 2 - a.top - a.height / 2}px) scale(.8)`; });
   setTimeout(() => f.remove(), 470);
@@ -290,18 +290,17 @@ function renderTray() {
 }
 
 /* ---------- Render meja ---------- */
-function orderHTML(c) { return `<div class="order">${c.items.map(i => `<span class="it av ${i.done ? 'done' : ''}">${ico('item_' + i.k, ITEMS[i.k].e)}</span>`).join('')}</div>`; }
+function orderHTML(c) { return `<div class="order">${c.items.map(i => `<span class="it av ${i.done ? 'done' : ''}">${ico('item_' + i.k, ITEMS[i.k].e)}</span>`).join('')}<div class="pat"><b class="${patCls(c)}" style="width:${c.pat / c.max * 100}%"></b></div></div>`; }
 function patCls(c) { const f = c.pat / c.max; return f > .5 ? '' : f > .25 ? 'mid' : 'low'; }
 function renderTables() {
   if (!R) return;
-  $('#tables').innerHTML = R.tables.map(c => `<div class="table"><span class="top"></span><span class="stool l"></span><span class="stool r"></span>${c ? `
-    <div class="cust ${c.angry ? 'angry' : ''}" data-id="${c.id}">${orderHTML(c)}<span class="av">${ico('cust_' + c.who.k, c.who.e)}</span>
-    <div class="pat"><b class="${patCls(c)}" style="width:${c.pat / c.max * 100}%"></b></div>${c.angry ? '<span class="calm-tag">TAP: Sabar!</span>' : ''}</div>` : ''}</div>`).join('');
+  $('#tables').innerHTML = R.tables.map(c => `<div class="table"><span class="shadow"></span><span class="top"></span><span class="stool l"></span><span class="stool r"></span>${c ? `
+    <div class="cust ${c.angry ? 'angry' : ''}" data-id="${c.id}">${orderHTML(c)}<span class="av">${ico('cust_' + c.who.k, c.who.e)}</span>${c.angry ? '<span class="calm-tag">TAP: Sabar!</span>' : ''}</div>` : ''}</div>`).join('');
 }
 function renderSide() {
   if (!R) return;
   const g = R.grab;
-  $('#grabSpot').innerHTML = g ? `<div class="grab">${orderHTML(g)}<span class="av">${ico('cust_grab', '🛵')}</span><div class="pat"><b class="${patCls(g)}" style="width:${g.pat / g.max * 100}%"></b></div></div>` : '';
+  $('#grabSpot').innerHTML = g ? `<div class="grab">${orderHTML(g)}<span class="av">${ico('cust_grab', '🛵')}</span></div>` : '';
   $('#catSpot').innerHTML = R.cat ? `<div class="cat"><span class="av">${ico('cust_oyen', '🐈')}</span></div>` : '';
 }
 $('#catSpot').addEventListener('pointerdown', () => {
@@ -318,6 +317,7 @@ function renderStations() {
   if (feat(d, 'maggi')) h.push(`<div class="st sub" id="stMaggi"><span class="lbl">MAGGI</span>${R.maggi.map((_, i) => `<div class="pan" data-i="${i}"><span class="big av"></span><span class="hint"></span><span class="bar"><b></b></span></div>`).join('')}</div>`);
   if (feat(d, 'nasi')) h.push(`<div class="st" id="stNasi"><span class="lbl">NASI LEMAK</span><span class="cnt"></span><span class="big av"></span><span class="hint"></span><span class="bar"><b></b></span></div>`);
   $('#stations').innerHTML = h.join('');
+  $('#stTeh').classList.toggle('has-tarik', !!SPR.st_tarik);
   const z = tehZone(); const zone = $('#stTeh .zone'); zone.style.bottom = (z[0] * 100) + '%'; zone.style.height = ((z[1] - z[0]) * 100) + '%';
   bindStations(); drawStations();
 }

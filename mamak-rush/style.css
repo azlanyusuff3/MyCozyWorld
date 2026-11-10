@@ -158,3 +158,51 @@ img{-webkit-user-drag:none}
 .cust .pat{width:70px;height:8px}
 .st.sub .lbl{font-size:9px;top:3px}
 .hud .icon-btn{font-weight:900;font-size:13px;color:#c8102e}
+
+/* ===== v2: kemas art sprite ===== */
+.shop-floor{background:
+  linear-gradient(180deg,#2f8f5b 0,#3aa36a 54px,#7a5233 54px,#7a5233 60px,#5b3a22 60px,#5b3a22 64px,transparent 64px),
+  radial-gradient(ellipse at 50% 30%,#fbf3df 0,#efe0bd 70%),#efe0bd}
+.shop-floor:before{content:"";position:absolute;inset:64px 0 0;background:
+  repeating-linear-gradient(90deg,transparent 0 63px,#d9c69c55 63px 64px),repeating-linear-gradient(0deg,transparent 0 63px,#d9c69c55 63px 64px);pointer-events:none}
+.wall{height:54px;background:repeating-linear-gradient(90deg,transparent 0 21px,#ffffff1a 21px 22px),repeating-linear-gradient(0deg,transparent 0 21px,#ffffff1a 21px 22px)}
+.menu-board{position:relative;z-index:1}
+.tables{position:relative;z-index:1;padding:2px 4px}
+.table{height:clamp(150px,24vh,230px);justify-content:flex-end}
+.table .shadow{position:absolute;bottom:-8px;width:80%;height:22px;border-radius:50%;background:#7a5a2a22}
+.table .top{z-index:3;height:38px;bottom:8px;width:92%}
+.table .stool{z-index:3;bottom:-2px;width:34px;height:13px}
+.cust{z-index:2;margin-bottom:24px}
+.cust>.av{width:clamp(96px,14vh,140px)!important;height:clamp(96px,14vh,140px)!important;font-size:clamp(70px,10vh,100px)!important;line-height:clamp(96px,14vh,140px)!important;margin-bottom:-26px;filter:drop-shadow(0 3px 2px #0002)}
+.cust .order{z-index:4;flex-wrap:wrap;justify-content:center;max-width:120px;padding:4px 6px 9px;margin-bottom:2px}
+.order .it{width:32px;height:32px;font-size:24px;line-height:32px}
+.cust .pat{position:absolute;left:8px;right:8px;bottom:3px;width:auto;height:5px;margin:0}
+.calm-tag{top:-14px;right:-18px;z-index:5}
+.counter{height:86px}
+.tray .slot{width:44px;height:44px;line-height:44px}
+.tray{height:58px}
+.grab-spot{width:78px;height:100%}
+.grab .av{width:70px!important;height:70px!important;font-size:46px;line-height:70px}
+.grab .order{top:-30px;z-index:4;padding:2px 4px 7px}
+.grab .order .it{width:26px;height:26px}
+.grab .pat{position:absolute;left:5px;right:5px;bottom:2px;width:auto;height:4px;margin:0}
+.grab>.pat{display:none}
+.cat-spot{width:70px}.cat .av{width:66px;height:66px}
+.st{height:142px;justify-content:flex-start;padding-top:20px}
+.st .big{width:72px;height:72px;display:flex;align-items:center;justify-content:center;font-size:48px;flex:none}
+.st .big img{width:100%;height:100%;object-fit:contain}
+.st .hint{font-size:11px;min-height:28px;margin-top:2px}
+.st.sub{padding-top:18px}
+.st .pan .big{width:54px;height:54px;font-size:36px}
+.st .pan{justify-content:flex-start;padding-top:4px}
+.st .pan .hint{font-size:10px}
+.has-tarik .teh-stream{display:none}
+.st .cnt{top:20px;right:4px;z-index:2}
+#stTeh .big{margin-right:14px}
+.fly{width:40px;height:40px;display:flex;align-items:center;justify-content:center}
+.fly img{width:100%;height:100%;object-fit:contain}
+.emote img,.slot img{width:100%;height:100%;object-fit:contain}
+.st.sub{flex:1.25;padding-left:3px;padding-right:3px}
+.st .pan{min-width:0}
+.st .pan .big{width:46px;height:46px}
+.st .pan .hint{white-space:nowrap;overflow:hidden;max-width:100%}
