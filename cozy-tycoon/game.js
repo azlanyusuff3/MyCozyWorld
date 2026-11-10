@@ -42,6 +42,21 @@ function chibi(c) {
   ${mouth}
 </svg>`;
 }
+// board token: glossy chess pawn in the player's colour
+function shade(hex, f) { const n = parseInt(hex.slice(1), 16); let r = n >> 16, g = n >> 8 & 255, b = n & 255; const m = v => Math.max(0, Math.min(255, Math.round(f < 0 ? v * (1 + f) : v + (255 - v) * f))); return `rgb(${m(r)},${m(g)},${m(b)})`; }
+function pawn(ci) {
+  const c = CHARS[ci].color, id = 'pw' + ci;
+  return `<svg viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <defs><radialGradient id="${id}" cx="35%" cy="30%" r="75%"><stop offset="0" stop-color="${shade(c, .55)}"/><stop offset=".45" stop-color="${c}"/><stop offset="1" stop-color="${shade(c, -.35)}"/></radialGradient></defs>
+  <ellipse cx="50" cy="112" rx="34" ry="7" fill="#0003"/>
+  <path d="M18 104 Q18 92 30 90 L70 90 Q82 92 82 104 Q82 110 50 110 Q18 110 18 104Z" fill="url(#${id})" stroke="${shade(c, -.45)}" stroke-width="2.5"/>
+  <path d="M33 90 Q40 72 40 58 L60 58 Q60 72 67 90Z" fill="url(#${id})" stroke="${shade(c, -.45)}" stroke-width="2.5"/>
+  <ellipse cx="50" cy="58" rx="20" ry="6" fill="url(#${id})" stroke="${shade(c, -.45)}" stroke-width="2.5"/>
+  <circle cx="50" cy="34" r="20" fill="url(#${id})" stroke="${shade(c, -.45)}" stroke-width="2.5"/>
+  <ellipse cx="43" cy="26" rx="7" ry="5" fill="#fff" opacity=".65"/>
+  <path d="M26 100 Q50 106 74 100" stroke="#fff" stroke-width="2" opacity=".35" fill="none"/>
+</svg>`;
+}
 function avatar(ci) { const c = CHARS[ci]; return SPRITES[c.id] ? `<img src="${SPRITES[c.id]}" alt="">` : chibi(c); }
 fetch('sprites/list.json').then(r => r.ok ? r.json() : []).then(l => {
   // human chibi kids (token_aina...) if available, else old animal tokens
@@ -514,7 +529,7 @@ function buildBoard() {
     el.onclick = () => { if (!busy && $('modal').classList.contains('hidden')) showTileInfo(i); };
     bd.appendChild(el);
   });
-  $('tokens').innerHTML = G.players.map((p, k) => `<div class="token" id="tok${k}"><div class="stand">${avatar(p.ci)}</div><div class="shadow"></div></div>`).join('');
+  $('tokens').innerHTML = G.players.map((p, k) => `<div class="token" id="tok${k}"><div class="stand">${pawn(p.ci)}</div><div class="shadow"></div></div>`).join('');
 }
 function renderAll() {
   if (!G || !$('board').querySelector('.tile')) return;
@@ -540,7 +555,7 @@ function renderAll() {
 function placeToken(k, pos) {
   const el = $('tok' + k); if (!el) return;
   const [r, c] = tilePos(pos), same = G.players.map((p, j) => j).filter(j => !G.players[j].out && G.players[j].pos === pos), idx = same.indexOf(k);
-  const ox = [.1, .32, -.08, .45][idx < 0 ? 0 : idx], oy = [-.3, -.3, -.12, -.12][idx < 0 ? 0 : idx];
+  const ox = [.05, .38, .05, .38][idx < 0 ? 0 : idx], oy = [-.22, -.22, .05, .05][idx < 0 ? 0 : idx];
   el.style.left = `calc(${(c + ox) / 11 * 100}% + 3px)`; el.style.top = `calc(${(r + oy) / 11 * 100}% + 3px)`;
   el.style.display = G.players[k].out ? 'none' : '';
   el.style.zIndex = k === G.turn ? 4 : 3;

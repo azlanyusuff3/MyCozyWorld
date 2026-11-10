@@ -327,3 +327,10 @@ button.kuih:active{transform:scale(.95)}
 .title-chars img,.title-chars svg{width:46px!important;height:80px!important;flex:none}
 .name-face{position:relative;border:0;background:none;padding:0;flex:none;display:flex}
 .name-face i{position:absolute;right:-6px;bottom:-2px;font-size:12px;font-style:normal;background:#fff;border-radius:50%;box-shadow:0 1px 3px #0003;width:18px;height:18px;display:grid;place-items:center}
+
+/* pawn tokens */
+.token{width:calc(100%/11*.62);height:calc(100%/11*.8)}
+.token .stand svg{filter:drop-shadow(0 2px 1px #0004)}
+.token.active .stand svg{transform:scale(1.35) translateY(-8%)}
+.token{width:calc(100%/11*.72);height:calc(100%/11*.95)}
+.token .stand svg{filter:drop-shadow(0 0 1.2px #fff) drop-shadow(0 0 1.2px #fff) drop-shadow(0 0 .8px #fff) drop-shadow(0 2px 1.5px #0006)}
