@@ -266,10 +266,14 @@ setInterval(flushNotify, 400);
 function notify(who, msg, voice) {
   // don't cover popups: wait until they close
   if (!$('modal').classList.contains('hidden') || document.querySelector('.mg')) { NQ.push([who, msg, voice]); if (NQ.length > 3) NQ.shift(); return; }
-  const F = FOLK[who] || FOLK.kiah, box = $('toasts'); if (!box) return;
+  const box = $('toasts'); if (!box) return;
+  let F, face;
+  if (/^p\d$/.test(who) && G && G.players[+who[1]]) {
+    const pl = G.players[+who[1]]; F = { n: pname(pl), c: CHARS[pl.ci].color }; face = avatar(pl.ci);
+  } else { F = FOLK[who] || FOLK.kiah; face = F.img ? `<img src="${F.img}" alt="">` : F.f; }
   const t = document.createElement('div');
-  t.className = 'toast' + (who === 'ann' ? ' ann' : ''); t.style.setProperty('--c', F.c);
-  t.innerHTML = `<div class="face">${F.img ? `<img src="${F.img}" alt="">` : F.f}</div><div><b>${F.n}</b><span>${msg}</span></div>`;
+  t.className = 'toast' + (who === 'ann' ? ' ann' : '') + (who[0] === 'p' ? ' player' : ''); t.style.setProperty('--c', F.c);
+  t.innerHTML = `<div class="face">${face}</div><div><b>${F.n}</b><span>${msg}</span></div>`;
   placeToasts();
   box.prepend(t);
   while (box.children.length > 2) box.lastChild.remove();
@@ -381,6 +385,24 @@ const LINES = {
   ],
 };
 let lastLine = '';
+// pemain sendiri bercakap (orang pertama)
+const PL = {
+  buy: ['Yeay! {t} jadi milik aku!', 'Akhirnya dapat jugak {t}!', '{t} ni aku punya sekarang. Jangan lupa bayar sewa ye!', 'Beli! Nanti aku jaga {t} elok-elok.', 'Wah, best gila dapat {t}!'],
+  buyBig: ['{m} untuk {t}! Mahal, tapi berbaloi!', 'Aku dah jadi tuan {t}! Kaya kaya!', 'Habis duit simpanan... tapi {t} aku punya!'],
+  upgrade: ['{t} aku dah jadi {l}!', 'Siap! {l} baru kat {t}!', 'Upgrade {t}! Mesti ramai pelanggan lepas ni!'],
+  bangunan: ['Tengok bangunan tinggi aku kat {t}!', '{t} dah ada bangunan! Aku memang tauke besar!', 'Bangunan siap! Sewa {t} mahal sekarang, hehe.'],
+  rentHigh: ['Alamak, {m} kat {o}?! Mahalnya!', 'Habis duit aku... {m}!', 'Kenapa aku singgah {t} ni... {m}!', '{o}, kurangkan sikit boleh tak? {m} mahal la!'],
+  rentLow: ['Ok la, {m} je. Nah {o}!', 'Bayar {m} kat {o}. Tak apa, murah je.', 'Sewa {t} {m}. Boleh tahan.'],
+  go: ['Yeay! Dapat RM200!', 'Gaji masuk! RM200!', 'Lalu MULA, duit tambah RM200!'],
+  sleep: ['Mengantuknya... aku tidur kat rumah Tok Wan kejap.', 'Zzz... kejut aku nanti ye.', 'Tok Wan, nak tumpang tidur!'],
+  kenduri: ['Terima kasih datang kenduri aku semua!', 'Jemput makan nasi minyak! Jangan malu-malu!', 'Kenduri aku! Terima kasih salam berisi!'],
+  minigame: ['Yes! Aku tangkap semua syiling!', 'Laju tak aku? Sewa separuh!'],
+  sell: ['Alamak, duit tak cukup... terpaksa jual harta.', 'Sedihnya kena jual tanah aku...'],
+  bankrupt: ['Duit aku dah habis... aku bankrap.', 'Takpe, lain kali aku menang!'],
+  trade: ['Deal! {t} dah jadi milik aku!', 'Terima kasih {o}! Aku jaga {t} baik-baik.'],
+  win: ['Yeay! Aku menang! Aku jutawan!', 'Terima kasih semua! Aku jadi Jutawan Comel!'],
+};
+const PL_CHANCE = { buy: .75, buyBig: .6, upgrade: .7, bangunan: .6, rentHigh: .6, rentLow: .7, go: .8, sleep: .7, kenduri: .5, minigame: .8, sell: .6, bankrupt: .5, trade: .6, win: .7 };
 const AI_SAY = {
   buy: ['Yeay! Aku beli {t}!', '{t} ni cantik, aku ambil!', 'Lama dah aku berkenan dengan {t}!', 'Beli! Nanti kawan-kawan kena bayar sewa, hehe.', 'Ok, {t} jadi milik aku sekarang!'],
   skip: ['Hmm... mahal la, tak nak.', 'Simpan duit dulu la.', 'Tak berkenan sangat dengan {t}.', 'Nanti-nantilah aku fikir.', 'Duit aku nak guna benda lain.'],
@@ -389,6 +411,11 @@ const AI_SAY = {
   payBig: ['Alamak! {m}?! Mahalnya!', 'Habislah duit aku... {m}!', '{o}, kurangkan sikit boleh tak? {m} mahal la!', 'Aduh, {m}! Kenapa aku singgah {t} ni...'],
 };
 function say2(kind, v) {
+  v = v || {};
+  if (v.k !== undefined && PL[kind] && Math.random() < (PL_CHANCE[kind] || .6)) {
+    let txt, n = 0; do { txt = fill(pick(PL[kind]), v); n++; } while (txt === lastLine && n < 5);
+    lastLine = txt; notify('p' + v.k, txt, false); return;
+  }
   const pool = LINES[kind]; if (!pool) return;
   let l, n = 0; do { l = pick(pool); n++; } while (fill(l[1], v || {}) === lastLine && n < 5);
   const txt = fill(l[1], v || {}); lastLine = txt; notify(l[0], txt, l[2]);
@@ -665,12 +692,12 @@ async function raiseCash(k, owed) {
   renderAll();
   if (sold.length) {
     log(`🏦 ${pname(p)} tak cukup duit, bank beli: ${sold.join(', ')}`);
-    say2('sell', { p: pname(p) });
+    say2('sell', { k, p: pname(p) });
     await modal(`<div class="big-ic">🏦</div><h2>Duit tak cukup!</h2><p>${pname(p)} kena bayar <b>${rm(owed)}</b> tapi duit tak cukup. Bank beli harta ni separuh harga:</p><div class="sold-list">${sold.map(x => `<div>${x}</div>`).join('')}</div><p>Baki duit sekarang: <b>${rm(Math.max(0, p.money))}</b></p>`, [{ label: 'OK' }], p.ai !== null ? 10000 : 0);
   }
   if (p.money < 0) {
     p.out = true; p.money = 0; log(`💸 ${pname(p)} dah bankrap!`);
-    say2('bankrupt', { p: pname(p) });
+    say2('bankrupt', { k, p: pname(p) });
     await modal(`<div class="big-ic">😭</div><h2>${pname(p)} Bankrap!</h2><p>Duit habis... takpe, lain kali cuba lagi!</p>`, [{ label: 'OK' }], p.ai !== null ? 10000 : 0);
   }
   return raised;
@@ -733,7 +760,7 @@ async function moveSteps(k, n) {
   const p = G.players[k], dir = n < 0 ? -1 : 1;
   for (let s = 0; s < Math.abs(n); s++) {
     p.pos = (p.pos + dir + 40) % 40;
-    if (p.pos === 0 && dir > 0) { gain(k, 200); log(`🏁 ${pname(p)} lalu MULA, dapat RM200!`); if (Math.random() < .5) say2('go', { p: pname(p) }); }
+    if (p.pos === 0 && dir > 0) { gain(k, 200); log(`🏁 ${pname(p)} lalu MULA, dapat RM200!`); if (Math.random() < .5) say2('go', { k, p: pname(p) }); }
     const tok = $('tok' + k); tok.classList.remove('hop'); void tok.offsetWidth; tok.classList.add('hop');
     G.players.forEach((q, j) => placeToken(j, q.pos)); cam(p.pos); sfx.step();
     await wait(230);
@@ -749,7 +776,7 @@ async function sendSleep(k) {
   const p = G.players[k];
   p.pos = 10; p.sleep = 1; st(k).sleeps++; sticker('tidur', k); renderAll();
   log(`😴 ${pname(p)} tertidur kat Rumah Tok Wan (rehat 1 giliran)`);
-  say2('sleep', { p: pname(p) });
+  say2('sleep', { k, p: pname(p) });
 }
 
 async function landOn(k, sum) {
@@ -766,7 +793,7 @@ async function landOn(k, sum) {
       if (want) {
         p.money -= t.price; G.own[i] = k; sfx.buy(); st(k).bought++; if (!ai) G.lastBuy = { k, i, price: t.price }; sticker('first_buy', k); if (i === 39) sticker('klcc', k); if (t.set && TILES.every((x, j) => x.set !== t.set || G.own[j] === k)) sticker('set', k); floatText(k, '-' + t.price, '#e64980');
         log(`🛒 ${pname(p)} beli ${t.name}!`); renderAll(); tileFx(i, 'buy'); await wait(1000);
-        say2(t.price >= 300 ? 'buyBig' : 'buy', { p: pname(p), t: t.name, m: rm(t.price) });
+        say2(t.price >= 300 ? 'buyBig' : 'buy', { k, p: pname(p), t: t.name, m: rm(t.price) });
         if (ai) await modal(say(`${pname(p)}: "${fill(pick(AI_SAY.buy), { t: t.name })}"`) + propHtml(i), [{ label: 'OK' }], auto);
       } else { log(`${pname(p)} tak beli ${t.name}`); if (ai) await modal(say(`${pname(p)}: "${fill(pick(AI_SAY.skip), { t: t.name })}"`) + propHtml(i), [{ label: 'OK' }], 10000); }
     } else if (o === k) {
@@ -775,20 +802,20 @@ async function landOn(k, sum) {
         let up;
         if (ai) up = can && p.money - cost >= ai.upReserve;
         else up = await modal(propHtml(i) + `<p>Ni tempat kau! Nak naik taraf jadi <b>${LVL_IC[nx]} ${LVL[nx]}</b>?</p>`, [{ label: `🔨 UPGRADE ${rm(cost)}`, v: true, cls: 'mint', dis: !can }, { label: 'Nanti dulu', v: false, cls: 'grey' }]);
-        if (up) { p.money -= cost; G.lvl[i] = nx; sfx.buy(); if (nx === 2) sticker('bangunan', k); renderAll(); tileFx(i, nx === 2 ? 'big' : 'up'); await wait(1100); log(`🔨 ${pname(p)} naik taraf ${t.name} jadi ${LVL[nx]}!`); renderAll(); say2(nx === 2 ? 'bangunan' : 'upgrade', { p: pname(p), t: t.name, l: LVL[nx] }); if (ai) await modal(say(`${pname(p)}: "${fill(pick(AI_SAY.up), { t: t.name, l: LVL[nx] })} ${LVL_IC[nx]}"`) + propHtml(i), [{ label: 'OK' }], auto); }
+        if (up) { p.money -= cost; G.lvl[i] = nx; sfx.buy(); if (nx === 2) sticker('bangunan', k); renderAll(); tileFx(i, nx === 2 ? 'big' : 'up'); await wait(1100); log(`🔨 ${pname(p)} naik taraf ${t.name} jadi ${LVL[nx]}!`); renderAll(); say2(nx === 2 ? 'bangunan' : 'upgrade', { k, p: pname(p), t: t.name, l: LVL[nx] }); if (ai) await modal(say(`${pname(p)}: "${fill(pick(AI_SAY.up), { t: t.name, l: LVL[nx] })} ${LVL_IC[nx]}"`) + propHtml(i), [{ label: 'OK' }], auto); }
       } else log(`${pname(p)} rehat kat ${t.name} sendiri 😌`);
     } else {
       let r = rentOf(i, sum); const owner = G.players[o];
       if (G.lastBuy && G.lastBuy.i === i) G.lastBuy = null;
       log(`🏠 ${pname(p)} bayar sewa ${rm(r)} kat ${pname(owner)}`);
-      if (r >= 100) say2('rentHigh', { p: pname(p), o: pname(owner), t: t.name, m: rm(r) }); else if (Math.random() < .6) say2('rentLow', { p: pname(p), o: pname(owner), t: t.name, m: rm(r) });
+      if (r >= 100) say2('rentHigh', { k, p: pname(p), o: pname(owner), t: t.name, m: rm(r) }); else if (Math.random() < .6) say2('rentLow', { k, p: pname(p), o: pname(owner), t: t.name, m: rm(r) });
       if (!ai) {
         const big = r >= 20;
         const v = await modal(propHtml(i) + `<p>Alamak! Ni tempat <b>${pname(owner)}</b>. Kena bayar sewa:</p><h2>${rm(r)}</h2>${big ? '<p class="mg-hint">🎮 Main <b>Tangkap Syiling</b>! Dapat 7 syiling, sewa jadi separuh.</p>' : ''}`,
           big ? [{ label: '🎮 CUBA NASIB', v: 'mg', cls: 'mint' }, { label: '💸 Bayar je', v: 'pay', cls: 'pink' }] : [{ label: '💸 BAYAR', v: 'pay', cls: 'pink' }]);
         if (v === 'mg') {
           const ok = await coinGame();
-          if (ok) { r = Math.ceil(r / 2); sticker('minigame', k); log(`🪙 ${pname(p)} menang Tangkap Syiling! Sewa jadi ${rm(r)}`); say2('minigame', { p: pname(p) }); }
+          if (ok) { r = Math.ceil(r / 2); sticker('minigame', k); log(`🪙 ${pname(p)} menang Tangkap Syiling! Sewa jadi ${rm(r)}`); say2('minigame', { k, p: pname(p) }); }
           else log(`🪙 ${pname(p)} tak sempat... bayar penuh ${rm(r)}`);
         }
       }
@@ -808,7 +835,7 @@ async function landOn(k, sum) {
     for (let j = 0; j < G.players.length; j++) if (j !== k && !G.players[j].out) { tot += 20; await pay(j, 20, k); }
     log(`💐 Kenduri ${pname(p)}! Dapat salam berisi ${rm(tot)}`); sfx.coin();
     st(k).kenduri++; if (st(k).kenduri >= 3) sticker('kenduri3', k);
-    say2('kenduri', { p: pname(p) });
+    say2('kenduri', { k, p: pname(p) });
     await modal(`<div class="big-ic">💐</div><h2>Kenduri Kahwin!</h2><p>Semua orang datang bagi salam berisi. ${pname(p)} dapat <b>${rm(tot)}</b>!</p>`, [{ label: 'Yeay!' }], auto || 0);
   } else if (t.t === 'rezeki' || t.t === 'musibah') {
     await drawCard(k, t.t);
@@ -1003,7 +1030,7 @@ async function openTrade(k) {
   floatText(k, '-' + off, '#e64980'); floatText(o, '+' + off, '#2f9f73'); sfx.buy();
   renderAll(); tileFx(i, 'buy'); sticker('trade', k);
   log(`🤝 ${pname(p)} beli ${t.name} dari ${pname(owner)} dengan ${rm(off)}`);
-  say2('trade', { p: pname(p), o: pname(owner), t: t.name });
+  say2('trade', { k, p: pname(p), o: pname(owner), t: t.name });
   if (t.set && TILES.every((x, j) => x.set !== t.set || G.own[j] === k)) sticker('set', k);
   await wait(1000);
 }
@@ -1032,7 +1059,7 @@ async function endGame() {
   const rank = G.players.map((p, k) => ({ p, k, w: p.out ? -1 : worth(k) })).sort((a, b) => b.w - a.w);
   const win = rank[0].p;
   sticker('win', G.players.indexOf(win));
-  sfx.win(); confetti(); say2('win', { p: pname(win) });
+  sfx.win(); confetti(); say2('win', { k: G.players.indexOf(win), p: pname(win) });
   await modal(`<div class="big-ic">🏆</div><h2>${pname(win)} ${win.ai === null && G.players.filter(x => x.ai === null).length === 1 ? 'menang! Hebat!' : 'jadi Jutawan Comel!'}</h2>
     <p>Kekayaan = duit + nilai tanah & bangunan</p>
     <ol class="rank">${rank.map((r, n) => `<li>${['🥇', '🥈', '🥉', '4️⃣'][n]} ${avatar(r.p.ci)} ${pname(r.p)}<span>${r.w < 0 ? 'Bankrap' : rm(r.w)}</span></li>`).join('')}</ol>${statsHtml()}`,
