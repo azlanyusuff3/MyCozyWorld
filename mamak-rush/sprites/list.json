@@ -74,5 +74,10 @@
   "up_bara_2",
   "up_bara_3",
   "bg_dinding_satay",
-  "bg_lantai_satay"
+  "bg_lantai_satay",
+  "chef_idle",
+  "chef_walk",
+  "chef_cook",
+  "chef_tarik",
+  "chef_serve"
 ]
