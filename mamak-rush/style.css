@@ -382,3 +382,14 @@ body.has-bg_dinding #tv,body.has-bg_dinding #fan{display:none}
 .stations.s4 .choose:has(button:nth-child(2):last-child) button{flex-direction:row;gap:4px;font-size:12px}
 .stations.s4 .choose:has(button:nth-child(2):last-child) button .av{width:30px!important;height:30px!important;font-size:22px!important}
 .stations.s4 .choose:has(button:nth-child(2):last-child) button small{display:none}
+
+/* ===== Combo & ringkasan kesilapan ===== */
+.hud-combo{background:#ffc93c;color:#7a0a1c;font-weight:900;font-size:13px;border-radius:10px;padding:2px 7px;white-space:nowrap}
+.hud-combo.bump{animation:pop .35s}
+.mist{background:#fff;border-radius:14px;padding:8px 10px;margin:0 0 10px;text-align:left;font-size:13px}
+.mist>b{color:#c8102e;display:block;margin-bottom:4px}
+.mist.good{text-align:center;color:#1f8a4c;font-weight:900}
+.m-row{display:flex;gap:8px;align-items:flex-start;padding:4px 0;border-top:1px dashed #eadbc0}
+.m-row:first-of-type{border-top:0}
+.m-row>span{font-size:20px;line-height:1.2}
+.m-row b{font-size:13px;display:block}.m-row small{font-size:11px;opacity:.75;line-height:1.25;display:block}

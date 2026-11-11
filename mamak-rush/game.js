@@ -208,7 +208,7 @@ function startDay(d) {
   R = {
     day: d, t: DUR, earned: 0, served: 0, lost: 0, perfect: 0, paused: true, over: false,
     tables: Array(nTables).fill(null), grab: null, tray: [], trayMax: 4 + up('tray'), cat: null,
-    spawnT: 1.2, grabT: rand(15, 25), catT: rand(14, 22), uid: 0, ev: eventFor(d), datukDone: false, azan: false, regToday: [], anne: { t: 0, busy: false }, sitiT: 0,
+    spawnT: 1.2, grabT: rand(15, 25), catT: rand(14, 22), uid: 0, ev: eventFor(d), datukDone: false, azan: false, mist: { burn: 0, wrong: 0, spill: 0, stolen: 0, teh: 0 }, combo: 0, bestCombo: 0, regToday: [], anne: { t: 0, busy: false }, sitiT: 0,
     roti: { s: 'idle', t: 0, prog: 0, k: 'roti', eggs: 0 },
     teh: { s: 'idle', lvl: 0, hold: false, dir: 1, prog: 0 }, chips: {},
     maggi: Array.from({ length: feat(d, 'maggi') ? 1 + up('kuali') : 1 }, () => ({ s: 'idle', t: 0, k: 'maggi' })),
@@ -290,13 +290,17 @@ function custEl(c) { return c.grab ? $('#grabSpot .grab') : document.querySelect
 function custDone(c) {
   const sum = c.items.reduce((s, i) => s + ITEMS[i.k].price, 0);
   const tipRate = (.15 + .6 * (c.pat / c.max)) * (up('tv') ? 1.25 : 1) * (c.grab ? (R.ev === 'hujan' ? 2.3 : 1.8) : 1);
-  const pay = Math.round((sum + Math.round(sum * tipRate) + (c.perf || 0)) * (c.vip ? 2.5 : 1) * (c.reg ? 1.2 + Math.min(10, (P.reg[c.reg] || {}).h || 0) * .05 : 1));
+  let pay = Math.round((sum + Math.round(sum * tipRate) + (c.perf || 0)) * (c.vip ? 2.5 : 1) * (c.reg ? 1.2 + Math.min(10, (P.reg[c.reg] || {}).h || 0) * .05 : 1));
   if (c.reg) {
     const st = P.reg[c.reg]; st.h++; save();
     const sl = REGS[c.reg].story, idx = [2, 5, 9].indexOf(st.h);
     setTimeout(() => R && notify(idx >= 0 ? `💬 ${sl[idx]}` : `❤️ ${c.who.n} makin sayang kedai ni! (${st.h})`, 'good'), 700);
   }
   if (c.vip) { notify(`🎩 Datuk puas hati! Bayar ${rm(pay)}!`, 'good'); SFX.perfect(); }
+  R.combo++; R.bestCombo = Math.max(R.bestCombo, R.combo);
+  const cb = comboBonus();
+  if (cb) { const extra = Math.max(1, Math.round(pay * cb)); pay += extra; if ([3, 5, 8, 12].includes(R.combo) || R.combo % 5 === 0) { notify(`🔥 <b>Combo x${R.combo}!</b> Tip +${Math.round(cb * 100)}%`, 'good'); SFX.perfect(); } }
+  hudCombo();
   R.earned += pay; R.served++; SFX.coin(); buzz(15);
   const el = custEl(c); floatAt(el, '+' + rm(pay)); emote(el, c.grab ? '👍' : pick(['😋', '🥰', '😄', '❤️']));
   // Tambah satu!
@@ -310,7 +314,7 @@ function custDone(c) {
 }
 function leave(c, angry) {
   const el = custEl(c);
-  if (angry) { R.lost++; SFX.bad(); buzz([30, 40, 30]); notify(`😠 <b>${c.who.n}</b> ${pick(['blah... lambat sangat!', 'merajuk, tak jadi makan!', 'kata: "Kedai lain lagi laju!"'])}`, 'bad'); emote(el, '💢'); }
+  if (angry) { if (R.combo >= 3) notify(`💔 Combo x${R.combo} putus!`, 'bad'); R.combo = 0; hudCombo(); R.lost++; SFX.bad(); buzz([30, 40, 30]); notify(`😠 <b>${c.who.n}</b> ${pick(['blah... lambat sangat!', 'merajuk, tak jadi makan!', 'kata: "Kedai lain lagi laju!"'])}`, 'bad'); emote(el, '💢'); }
   if (el) el.classList.add('leave');
   setTimeout(() => {
     if (!R) return;
@@ -360,7 +364,7 @@ function deliver(item, fromEl) {
     }, 460);
     return true;
   }
-  if (wantsK(item.k)) notify(`🤔 Ada yang order ${ITEMS[item.k].name.toLowerCase()}, tapi bukan macam ni. Tengok tag dia!`, 'bad');
+  if (wantsK(item.k)) R.mist.wrong++, notify(`🤔 Ada yang order ${ITEMS[item.k].name.toLowerCase()}, tapi bukan macam ni. Tengok tag dia!`, 'bad');
   if (R.tray.length >= R.trayMax) { notify('🍽️ Dulang dah penuh! Tap makanan atas dulang untuk buang.', 'bad'); return false; }
   R.tray.push(item); flyItem(fromEl, $('#tray'), item.k); setTimeout(renderTray, 300);
   return true;
@@ -572,7 +576,7 @@ function bindStations() {
     const t = R && R.teh; if (!t || t.s !== 'shake' || lastShakeY == null) return;
     t.prog += Math.abs(e.clientY - lastShakeY) / 700; lastShakeY = e.clientY;
     if (Math.random() < .15) tone(500 + Math.random() * 300, .03, 'triangle', .05);
-    if (t.prog > 1.25) { t.prog = 0; t.s = 'idle'; lastShakeY = null; SFX.burn(); notify('🥤 Alamak, Milo melimpah! Goncang perlahan sikit.', 'bad'); }
+    if (t.prog > 1.25) { t.prog = 0; t.s = 'idle'; lastShakeY = null; R.mist.spill++; SFX.burn(); notify('🥤 Alamak, Milo melimpah! Goncang perlahan sikit.', 'bad'); }
     drawStations();
   });
   const rel = () => {
@@ -584,7 +588,7 @@ function bindStations() {
     }
     if (!t.hold) return; t.hold = false; t.s = 'idle';
     const [a, b] = tehZone(), perf = t.lvl >= a && t.lvl <= b, ok = t.lvl >= .3;
-    if (!ok) { notify('☕ Tarik tak cukup tinggi, cuba lagi!', 'bad'); t.lvl = 0; drawStations(); return; }
+    if (!ok) { R.mist.teh++; notify('☕ Tarik tak cukup tinggi, cuba lagi!', 'bad'); t.lvl = 0; drawStations(); return; }
     if (perf) { R.perfect++; SFX.perfect(); notify(feat(R.day, 'kaw') ? '✨ Teh tarik KAW! Buih tebal!' : '✨ Teh tarik buih tebal! Perfect!', 'good'); buzz(20); } else SFX.tap();
     const m = drinkMods('teh'); if (perf) m.kaw = true;
     deliver({ k: 'teh', m }, tEl); t.lvl = 0; drawStations();
@@ -646,7 +650,7 @@ function renderStaff() {
 function stepStations(dt) {
   const r = R.roti;
   if (r.s === 'cook' && (r.t -= dt) <= 0) { r.s = 'ready'; r.t = READY_WIN; SFX.ready(); }
-  else if (r.s === 'ready' && (r.t -= dt) <= 0) { r.s = 'burn'; SFX.burn(); notify('🔥 Alamak, roti hangus!', 'bad'); }
+  else if (r.s === 'ready' && (r.t -= dt) <= 0) { r.s = 'burn'; R.mist.burn++; SFX.burn(); notify('🔥 Alamak, roti hangus!', 'bad'); }
   const t = R.teh;
   if (t.hold) { const sp = 1 / (1.25 + up('teko') * .2); t.lvl += t.dir * dt * sp; if (t.lvl >= 1) { t.lvl = 1; t.dir = -1; } if (t.lvl <= 0) { t.lvl = 0; t.dir = 1; } }
   R.maggi.forEach(m => {
@@ -655,8 +659,8 @@ function stepStations(dt) {
       if (m.k === 'mee' && !m.stir && m.t <= MEE_COOK / 2) { m.s = 'stir'; m.st = 1.6; SFX.notif(); }
       else if (m.t <= 0) { m.s = 'ready'; m.t = READY_WIN; SFX.ready(); }
     }
-    else if (m.s === 'stir' && (m.st -= dt) <= 0) { m.s = 'burn'; SFX.burn(); notify('🔥 Mee tak kacau, melekat hangus!', 'bad'); }
-    else if (m.s === 'ready' && (m.t -= dt) <= 0) { m.s = 'burn'; SFX.burn(); notify(`🔥 ${m.k === 'mee' ? 'Mee' : 'Maggi'} hangus! Bau satu kedai...`, 'bad'); }
+    else if (m.s === 'stir' && (m.st -= dt) <= 0) { m.s = 'burn'; R.mist.burn++; SFX.burn(); notify('🔥 Mee tak kacau, melekat hangus!', 'bad'); }
+    else if (m.s === 'ready' && (m.t -= dt) <= 0) { m.s = 'burn'; R.mist.burn++; SFX.burn(); notify(`🔥 ${m.k === 'mee' ? 'Mee' : 'Maggi'} hangus! Bau satu kedai...`, 'bad'); }
   });
   const n = R.nasi; if (n.s === 'cook' && (n.t -= dt) <= 0) { n.s = 'idle'; n.stock = 6; SFX.ready(); }
 }
@@ -684,7 +688,7 @@ function loop(now) {
   if (R.ev === 'datuk' && !R.datukDone && R.t <= DUR * .55 && R.t > 15 && R.tables.some(x => !x)) { R.datukDone = true; spawnCustomer(R.tables.findIndex(x => !x), true); }
   if (feat(d, 'grab') && !R.grab) { R.grabT -= dt; if (R.grabT <= 0 && R.t > 12) { spawnGrab(); R.grabT = R.ev === 'hujan' ? rand(5, 9) : rand(18, 30); } }
   if (feat(d, 'cat') && !R.cat) { R.catT -= dt; if (R.catT <= 0 && R.tray.length && R.t > 5) { R.cat = { t: 4 }; renderSide(); notify('🐈 <b>Oyen</b> nak curi makanan! Tap halau cepat!', 'bad'); R.catT = rand(16, 26); } }
-  if (R.cat) { R.cat.t -= dt; if (R.cat.t <= 0) { R.cat = null; if (R.tray.length) { const s = R.tray.splice(Math.floor(Math.random() * R.tray.length), 1)[0]; notify(`🐈 Alamak! Oyen curi ${ITEMS[s.k].name.toLowerCase()}! 😾`, 'bad'); SFX.bad(); renderTray(); } renderSide(); } }
+  if (R.cat) { R.cat.t -= dt; if (R.cat.t <= 0) { R.cat = null; if (R.tray.length) { const s = R.tray.splice(Math.floor(Math.random() * R.tray.length), 1)[0]; R.mist.stolen++; notify(`🐈 Alamak! Oyen curi ${ITEMS[s.k].name.toLowerCase()}! 😾`, 'bad'); SFX.bad(); renderTray(); } renderSide(); } }
   // sabar
   const drain = up('fan') ? .8 : 1;
   R.tables.forEach(c => {
@@ -702,6 +706,13 @@ function loop(now) {
   drawStations(); hud();
   if (R.t <= 0) endDay();
 }
+const comboBonus = () => R.combo >= 3 ? Math.min(.5, .1 + (R.combo - 3) * .05) : 0;
+function hudCombo() {
+  const el = $('#hudCombo'); if (!el) return;
+  el.classList.toggle('hidden', R.combo < 3);
+  el.textContent = `🔥x${R.combo}`;
+  el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump');
+}
 function hud() {
   const s = Math.max(0, Math.ceil(R.t));
   $('#hudDay').textContent = 'Hari ' + R.day + (R.ev ? ' ' + EVENTS[R.ev].ic : '');
@@ -709,6 +720,18 @@ function hud() {
   $('#timeBar').style.width = Math.max(0, R.t / DUR * 100) + '%';
   $('#hudCoin').textContent = rm(R.earned);
   $('#hudTarget').textContent = 'sasaran ' + rm(target(R.day));
+}
+function mistakeHTML() {
+  const M = R.mist, rows = [
+    [R.lost, '😠', 'pelanggan merajuk', 'Layan yang bar sabar merah dulu. Tap 😤 untuk tenangkan.'],
+    [M.burn, '🔥', 'makanan hangus', 'Jangan masak terlalu banyak serentak. Ambik bila stesen menyala.'],
+    [M.wrong, '🏷️', 'salah tag (kurang manis / ikat / kaw...)', 'Tengok tag merah bawah order, tekan chip sebelum buat air.'],
+    [M.spill, '🥤', 'Milo melimpah', 'Goncang perlahan, lepas jari bila jarum masuk hijau.'],
+    [M.stolen, '🐈', 'kena curi Oyen', 'Tap Oyen cepat-cepat, atau upah Kak Siti.'],
+    [M.teh, '☕', 'teh tak cukup tarik', 'Tahan lebih lama sampai jarum naik ke hijau.']
+  ].filter(r => r[0] > 0).sort((a, b) => b[0] - a[0]);
+  if (!rows.length) return '<div class="mist good">🌟 Takde kesilapan langsung! Power!</div>';
+  return `<div class="mist"><b>Kena baiki:</b>${rows.slice(0, 3).map(r => `<div class="m-row"><span>${r[1]}</span><div><b>${r[0]}× ${r[2]}</b><small>${r[3]}</small></div></div>`).join('')}</div>`;
 }
 function endDay() {
   R.over = true; SFX.bell();
@@ -720,7 +743,8 @@ function endDay() {
   const passed = stars > 0;
   modal(`<h2>${passed ? 'Kedai tutup! 🎉' : 'Alamak...'}</h2>
     <div class="stars">${[1, 2, 3].map(i => `<span class="${i <= stars ? '' : 'off'}">⭐</span>`).join('')}</div>
-    <div class="res"><span>Duit hari ni</span><b>${rm(e)}</b><span>Sasaran</span><b>${rm(tg)}</b><span>Pelanggan puas</span><b>${R.served} 😋</b><span>Pelanggan merajuk</span><b>${R.lost} 😠</b><span>Teh tarik perfect</span><b>${R.perfect} ✨</b>${wg ? `<span>Gaji pekerja</span><b>-${rm(wg)}</b>` : ''}</div>
+    <div class="res"><span>Duit hari ni</span><b>${rm(e)}</b><span>Sasaran</span><b>${rm(tg)}</b><span>Pelanggan puas</span><b>${R.served} 😋</b><span>Pelanggan merajuk</span><b>${R.lost} 😠</b><span>Teh tarik perfect</span><b>${R.perfect} ✨</b><span>Combo terbaik</span><b>🔥 x${R.bestCombo}</b>${wg ? `<span>Gaji pekerja</span><b>-${rm(wg)}</b>` : ''}</div>
+    ${mistakeHTML()}
     <p>${passed ? (first ? `Hari ${P.day} dah dibuka!` : 'Bagus!') : 'Tak capai sasaran. Cuba lagi, atau upgrade kedai dulu!'}</p>
     ${passed ? `<button class="btn gold" id="nextBtn" type="button">▶ HARI ${first ? P.day : R.day + 1 <= P.day ? R.day + 1 : P.day}</button>` : `<button class="btn gold" id="retryBtn" type="button">↻ CUBA LAGI</button>`}
     <button class="btn green" id="upBtn" type="button">🛠️ Upgrade (${rm(P.coins)})</button>
