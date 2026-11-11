@@ -121,3 +121,29 @@ Tambahan gaya: *cozy mobile game upgrade icon, chunky shapes, slight 3/4 view, c
 | `deko_pokok.webp` | A small cute potted money plant hanging on a wall |
 | `deko_lampu.webp` | A short string of warm yellow fairy light bulbs |
 | `deko_mural.webp` | A small framed painting of a Malaysian kampung house with coconut trees |
+
+## Batch 9 — Pelanggan berpersonaliti (v3)
+Gaya sama macam Batch 2.
+| Fail | Watak | Prompt tambahan |
+|---|---|---|
+| `cust_mira.webp` | Mira Influencer | A trendy young Malaysian woman in a pastel hijab and oversized hoodie holding up a smartphone on a selfie stick, ring light glow, excited pose |
+| `cust_ain.webp` | Adik Ain | A Malay schoolgirl in a white school tudung, blue pinafore uniform and backpack, impatient pout, tapping her watch |
+
+## Batch 10 — Restoran 2: Warung Satay Pak Mat (malam, lampu tanglung)
+Tambahan gaya: *night-time Malaysian roadside satay stall, warm orange lantern glow.*
+| Fail | Prompt tambahan |
+|---|---|
+| `loc_mamak.webp` | Small icon of a cosy mamak restaurant shopfront with a red signboard (no readable text), plastic stools outside |
+| `loc_satay.webp` | Small icon of a night satay stall with a smoking charcoal grill, red lanterns and a zinc roof |
+| `item_satay.webp` | Five sticks of golden chicken satay on a small plate with cucumber and onion slices |
+| `item_satayd.webp` | Five sticks of dark caramelised beef satay on a banana leaf |
+| `item_kuah.webp` | A small bowl of thick chunky peanut sauce (kuah kacang) with a drizzle of chilli oil |
+| `st_bara.webp` | A long empty charcoal satay grill with glowing red-orange embers, top view slightly angled |
+| `st_satay_bakar.webp` | Raw-to-golden satay sticks sizzling on the charcoal grill with small flames and smoke |
+| `st_hangus_satay.webp` | Burnt blackened satay sticks with grey smoke puffs, comedic |
+| `st_periuk_kuah.webp` | A pot of bubbling peanut sauce on a small stove with steam |
+| `up_bara_1.webp` | A basic small charcoal satay grill, slightly rusty |
+| `up_bara_2.webp` | A longer shiny steel satay grill with roaring embers and a bamboo fan |
+| `up_bara_3.webp` | A luxurious golden satay grill with blazing embers, sparkles and decorative trim |
+| `bg_dinding_satay.webp` | **Landscape 1536×256, NOT transparent.** Night street backdrop behind a satay stall: dark purple sky, string of red lanterns, zinc roof edge, hanging banner (no text) |
+| `bg_lantai_satay.webp` | **Square 512×512 tileable, NOT transparent.** Top-down rough concrete road floor at night, warm lantern light, seamless tile |

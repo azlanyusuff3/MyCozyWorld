@@ -440,3 +440,25 @@ body.has-bg_dinding #tv,body.has-bg_dinding #fan{display:none}
 .st .hint{position:relative}
 body.has-bg_dinding #tv:has(img):not(.hidden){display:block;position:absolute;left:13%;top:6px}
 body.has-bg_dinding #fan.spr:not(.hidden){display:block;left:1%;top:-4px}
+
+/* v3: restoran & personaliti */
+.locs{display:flex;gap:8px;margin:6px 0 4px;width:100%;max-width:420px}
+.loc{flex:1;border:0;border-radius:14px;background:#fff8e8;padding:8px 6px;display:flex;flex-direction:column;align-items:center;gap:2px;font-family:inherit;box-shadow:0 3px 0 #0002;color:#5a3608}
+.loc .av{width:44px;height:44px;font-size:30px;display:flex;align-items:center;justify-content:center}.loc .av img{width:100%;height:100%;object-fit:contain}
+.loc b{font-size:12px;line-height:1.1}.loc small{font-size:10px;opacity:.8}
+.loc.on{background:#ffc93c;box-shadow:0 3px 0 #c38b12,0 0 0 3px #fff inset}
+.loc.lock{filter:grayscale(1);opacity:.6}
+.cust .trait{position:absolute;right:-4px;bottom:18px;font-size:18px;background:#fff;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 0 #0003;z-index:3}
+.st .pan.garing{box-shadow:inset 0 0 0 3px #ff6a3d;background:#ff6a3d22}
+body.loc-satay .shop-floor{background-color:#2a1d2e}
+body.loc-satay .wall{filter:hue-rotate(-25deg) saturate(1.2) brightness(.8)}
+body.loc-satay .shop-floor::after{content:'🏮 🏮 🏮';position:absolute;top:58px;left:0;right:0;text-align:center;font-size:20px;letter-spacing:40px;pointer-events:none;z-index:1}
+body.loc-satay .tables{filter:brightness(.92)}
+body.loc-satay .st{background:#2b1a12}
+body.loc-satay .st.bara{background:radial-gradient(ellipse at 50% 90%,#ff6a3d55,#2b1a12 70%)}
+body.loc-satay .sign{filter:hue-rotate(-30deg)}
+body.loc-satay .wall,body.loc-satay .shop-floor{filter:brightness(.72) sepia(.35) hue-rotate(-18deg) saturate(1.4)}
+body.loc-satay .tables{filter:none}
+body.loc-satay .shop-floor::after{z-index:2;top:62px;filter:drop-shadow(0 0 8px #ffb347)}
+body.loc-satay .tables,body.loc-satay .counter{position:relative;z-index:1}
+body.loc-satay.satay-art .wall,body.loc-satay.satay-art .shop-floor{filter:none}
