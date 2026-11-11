@@ -90,3 +90,34 @@ Ini yang buat semua art nampak sebati. Gaya umum sama, **tapi saiz ikut jadual**
 ## Kad hub (pilihan)
 Simpan `assets/hub/card_mamak.webp` (landscape 4:3), tambah `"card_mamak"` dalam `assets/hub/list.json`:
 > Cute chibi busy Malaysian mamak restaurant at night with green walls, marble round tables and red plastic stools, a chef stretching roti canai in the air, teh tarik being pulled high, cute chibi Malaysian customers of different races eating happily, a delivery rider on a scooter and an orange cat sneaking near the counter, warm lights and a TV showing football, kawaii mobile game key art, no text.
+
+## Batch 7 — Upgrade dapur & kedai (v2, gaya Cooking Diary)
+Ikon kedai upgrade. Setiap tahap mesti nampak **makin mewah**: tahap 1 = biasa/lusuh sikit, tahap 2 = baru & berkilat, tahap 3 = emas/premium dengan sparkle.
+Tambahan gaya: *cozy mobile game upgrade icon, chunky shapes, slight 3/4 view, clear silhouette, transparent background, no text.*
+| Fail | Prompt tambahan |
+|---|---|
+| `up_tawa_1.webp` | A simple old flat iron griddle (tawa) for roti canai on a small gas stove, a bit worn and dented |
+| `up_tawa_2.webp` | A shiny new stainless steel tawa griddle with a bigger gas burner and blue flames underneath |
+| `up_tawa_3.webp` | A luxurious golden tawa griddle with ornate trim, roaring orange flames and little sparkles around it |
+| `up_teko_1.webp` | A plain dented aluminium teapot used for teh tarik with a long spout |
+| `up_teko_2.webp` | A bigger polished stainless steel teh tarik pitcher pair, shiny highlights |
+| `up_teko_3.webp` | An elegant copper teh tarik pot with gold trim, steam swirls and sparkles |
+| `up_kuali.webp` | Two black woks (kuali) side by side on a double gas stove |
+| `up_api_1.webp` | A sturdy gas stove burner with strong blue flames |
+| `up_api_2.webp` | A powerful wok burner with huge roaring red-orange "dragon" flames, sparks flying |
+| `up_periuk_1.webp` | A large aluminium rice pot with lid slightly open and steam, white rice visible |
+| `up_periuk_2.webp` | A giant shiny rice cooker pot overflowing with fluffy coconut rice, big steam clouds and sparkles |
+| `up_dulang_1.webp` | A round stainless steel serving tray, empty |
+| `up_dulang_2.webp` | A large oval golden serving tray with decorative handles, empty |
+| `up_kipas.webp` | A classic wooden ceiling fan with 4 blades and a small light |
+| `up_tv.webp` | A chunky wall-mounted TV showing a green football field (no logos) |
+| `up_deko_1.webp` | A cute potted green plant in a terracotta pot |
+| `up_deko_2.webp` | A potted plant with a string of warm fairy lights wrapped around it |
+| `up_deko_3.webp` | A potted plant, fairy lights and a small framed colourful mural painting of a Malaysian kampung scene |
+
+## Batch 8 — Hiasan dinding kedai (kecil, muncul atas dinding ikut tahap)
+| Fail | Prompt tambahan |
+|---|---|
+| `deko_pokok.webp` | A small cute potted money plant hanging on a wall |
+| `deko_lampu.webp` | A short string of warm yellow fairy light bulbs |
+| `deko_mural.webp` | A small framed painting of a Malaysian kampung house with coconut trees |

@@ -1,7 +1,7 @@
 'use strict';
 /* Mamak Rush — game kedai mamak gaya "sushi bar". Semua art guna emoji dulu;
    sprite dalam sprites/list.json (nama tanpa .webp) akan ganti emoji secara automatik. */
-const GAME_VERSION = 'v1';
+const GAME_VERSION = 'v2';
 const $ = s => document.querySelector(s);
 const store = {
   get(k, d) { try { const v = localStorage.getItem('mamak_' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
@@ -70,17 +70,28 @@ const UNLOCK = {
 };
 const feat = (d, f) => d >= { maggi: 2, tambah: 3, sabar: 4, grab: 5, cat: 6, nasi: 7, kaw: 8, milo: 9, kurang: 10, telur: 11, garing: 12, mee: 13, ikat: 14, murtabak: 15, dino: 16, tosai: 17 }[f];
 const UPS = [
-  { k: 'tables', ic: '🪑', n: 'Meja tambahan', d: 'Lebih ramai pelanggan serentak', cost: [40, 120], max: 2 },
-  { k: 'fan', ic: '🌀', n: 'Kipas siling', d: 'Pelanggan lebih sabar (-20% cepat marah)', cost: [35], max: 1 },
-  { k: 'teko', ic: '🫖', n: 'Teko besar', d: 'Zon hijau teh tarik lebih lebar', cost: [30, 90], max: 2 },
-  { k: 'kuali', ic: '🍳', n: 'Kuali kedua', d: 'Masak 2 kuali serentak (Maggi/Mee)', cost: [60], max: 1, need: 2 },
-  { k: 'tawa', ic: '🔥', n: 'Tawa panas', d: 'Roti canai masak lebih laju', cost: [45], max: 1 },
-  { k: 'tray', ic: '🍽️', n: 'Dulang besar', d: 'Dulang muat 5 makanan', cost: [40], max: 1 },
-  { k: 'tv', ic: '📺', n: 'TV bola', d: 'Tip +25% (pelanggan seronok tengok bola)', cost: [80], max: 1 },
-  { k: 'siti', ic: '🧕🏻', spr: 'staff_siti', staff: 1, wage: 12, n: 'Upah Kak Siti (pelayan)', d: 'Auto tenangkan pelanggan tak sabar & halau Oyen', cost: [50], max: 1, need: 6 },
-  { k: 'anne', ic: '👨🏾‍🍳', spr: 'staff_anne', staff: 1, wage: 15, n: 'Upah Anne (tukang teh)', d: 'Auto buat teh tarik biasa (bukan kaw/kurang/ikat)', cost: [70], max: 1, need: 8 },
-  { k: 'ravi', ic: '🧑🏾‍🍳', spr: 'staff_ravi', staff: 1, wage: 20, n: 'Upah Ravi (tukang roti)', d: 'Auto tebar roti kosong bila ada order', cost: [90], max: 1, need: 10 }
+  // DAPUR — setiap stesen ada 3 tahap, makin laju & makin cantik
+  { k: 'tawa', cat: 'dapur', ic: '🔥', spr: 'up_tawa', n: 'Tawa roti', d: ['Roti masak 30% laju', 'Roti masak 45% laju', 'Tawa emas: roti masak 55% laju'], cost: [45, 110, 220], max: 3 },
+  { k: 'teko', cat: 'dapur', ic: '🫖', spr: 'up_teko', n: 'Teko', d: ['Zon hijau teh tarik lebih lebar', 'Zon hijau lebih lebar lagi', 'Teko tembaga: zon hijau paling lebar'], cost: [30, 90, 180], max: 3 },
+  { k: 'kuali', cat: 'dapur', ic: '🍳', spr: 'up_kuali', n: 'Kuali kedua', d: 'Masak 2 kuali serentak (Maggi/Mee)', cost: [60], max: 1, need: 2 },
+  { k: 'api', cat: 'dapur', ic: '♨️', spr: 'up_api', n: 'Dapur gas', d: ['Kuali masak 20% laju', 'Api naga: kuali masak 35% laju'], cost: [70, 160], max: 2, need: 2 },
+  { k: 'periuk', cat: 'dapur', ic: '🍚', spr: 'up_periuk', n: 'Periuk nasi', d: ['Periuk besar: 9 bungkus, masak laju', 'Periuk gergasi: 12 bungkus, masak paling laju'], cost: [60, 140], max: 2, need: 7 },
+  { k: 'tray', cat: 'dapur', ic: '🍽️', spr: 'up_dulang', n: 'Dulang', d: ['Dulang muat 5 makanan', 'Dulang muat 6 makanan'], cost: [40, 120], max: 2 },
+  // KEDAI — selesa = pelanggan lebih sabar & tip lebih
+  { k: 'tables', cat: 'kedai', ic: '🪑', n: 'Meja tambahan', d: 'Lebih ramai pelanggan serentak', cost: [40, 120], max: 2 },
+  { k: 'fan', cat: 'kedai', ic: '🌀', spr: 'up_kipas', n: 'Kipas siling', d: 'Pelanggan lebih sabar (-20% cepat marah)', cost: [35], max: 1 },
+  { k: 'deko', cat: 'kedai', ic: '🪴', spr: 'up_deko', n: 'Hiasan kedai', d: ['Pokok bunga: sabar +8%, tip +5%', 'Lampu kelip: sabar +16%, tip +10%', 'Mural cantik: sabar +24%, tip +15%'], cost: [60, 150, 300], max: 3 },
+  { k: 'tv', cat: 'kedai', ic: '📺', spr: 'up_tv', n: 'TV bola', d: 'Tip +25% (pelanggan seronok tengok bola)', cost: [80], max: 1 },
+  { k: 'siti', cat: 'staf', ic: '🧕🏻', spr: 'staff_siti', staff: 1, wage: 12, n: 'Upah Kak Siti (pelayan)', d: 'Auto tenangkan pelanggan tak sabar & halau Oyen', cost: [50], max: 1, need: 6 },
+  { k: 'anne', cat: 'staf', ic: '👨🏾‍🍳', spr: 'staff_anne', staff: 1, wage: 15, n: 'Upah Anne (tukang teh)', d: 'Auto buat teh tarik biasa (bukan kaw/kurang/ikat)', cost: [70], max: 1, need: 8 },
+  { k: 'ravi', cat: 'staf', ic: '🧑🏾‍🍳', spr: 'staff_ravi', staff: 1, wage: 20, n: 'Upah Ravi (tukang roti)', d: 'Auto tebar roti kosong bila ada order', cost: [90], max: 1, need: 10 }
 ];
+const upDesc = u => Array.isArray(u.d) ? u.d[Math.min(up(u.k), u.d.length - 1)] : u.d;
+const lvStars = u => u.max > 1 ? '★'.repeat(up(u.k)) + '☆'.repeat(u.max - up(u.k)) : '';
+const tawaMul = () => [1, .7, .55, .45][up('tawa')];
+const apiMul = () => [1, .8, .65][up('api')];
+const nasiStock = () => 6 + up('periuk') * 3, nasiCook = () => 5 * [1, .75, .55][up('periuk')];
+const dekoPat = () => 1 + up('deko') * .08, dekoTip = () => 1 + up('deko') * .05;
 const wages = () => UPS.filter(u => u.staff && up(u.k)).reduce((s, u) => s + u.wage, 0);
 // Pelanggan tetap: order "macam biasa" yang sama setiap kali datang
 const REGS = {
@@ -107,6 +118,22 @@ P.reg = P.reg || {};
 const up = k => P.up[k] || 0;
 const save = () => store.set('save', P);
 const target = d => Math.round(26 + d * 7 + d * d * .1);
+/* Matlamat hari: ★1 capai duit, ★2 jaga pelanggan, ★3 cabaran berpusing */
+function goalsFor(d) {
+  const lostMax = d < 4 ? 1 : d < 10 ? 2 : 3;
+  const ch = [
+    { ic: '🔥', t: `Combo x${3 + Math.floor(d / 4)}`, ok: r => r.bestCombo >= 3 + Math.floor(d / 4) },
+    { ic: '😋', t: `Hidang ${Math.round(4 + d * 1.1)} pelanggan`, ok: r => r.served >= Math.round(4 + d * 1.1) },
+    { ic: '✨', t: `${2 + Math.floor(d / 3)} teh tarik perfect`, ok: r => r.perfect >= 2 + Math.floor(d / 3) },
+    { ic: '🧯', t: 'Takde makanan hangus', ok: r => r.mist.burn === 0 }
+  ][d % 4];
+  return [
+    { ic: '💰', t: `Kutip ${rm(target(d))}`, ok: r => r.earned >= target(d) },
+    { ic: '❤️', t: `Merajuk maks ${lostMax} orang`, ok: r => r.lost <= lostMax },
+    ch
+  ];
+}
+const goalsHTML = (d, r) => `<div class="goals">${goalsFor(d).map((g, i) => `<div class="goal ${r ? (g.ok(r) ? 'ok' : 'no') : ''}"><span class="gs">${'⭐'}</span><span>${g.ic} ${g.t}</span><b>${r ? (g.ok(r) ? '✓' : '✗') : i ? '' : 'WAJIB'}</b></div>`).join('')}</div>`;
 
 /* ---------- Bunyi ---------- */
 let AC = null, soundOn = store.get('sound', true);
@@ -182,10 +209,12 @@ function confirmReset() { if (Date.now() - resetArm < 3000) return true; resetAr
 function modal(html) { $('#modalCard').classList.remove('shop'); $('#modalCard').innerHTML = html; $('#modal').classList.remove('hidden'); }
 function closeModal() { $('#modal').classList.add('hidden'); }
 
+let shopTab = 'dapur', justUp = null;
+const TABS = [['dapur', '🍳 Dapur'], ['kedai', '🏠 Kedai'], ['staf', '👥 Pekerja']];
 function openShop(nextDay) {
-  const rows = UPS.map(u => {
+  const rows = `<div class="tabs">${TABS.map(([k, t]) => `<button type="button" data-tab="${k}" class="${shopTab === k ? 'on' : ''}">${t}</button>`).join('')}</div>` + UPS.filter(u => u.cat === shopTab).map(u => {
     const lv = up(u.k), max = lv >= u.max, locked = u.need && P.day < u.need, cost = u.cost[lv];
-    return `<div class="up ${max ? 'max' : ''}"><span class="ic av">${u.spr ? ico(u.spr, u.ic) : u.ic}</span><div><b>${u.n}${u.max > 1 ? ` (${lv}/${u.max})` : ''}</b><small>${locked ? 'Buka lepas Hari ' + u.need : u.d}${u.staff ? ` · <b>gaji ${rm(u.wage)}/hari</b>` : ''}</small></div>
+    return `<div class="up ${max ? 'max' : ''} ${justUp === u.k ? 'pop' : ''}"><span class="ic av">${u.spr ? ico(u.spr + (u.max > 1 ? '_' + Math.max(1, lv) : ''), ico(u.spr, u.ic)) : u.ic}</span><div><b>${u.n}</b>${u.max > 1 ? `<span class="lvs">${lvStars(u)}</span>` : ''}<small>${locked ? 'Buka lepas Hari ' + u.need : max && Array.isArray(u.d) ? 'Tahap maksimum! ' + u.d[u.d.length - 1].split(':')[0] : (lv && u.max > 1 ? 'Seterusnya: ' : '') + upDesc(u)}${u.staff ? ` · <b>gaji ${rm(u.wage)}/hari</b>` : ''}</small></div>
       <button type="button" data-k="${u.k}" ${max || locked || P.coins < cost ? 'disabled' : ''}>${max ? (u.staff ? 'KERJA ✓' : 'ADA ✓') : rm(cost)}</button></div>`;
   }).join('');
   const sc = $('#modalCard').classList.contains('shop') ? $('#modalCard').scrollTop : 0;
@@ -194,8 +223,9 @@ function openShop(nextDay) {
   $('#modalCard').classList.add('shop'); $('#modalCard').scrollTop = sc;
   $('#modalCard').onclick = e => {
     if (e.target.closest('#shopX')) { closeModal(); if (nextDay) toMenu(); return; }
+    const tb = e.target.closest('[data-tab]'); if (tb) { shopTab = tb.dataset.tab; justUp = null; SFX.tap(); openShop(nextDay); return; }
     const b = e.target.closest('button[data-k]');
-    if (b) { const u = UPS.find(x => x.k === b.dataset.k), c = u.cost[up(u.k)]; if (P.coins >= c) { P.coins -= c; P.up[u.k] = up(u.k) + 1; save(); SFX.coin(); openShop(nextDay); renderMenu(); } return; }
+    if (b) { const u = UPS.find(x => x.k === b.dataset.k), c = u.cost[up(u.k)]; if (P.coins >= c) { P.coins -= c; P.up[u.k] = up(u.k) + 1; save(); SFX.perfect(); buzz(20); justUp = u.k; openShop(nextDay); justUp = null; renderMenu(); } return; }
     if (e.target.id === 'shopDone') { closeModal(); if (nextDay) startDay(nextDay); }
   };
 }
@@ -212,11 +242,11 @@ function startDay(d) {
     roti: { s: 'idle', t: 0, prog: 0, k: 'roti', eggs: 0 },
     teh: { s: 'idle', lvl: 0, hold: false, dir: 1, prog: 0 }, chips: {},
     maggi: Array.from({ length: feat(d, 'maggi') ? 1 + up('kuali') : 1 }, () => ({ s: 'idle', t: 0, k: 'maggi' })),
-    nasi: { stock: 6, s: 'idle', t: 0 }
+    nasi: { stock: nasiStock(), s: 'idle', t: 0 }
   };
   $('#menu').classList.add('hidden'); $('#game').classList.remove('hidden');
   $('#tables').className = 'tables n' + nTables;
-  $('#tv').classList.toggle('hidden', !up('tv')); $('#fan').classList.toggle('hidden', !up('fan'));
+  $('#deco').innerHTML = ['', '🪴', '🪴💡', '🪴💡🖼️'][up('deko')].replace(/🪴|💡|🖼️/gu, m => `<span class="av">${ico({ '🪴': 'deko_pokok', '💡': 'deko_lampu', '🖼️': 'deko_mural' }[m], m)}</span>`); $('#tv').classList.toggle('hidden', !up('tv')); $('#fan').classList.toggle('hidden', !up('fan'));
   $('#menuBoard').textContent = menuItems().map(k => ITEMS[k].e).join(' ');
   $('#notifs').innerHTML = '';
   const fl = document.querySelector('.shop-floor'); fl.classList.toggle('rain', R.ev === 'hujan'); fl.classList.toggle('senja', R.ev === 'berbuka');
@@ -226,7 +256,7 @@ function startDay(d) {
   renderStations(); renderTables(); renderTray(); renderSide(); renderStaff(); hud();
   const u = UNLOCK[d];
   modal(`<h2>Hari ${d}</h2>${u ? `<div class="new-box"><div class="ic">${u.ic}</div><b>${u.t}</b><span>${u.d}</span></div>` : (R.ev ? '' : '<p>Pelanggan makin ramai. Gerak laju!</p>')}${R.ev ? `<div class="new-box ev"><div class="ic">${EVENTS[R.ev].ic}</div><b>${u ? 'Event: ' : ''}${EVENTS[R.ev].t}</b><span>${EVENTS[R.ev].d}</span></div>` : ''}
-    <p>Sasaran hari ni: <b>${rm(target(d))}</b></p><button class="btn gold" id="goBtn" type="button">▶ JOM BUKA!</button>`);
+    <p class="gtitle">Matlamat hari ni</p>${goalsHTML(d)}<button class="btn gold" id="goBtn" type="button">▶ JOM BUKA!</button>`);
   $('#modalCard').onclick = e => { if (e.target.id === 'goBtn') { closeModal(); R.paused = false; SFX.bell(); lastT = performance.now(); } };
   cancelAnimationFrame(raf); lastT = performance.now(); raf = requestAnimationFrame(loop);
 }
@@ -235,7 +265,7 @@ const menuItemsFor = d => ['roti', 'teh', ...[['maggi', 'maggi'], ['nasi', 'nasi
 
 $('#pauseBtn').onclick = () => {
   if (!R || R.over) return; R.paused = true;
-  modal(`<h2>Rehat jap ☕</h2><button class="btn gold" id="resBtn" type="button">▶ Sambung</button><button class="btn" id="quitBtn" type="button">Keluar ke menu</button>`);
+  modal(`<h2>Rehat jap ☕</h2>${goalsHTML(R.day, R)}<button class="btn gold" id="resBtn" type="button">▶ Sambung</button><button class="btn" id="quitBtn" type="button">Keluar ke menu</button>`);
   $('#modalCard').onclick = e => {
     if (e.target.id === 'resBtn') { closeModal(); R.paused = false; lastT = performance.now(); }
     if (e.target.id === 'quitBtn') { R.over = true; closeModal(); toMenu(); }
@@ -255,7 +285,7 @@ function makeOrder(n, vip) {
   }
   return its;
 }
-function patMax() { return Math.max(16, 34 - R.day * 1.1); }
+function patMax() { return Math.max(16, 34 - R.day * 1.1) * dekoPat(); }
 function spawnCustomer(at, vip) {
   const free = R.tables.map((c, i) => c ? -1 : i).filter(i => i >= 0);
   if (!free.length) return;
@@ -289,7 +319,7 @@ function spawnGrab() {
 function custEl(c) { return c.grab ? $('#grabSpot .grab') : document.querySelector(`.cust[data-id="${c.id}"]`); }
 function custDone(c) {
   const sum = c.items.reduce((s, i) => s + ITEMS[i.k].price, 0);
-  const tipRate = (.15 + .6 * (c.pat / c.max)) * (up('tv') ? 1.25 : 1) * (c.grab ? (R.ev === 'hujan' ? 2.3 : 1.8) : 1);
+  const tipRate = (.15 + .6 * (c.pat / c.max)) * (up('tv') ? 1.25 : 1) * dekoTip() * (c.grab ? (R.ev === 'hujan' ? 2.3 : 1.8) : 1);
   let pay = Math.round((sum + Math.round(sum * tipRate) + (c.perf || 0)) * (c.vip ? 2.5 : 1) * (c.reg ? 1.2 + Math.min(10, (P.reg[c.reg] || {}).h || 0) * .05 : 1));
   if (c.reg) {
     const st = P.reg[c.reg]; st.h++; save();
@@ -389,7 +419,9 @@ $('#tray').addEventListener('pointerdown', e => {
 });
 
 /* ---------- Render meja ---------- */
-function orderHTML(c) { return `<div class="order${c.reg ? ' reg' : ''}">${c.hidden ? '<i class="biasa">macam biasa</i>' : ''}${c.items.map(i => c.hidden && !i.done ? '<span class="it"><span class="av q">❓</span></span>' : `<span class="it ${i.done ? 'done' : ''}"><span class="av">${ico('item_' + i.k, ITEMS[i.k].e)}</span>${tagHTML(i.m)}</span>`).join('')}<div class="pat"><b class="${patCls(c)}" style="width:${c.pat / c.max * 100}%"></b></div></div>`; }
+const heartsN = c => Math.max(0, Math.ceil(c.pat / c.max * 3));
+const heartsTxt = n => '❤️'.repeat(n) + '🤍'.repeat(3 - n);
+function orderHTML(c) { return `<div class="order${c.reg ? ' reg' : ''}"><span class="hearts" data-h="${heartsN(c)}">${heartsTxt(heartsN(c))}</span>${c.hidden ? '<i class="biasa">macam biasa</i>' : ''}${c.items.map(i => c.hidden && !i.done ? '<span class="it"><span class="av q">❓</span></span>' : `<span class="it ${i.done ? 'done' : ''}"><span class="av">${ico('item_' + i.k, ITEMS[i.k].e)}</span>${tagHTML(i.m)}</span>`).join('')}<div class="pat"><b class="${patCls(c)}" style="width:${c.pat / c.max * 100}%"></b></div></div>`; }
 function patCls(c) { const f = c.pat / c.max; return f > .5 ? '' : f > .25 ? 'mid' : 'low'; }
 function fitTables() {
   const box = $('#tables'); if (!box || !R) return;
@@ -419,13 +451,13 @@ $('#catSpot').addEventListener('pointerdown', () => {
 
 /* ---------- Stesen ---------- */
 const ROTI_KINDS = [
-  { k: 'roti', f: null, n: 'Kosong', e: '🫓', eggs: 0, cook: () => up('tawa') ? 2.4 : 3.5 },
-  { k: 'rotitelur', f: 'telur', n: 'Telur', e: '🍳', eggs: 1, cook: () => up('tawa') ? 3 : 4.2 },
-  { k: 'murtabak', f: 'murtabak', n: 'Murtabak', e: '🥙', eggs: 2, cook: () => up('tawa') ? 4.5 : 6 },
-  { k: 'tosai', f: 'tosai', n: 'Tosai', e: '🥞', eggs: 0, circle: true, cook: () => up('tawa') ? 2.2 : 3 }
+  { k: 'roti', f: null, n: 'Kosong', e: '🫓', eggs: 0, cook: () => 3.5 * tawaMul() },
+  { k: 'rotitelur', f: 'telur', n: 'Telur', e: '🍳', eggs: 1, cook: () => 4.2 * tawaMul() },
+  { k: 'murtabak', f: 'murtabak', n: 'Murtabak', e: '🥙', eggs: 2, cook: () => 6 * tawaMul() },
+  { k: 'tosai', f: 'tosai', n: 'Tosai', e: '🥞', eggs: 0, circle: true, cook: () => 3 * tawaMul() }
 ];
 const READY_WIN = 5, MAGGI_COOK = 4.2, MEE_COOK = 5.5, NASI_COOK = 5, GARING_AT = .4;
-const tehZone = () => { const w = .14 + up('teko') * .06; return [.72 - w / 2, .72 + w / 2]; };
+const tehZone = () => { const w = .14 + up('teko') * .05; return [.72 - w / 2, .72 + w / 2]; };
 const MILO_ZONE = [.75, 1.1];
 const rotiOpts = () => ROTI_KINDS.filter(x => !x.f || feat(R.day, x.f));
 const panOpts = () => feat(R.day, 'mee') ? ['maggi', 'mee'] : ['maggi'];
@@ -441,6 +473,11 @@ function renderStations() {
   if (feat(d, 'nasi')) h.push(`<div class="st" id="stNasi"><span class="lbl">NASI LEMAK</span><span class="cnt"></span><span class="big av"></span><span class="hint"></span><span class="bar"><b></b></span></div>`);
   $('#stations').innerHTML = h.join('');
   $('#stations').className = 'stations s' + h.length; $('#stations').style.setProperty('--sc', h.length);
+  [['stRoti', 'tawa', 3], ['stTeh', 'teko', 3], ['stMaggi', 'api', 2], ['stNasi', 'periuk', 2]].forEach(([id, k, mx]) => {
+    const el = $('#' + id); if (!el) return; const lv = up(k);
+    el.classList.add('lv' + lv); el.querySelector(':scope > .lbl').insertAdjacentHTML('beforeend', lv ? ` <i class="lvb">${'★'.repeat(lv)}</i>` : '');
+    const bg = SPR['stbg_' + k + '_' + lv]; if (bg) { el.style.backgroundImage = `url(${bg})`; el.classList.add('has-bg'); }
+  });
   $('#stTeh').classList.toggle('has-tarik', !!SPR.st_tarik);
   $('#stTeh').classList.toggle('has-chips', chips.length > 0);
   R.chooseKeys = {};
@@ -501,12 +538,12 @@ function drawStations() {
     if (pb._v !== pv) { pb._v = pv; pb.innerHTML = pv; }
     const ph = el.querySelector('.hint'), hv = m.s === 'idle' ? (po.length > 1 ? '' : 'Tap masak') : m.s === 'cook' ? (mee ? 'Mee...' : 'Goreng...') : m.s === 'stir' ? 'KACAU!' : m.s === 'ready' ? '✨ Ambik!' : '🔥 Buang';
     if (ph._v !== hv) { ph._v = hv; ph.innerHTML = hv; }
-    b.style.width = (m.s === 'cook' ? 1 - m.t / (mee ? MEE_COOK : MAGGI_COOK) : m.s === 'ready' ? m.t / READY_WIN : m.s === 'stir' ? m.st / 1.6 : 0) * 100 + '%';
+    b.style.width = (m.s === 'cook' ? 1 - m.t / (m.T || MAGGI_COOK) : m.s === 'ready' ? m.t / READY_WIN : m.s === 'stir' ? m.st / 1.6 : 0) * 100 + '%';
   });
   if (feat(R.day, 'nasi')) {
     const n = R.nasi, el = $('#stNasi');
     el.querySelector('.cnt').textContent = n.s === 'cook' ? '...' : n.stock + ' bungkus';
-    setSt(el, n.s === 'cook' ? ico('st_periuk', '♨️') : ico('item_nasi', '🍛'), n.s === 'cook' ? 'Masak nasi...' : n.stock ? 'Tap ambik' : 'Habis! Tap masak', n.s === 'cook' ? 1 - n.t / NASI_COOK : 0);
+    setSt(el, n.s === 'cook' ? ico('st_periuk', '♨️') : ico('item_nasi', '🍛'), n.s === 'cook' ? 'Masak nasi...' : n.stock ? 'Tap ambik' : 'Habis! Tap masak', n.s === 'cook' ? 1 - n.t / nasiCook() : 0);
   }
 }
 function drinkMods(k) {
@@ -601,7 +638,7 @@ function bindStations() {
     const p = e.target.closest('.pan'); if (!p || !live()) return; const m = R.maggi[+p.dataset.i];
     if (m.s === 'idle') {
       const b = e.target.closest('[data-pan]'), k = panOpts().length > 1 ? (b && b.dataset.pan) : 'maggi'; if (!k) return;
-      m.k = k; m.s = 'cook'; m.t = k === 'mee' ? MEE_COOK : MAGGI_COOK; m.stir = false; tone(200, .3, 'sawtooth', .04, 260);
+      m.k = k; m.s = 'cook'; m.t = m.T = (k === 'mee' ? MEE_COOK : MAGGI_COOK) * apiMul(); m.stir = false; tone(200, .3, 'sawtooth', .04, 260);
     }
     else if (m.s === 'stir') { m.stir = true; m.s = 'cook'; tone(700, .08, 'triangle', .1); emote(p, '🥄'); }
     else if (m.s === 'ready') { if (deliver({ k: m.k, m: {} }, p)) m.s = 'idle'; }
@@ -613,7 +650,7 @@ function bindStations() {
     if (!live()) return; const n = R.nasi;
     if (n.s === 'cook') return;
     if (n.stock > 0) { if (deliver({ k: 'nasi', m: {} }, nEl)) n.stock--; }
-    else { n.s = 'cook'; n.t = NASI_COOK; SFX.tap(); }
+    else { n.s = 'cook'; n.t = nasiCook(); SFX.tap(); }
     drawStations();
   });
 }
@@ -656,13 +693,13 @@ function stepStations(dt) {
   R.maggi.forEach(m => {
     if (m.s === 'cook') {
       m.t -= dt;
-      if (m.k === 'mee' && !m.stir && m.t <= MEE_COOK / 2) { m.s = 'stir'; m.st = 1.6; SFX.notif(); }
+      if (m.k === 'mee' && !m.stir && m.t <= m.T / 2) { m.s = 'stir'; m.st = 1.6; SFX.notif(); }
       else if (m.t <= 0) { m.s = 'ready'; m.t = READY_WIN; SFX.ready(); }
     }
     else if (m.s === 'stir' && (m.st -= dt) <= 0) { m.s = 'burn'; R.mist.burn++; SFX.burn(); notify('🔥 Mee tak kacau, melekat hangus!', 'bad'); }
     else if (m.s === 'ready' && (m.t -= dt) <= 0) { m.s = 'burn'; R.mist.burn++; SFX.burn(); notify(`🔥 ${m.k === 'mee' ? 'Mee' : 'Maggi'} hangus! Bau satu kedai...`, 'bad'); }
   });
-  const n = R.nasi; if (n.s === 'cook' && (n.t -= dt) <= 0) { n.s = 'idle'; n.stock = 6; SFX.ready(); }
+  const n = R.nasi; if (n.s === 'cook' && (n.t -= dt) <= 0) { n.s = 'idle'; n.stock = nasiStock(); SFX.ready(); }
 }
 const live = () => R && !R.paused && !R.over;
 
@@ -700,6 +737,7 @@ function loop(now) {
   document.querySelectorAll('.cust').forEach(el => {
     const c = R.tables.find(x => x && x.id === +el.dataset.id); if (!c) return;
     const b = el.querySelector('.pat b'); b.style.width = Math.max(0, c.pat / c.max * 100) + '%'; b.className = patCls(c);
+    const h = el.querySelector('.hearts'), hn = heartsN(c); if (h && +h.dataset.h !== hn) { h.dataset.h = hn; h.textContent = heartsTxt(hn); h.classList.remove('lose'); void h.offsetWidth; h.classList.add('lose'); }
   });
   const gb = $('#grabSpot .pat b'); if (gb && R.grab) { gb.style.width = Math.max(0, R.grab.pat / R.grab.max * 100) + '%'; gb.className = patCls(R.grab); }
   stepStations(dt); stepStaff(dt);
@@ -735,7 +773,7 @@ function mistakeHTML() {
 }
 function endDay() {
   R.over = true; SFX.bell();
-  const tg = target(R.day), e = R.earned, stars = e >= tg * 1.6 ? 3 : e >= tg * 1.3 ? 2 : e >= tg ? 1 : 0;
+  const tg = target(R.day), e = R.earned, gs = goalsFor(R.day).map(g => g.ok(R)), stars = gs[0] ? 1 + gs[1] + gs[2] : 0;
   const first = R.day === P.day;
   const wg = wages(); P.coins = Math.max(0, P.coins + e - wg); P.stars[R.day] = Math.max(P.stars[R.day] || 0, stars);
   if (stars && first) P.day++;
@@ -744,6 +782,7 @@ function endDay() {
   modal(`<h2>${passed ? 'Kedai tutup! 🎉' : 'Alamak...'}</h2>
     <div class="stars">${[1, 2, 3].map(i => `<span class="${i <= stars ? '' : 'off'}">⭐</span>`).join('')}</div>
     <div class="res"><span>Duit hari ni</span><b>${rm(e)}</b><span>Sasaran</span><b>${rm(tg)}</b><span>Pelanggan puas</span><b>${R.served} 😋</b><span>Pelanggan merajuk</span><b>${R.lost} 😠</b><span>Teh tarik perfect</span><b>${R.perfect} ✨</b><span>Combo terbaik</span><b>🔥 x${R.bestCombo}</b>${wg ? `<span>Gaji pekerja</span><b>-${rm(wg)}</b>` : ''}</div>
+    ${goalsHTML(R.day, R)}
     ${mistakeHTML()}
     <p>${passed ? (first ? `Hari ${P.day} dah dibuka!` : 'Bagus!') : 'Tak capai sasaran. Cuba lagi, atau upgrade kedai dulu!'}</p>
     ${passed ? `<button class="btn gold" id="nextBtn" type="button">▶ HARI ${first ? P.day : R.day + 1 <= P.day ? R.day + 1 : P.day}</button>` : `<button class="btn gold" id="retryBtn" type="button">↻ CUBA LAGI</button>`}

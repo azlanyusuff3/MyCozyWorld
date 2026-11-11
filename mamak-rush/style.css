@@ -393,3 +393,27 @@ body.has-bg_dinding #tv,body.has-bg_dinding #fan{display:none}
 .m-row:first-of-type{border-top:0}
 .m-row>span{font-size:20px;line-height:1.2}
 .m-row b{font-size:13px;display:block}.m-row small{font-size:11px;opacity:.75;line-height:1.25;display:block}
+
+/* ===== v2: matlamat, hati, tahap stesen, kedai bertab ===== */
+.gtitle{margin:8px 0 4px;font-weight:900}
+.goals{display:flex;flex-direction:column;gap:5px;margin:6px 0 10px}
+.goal{display:flex;align-items:center;gap:8px;background:#fff;border-radius:12px;padding:7px 10px;text-align:left;font-weight:800;font-size:13px}
+.goal span:nth-child(2){flex:1}.goal b{font-size:11px;color:#c38b12}
+.goal.ok{background:#e3f7e9}.goal.ok b{color:#23864a;font-size:16px}
+.goal.no{background:#fde8e6}.goal.no .gs{filter:grayscale(1);opacity:.35}.goal.no b{color:#e5483b;font-size:16px}
+.hearts{display:block;font-size:10px;line-height:1;letter-spacing:-1px;text-align:center;margin-bottom:1px}
+.hearts.lose{animation:hlose .4s}
+@keyframes hlose{0%{transform:scale(1.5)}100%{transform:scale(1)}}
+.st .lvb{font-style:normal;color:#ffe066;letter-spacing:0}
+.st.lv1{border-color:#c98a4b}
+.st.lv2{border-color:#cfd8dc;box-shadow:inset 0 0 14px #cfd8dc44}
+.st.lv3{border-color:#ffd54a;box-shadow:inset 0 0 18px #ffd54a55,0 0 8px #ffd54a66}
+.st.has-bg{background-size:cover;background-position:center}
+.deco{position:absolute;right:6px;bottom:2px;display:flex;gap:2px;font-size:20px;pointer-events:none}
+.deco .av img{width:30px;height:30px;object-fit:contain}
+.tabs{display:flex;gap:6px;margin:0 0 10px}
+.tabs button{flex:1;border:0;border-radius:12px;padding:8px 4px;font-weight:900;font-size:12px;background:#f1e2c2;color:#5a3608}
+.tabs button.on{background:#ffc93c;box-shadow:0 3px 0 #c38b12}
+.up .lvs{display:inline-block;margin-left:6px;color:#f0a800;font-size:13px;letter-spacing:1px}
+.up.pop{animation:uppop .5s}
+@keyframes uppop{0%{transform:scale(1);background:#fff}40%{transform:scale(1.05);background:#fff3c4}100%{transform:scale(1);background:#fff}}
