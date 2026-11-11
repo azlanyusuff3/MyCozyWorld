@@ -210,6 +210,15 @@ function modal(html) { $('#modalCard').classList.remove('shop'); $('#modalCard')
 function closeModal() { $('#modal').classList.add('hidden'); }
 
 let shopTab = 'dapur', justUp = null;
+function levelUp(u, nextDay) {
+  const lv = up(u.k), img = u.spr ? ico(u.spr + (u.max > 1 ? '_' + lv : ''), ico(u.spr, u.ic)) : u.ic;
+  const was = u.spr && u.max > 1 && lv > 1 ? ico(u.spr + '_' + (lv - 1), u.ic) : '';
+  modal(`<div class="lvup"><div class="rays"></div><h2>${u.max > 1 ? 'NAIK TAHAP!' : 'BARU!'}</h2>
+    <div class="lv-row">${was ? `<span class="old av">${was}</span><span class="arr">➜</span>` : ''}<span class="new av">${img}</span></div>
+    <b>${u.n}</b>${u.max > 1 ? `<div class="lvs big">${lvStars(u)}</div>` : ''}<p>${Array.isArray(u.d) ? u.d[lv - 1] : u.d}</p>
+    <button class="btn gold" id="lvOk" type="button">MANTAP! 👍</button></div>`);
+  $('#modalCard').onclick = e => { if (e.target.id === 'lvOk') openShop(nextDay); };
+}
 const TABS = [['dapur', '🍳 Dapur'], ['kedai', '🏠 Kedai'], ['staf', '👥 Pekerja']];
 function openShop(nextDay) {
   const rows = `<div class="tabs">${TABS.map(([k, t]) => `<button type="button" data-tab="${k}" class="${shopTab === k ? 'on' : ''}">${t}</button>`).join('')}</div>` + UPS.filter(u => u.cat === shopTab).map(u => {
@@ -225,7 +234,7 @@ function openShop(nextDay) {
     if (e.target.closest('#shopX')) { closeModal(); if (nextDay) toMenu(); return; }
     const tb = e.target.closest('[data-tab]'); if (tb) { shopTab = tb.dataset.tab; justUp = null; SFX.tap(); openShop(nextDay); return; }
     const b = e.target.closest('button[data-k]');
-    if (b) { const u = UPS.find(x => x.k === b.dataset.k), c = u.cost[up(u.k)]; if (P.coins >= c) { P.coins -= c; P.up[u.k] = up(u.k) + 1; save(); SFX.perfect(); buzz(20); justUp = u.k; openShop(nextDay); justUp = null; renderMenu(); } return; }
+    if (b) { const u = UPS.find(x => x.k === b.dataset.k), c = u.cost[up(u.k)]; if (P.coins >= c) { P.coins -= c; P.up[u.k] = up(u.k) + 1; save(); SFX.perfect(); buzz(20); justUp = u.k; levelUp(u, nextDay); renderMenu(); } return; }
     if (e.target.id === 'shopDone') { closeModal(); if (nextDay) startDay(nextDay); }
   };
 }
@@ -246,7 +255,7 @@ function startDay(d) {
   };
   $('#menu').classList.add('hidden'); $('#game').classList.remove('hidden');
   $('#tables').className = 'tables n' + nTables;
-  $('#deco').innerHTML = ['', '🪴', '🪴💡', '🪴💡🖼️'][up('deko')].replace(/🪴|💡|🖼️/gu, m => `<span class="av">${ico({ '🪴': 'deko_pokok', '💡': 'deko_lampu', '🖼️': 'deko_mural' }[m], m)}</span>`); $('#tv').classList.toggle('hidden', !up('tv')); $('#fan').classList.toggle('hidden', !up('fan'));
+  $('#deco').innerHTML = ['', '🪴', '🪴💡', '🪴💡🖼️'][up('deko')].replace(/🪴|💡|🖼️/gu, m => `<span class="av">${ico({ '🪴': 'deko_pokok', '💡': 'deko_lampu', '🖼️': 'deko_mural' }[m], m)}</span>`); $('#tv').classList.toggle('hidden', !up('tv')); if (SPR.up_tv) $('#tv').innerHTML = `<img src="${SPR.up_tv}" alt="">`; if (SPR.up_kipas) { $('#fan').innerHTML = `<img src="${SPR.up_kipas}" alt="">`; $('#fan').classList.add('spr'); } $('#fan').classList.toggle('hidden', !up('fan'));
   $('#menuBoard').textContent = menuItems().map(k => ITEMS[k].e).join(' ');
   $('#notifs').innerHTML = '';
   const fl = document.querySelector('.shop-floor'); fl.classList.toggle('rain', R.ev === 'hujan'); fl.classList.toggle('senja', R.ev === 'berbuka');
@@ -477,6 +486,9 @@ function renderStations() {
     const el = $('#' + id); if (!el) return; const lv = up(k);
     el.classList.add('lv' + lv); el.querySelector(':scope > .lbl').insertAdjacentHTML('beforeend', lv ? ` <i class="lvb">${'★'.repeat(lv)}</i>` : '');
     const bg = SPR['stbg_' + k + '_' + lv]; if (bg) { el.style.backgroundImage = `url(${bg})`; el.classList.add('has-bg'); }
+    const eq = SPR[{ tawa: 'up_tawa_', teko: 'up_teko_', api: 'up_api_', periuk: 'up_periuk_' }[k] + Math.max(1, lv)];
+    if (eq && lv) el.insertAdjacentHTML('afterbegin', `<img class="equip" src="${eq}" alt="">`);
+    if (lv >= mx) el.insertAdjacentHTML('afterbegin', '<span class="shine"></span>');
   });
   $('#stTeh').classList.toggle('has-tarik', !!SPR.st_tarik);
   $('#stTeh').classList.toggle('has-chips', chips.length > 0);
