@@ -462,3 +462,68 @@ body.loc-satay .tables{filter:none}
 body.loc-satay .shop-floor::after{z-index:2;top:62px;filter:drop-shadow(0 0 8px #ffb347)}
 body.loc-satay .tables,body.loc-satay .counter{position:relative;z-index:1}
 body.loc-satay.satay-art .wall,body.loc-satay.satay-art .shop-floor{filter:none}
+
+/* ================= v4: SCENE gaya Cooking Diary ================= */
+.shop-floor{overflow:hidden}
+.door{position:absolute;left:2px;top:66px;z-index:1;opacity:.95;pointer-events:none}
+.door .av{display:block;width:54px;height:80px;font-size:52px;line-height:80px;text-align:center}.door img{width:100%;height:100%;object-fit:contain}
+/* pelanggan berdiri depan kaunter, tiada meja */
+.tables{flex-wrap:nowrap!important;align-content:flex-end!important;align-items:flex-end;justify-content:space-evenly!important;padding:0 6px!important}
+.table.spot{flex:1;width:auto!important;height:100%!important;max-height:none;justify-content:flex-end}
+.table.spot .shadow{display:block;position:absolute;bottom:-4px;width:70%;height:16px;border-radius:50%;background:#0002}
+.table.spot .cust{margin-bottom:-34px!important}
+.table.spot .cust>.av{margin-bottom:0!important;width:clamp(84px,13vh,128px)!important;height:clamp(84px,13vh,128px)!important}
+.tables.n5 .cust>.av{width:clamp(70px,11vh,100px)!important;height:clamp(70px,11vh,100px)!important}
+.cust{animation:none}
+.cust.enter{animation:walkIn 1s cubic-bezier(.3,.7,.4,1) both}
+.cust.enter>.av{animation:bob .2s ease-in-out 5 alternate}
+.cust.enter .order{animation:popIn .35s .95s both}
+@keyframes walkIn{0%{transform:translateX(-100vw)}100%{transform:translateX(0)}}
+@keyframes bob{to{transform:translateY(-7px) rotate(2deg)}}
+@keyframes popIn{0%{transform:scale(0);opacity:0}70%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
+.cust.leave{animation:walkOut .85s ease-in forwards!important}
+.cust.leave>.av{animation:bob .2s ease-in-out infinite alternate}
+.cust.leave .order{display:none}
+@keyframes walkOut{to{transform:translateX(105vw)}}
+.counter{z-index:3;margin:0!important;border-radius:0!important}
+/* dapur: chef jalan belakang kaunter */
+.kitchen{position:relative;z-index:2;padding-top:58px;background:
+  linear-gradient(180deg,#0000 0,#0000 100%),
+  repeating-linear-gradient(90deg,#0000 0 29px,#ffffff66 29px 31px),repeating-linear-gradient(0deg,#0000 0 29px,#ffffff66 29px 31px),
+  linear-gradient(180deg,#bfe3e0,#9fd0cb)}
+body.has-bg_dapur .kitchen{background:var(--bg_dapur) center top/cover no-repeat}
+.chef{position:absolute;top:2px;left:0;z-index:1;transition:left .38s ease-in-out;pointer-events:none;transform:scaleX(var(--flip,1))}
+.chef .av{display:block;width:104px;height:104px;font-size:76px;line-height:104px;text-align:center;filter:drop-shadow(0 3px 2px #0003)}
+.chef img{width:100%;height:100%;object-fit:contain}
+.chef.walk .av{animation:bob .14s ease-in-out infinite alternate}
+.chef.cook .av{animation:chefCook .3s ease-in-out 3 alternate}
+.chef.tarik .av{animation:chefTarik .4s ease-in-out 2 alternate}
+.chef.serve .av{animation:chefServe .5s ease-out}
+@keyframes chefCook{to{transform:rotate(-6deg) translateY(3px)}}
+@keyframes chefTarik{to{transform:translateY(-10px) scaleY(1.06)}}
+@keyframes chefServe{40%{transform:translateY(-16px) rotate(6deg)}}
+.chef .emote{transform:scaleX(var(--flip,1))}
+.stations{position:relative;z-index:2;background:transparent!important;box-shadow:none!important;padding-top:0!important}
+body.has-kaunter_dapur .stations{background:var(--kaunter_dapur) center bottom/100% 100% no-repeat!important}
+/* stesen jadi peralatan atas kaunter dapur */
+.st{background:linear-gradient(180deg,#fdf8ec,#eadcbc)!important;border:0!important;border-top:7px solid #c9ced3!important;border-radius:8px 8px 4px 4px!important;color:#4a2c14!important;box-shadow:0 5px 0 #a88a5c,0 8px 10px #0003!important}
+.st .lbl{color:#7a5233;opacity:1}
+.st .lvb{color:#e0a000}
+.st .hint{color:#fff;background:#4a2c14d9;border-radius:8px;padding:2px 6px;min-height:0!important;align-self:center}
+.st .hint:empty{display:none}
+.st .bar{background:#0000001f}
+.st.ready{box-shadow:0 0 0 3px #ffe066,0 0 18px #ffe066,0 5px 0 #a88a5c!important}
+.st.burn{background:linear-gradient(180deg,#e8d6c8,#c9ab95)!important}
+.st.lv1{border-top-color:#d39a5c!important}.st.lv2{border-top-color:#e6edf0!important}.st.lv3{border-top-color:#ffd54a!important}
+.choose button{background:#fff!important;color:#4a2c14!important;box-shadow:0 2px 0 #0002!important}
+.chip{filter:none}
+.st .equip{opacity:.4}
+body.loc-satay .kitchen{background:linear-gradient(180deg,#3a2140,#5a2f2a)}
+body.loc-satay .st{background:linear-gradient(180deg,#6b4632,#4a2c1c)!important;color:#fff!important}
+body.loc-satay .st .lbl{color:#ffd9a0}
+body.loc-satay .st.bara{background:radial-gradient(ellipse at 50% 85%,#ff6a3d88,#4a2c1c 70%)!important}
+.chip{background:#4a2c1418!important;color:#4a2c14!important}.chip.on{background:#ffc93c!important}
+.kitchen{padding-top:86px}
+.chef{top:0}
+.table.spot .cust>.av{width:clamp(100px,17vh,160px)!important;height:clamp(100px,17vh,160px)!important}
+.tables.n5 .cust>.av,.tables.n4 .cust>.av{width:clamp(80px,13vh,120px)!important;height:clamp(80px,13vh,120px)!important}

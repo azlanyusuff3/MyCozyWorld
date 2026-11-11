@@ -147,3 +147,21 @@ Tambahan gaya: *night-time Malaysian roadside satay stall, warm orange lantern g
 | `up_bara_3.webp` | A luxurious golden satay grill with blazing embers, sparkles and decorative trim |
 | `bg_dinding_satay.webp` | **Landscape 1536×256, NOT transparent.** Night street backdrop behind a satay stall: dark purple sky, string of red lanterns, zinc roof edge, hanging banner (no text) |
 | `bg_lantai_satay.webp` | **Square 512×512 tileable, NOT transparent.** Top-down rough concrete road floor at night, warm lantern light, seamless tile |
+
+## Batch 11 — Chef & dapur (v4, scene gaya Cooking Diary) ⭐ PALING PENTING
+Chef ni watak utama yang berjalan dalam dapur. **Semua pose mesti watak SAMA** (muka, baju, warna), badan penuh, pandang ke kanan sikit (3/4 view), 512×512 transparent.
+Watak: *a cheerful young Malaysian mamak chef, tan skin, short black hair, thin moustache, tall white chef hat, white chef jacket with red neckerchief, black apron, chibi proportions (big head, small body), full body.*
+| Fail | Pose |
+|---|---|
+| `chef_idle.webp` | Standing relaxed, hands on hips, big friendly smile |
+| `chef_walk.webp` | Mid-stride walking quickly to the right, one leg forward, arms swinging |
+| `chef_cook.webp` | Flipping roti canai dough in the air with both hands, focused happy face |
+| `chef_tarik.webp` | Pulling teh tarik: one mug held high, one low, a long stream of tea between them |
+| `chef_serve.webp` | Holding a plate of food forward with one hand, winking, other hand thumbs up |
+
+## Batch 12 — Latar dapur & pintu (TAK transparent kecuali pintu)
+| Fail | Prompt tambahan |
+|---|---|
+| `bg_dapur.webp` | **Landscape 1536×768, NOT transparent.** Back wall of a cosy mamak kitchen behind the counter: mint green and white tiles, steel shelves with jars of spices, hanging ladles and woks, warm lighting, empty floor area in the middle (no people) |
+| `kaunter_dapur.webp` | **Landscape 1536×512, NOT transparent.** Front view of a long stainless steel kitchen counter top with a wooden front panel, flat empty surface (no items) |
+| `pintu.webp` | **Transparent, 512×768.** A cute open wooden shop door with a small "BUKA" style sign shape (no text) and a bell |

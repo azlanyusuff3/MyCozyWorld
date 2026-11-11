@@ -1,7 +1,7 @@
 'use strict';
 /* Mamak Rush — game kedai mamak gaya "sushi bar". Semua art guna emoji dulu;
    sprite dalam sprites/list.json (nama tanpa .webp) akan ganti emoji secara automatik. */
-const GAME_VERSION = 'v3';
+const GAME_VERSION = 'v4';
 const $ = s => document.querySelector(s);
 const store = {
   get(k, d) { try { const v = localStorage.getItem('mamak_' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
@@ -21,7 +21,7 @@ fetch('sprites/list.json', { cache: 'no-cache' }).then(r => r.ok ? r.json() : []
 
 function applyScene() {
   const b = document.body.classList, set = (k, v) => document.documentElement.style.setProperty(k, `url(${v})`);
-  ['bg_dinding', 'bg_lantai', 'kaunter', 'dulang'].forEach(n => { const v = LOC === 'satay' && SPR[n + '_satay'] || SPR[n]; if (v) { b.add('has-' + n); set('--' + n, v); } });
+  ['bg_dinding', 'bg_lantai', 'kaunter', 'dulang', 'bg_dapur', 'kaunter_dapur'].forEach(n => { const v = LOC === 'satay' && SPR[n + '_satay'] || SPR[n]; if (v) { b.add('has-' + n); set('--' + n, v); } });
   b.toggle('satay-art', LOC === 'satay' && !!SPR.bg_dinding_satay);
 }
 // Elak menu "save image" bila tekan lama atas gambar (iOS/Android)
@@ -293,6 +293,7 @@ function startDay(d) {
   $('#menu').classList.add('hidden'); $('#game').classList.remove('hidden');
   $('#tables').className = 'tables n' + nTables;
   $('#deco').innerHTML = ['', '🪴', '🪴💡', '🪴💡🖼️'][up('deko')].replace(/🪴|💡|🖼️/gu, m => `<span class="av">${ico({ '🪴': 'deko_pokok', '💡': 'deko_lampu', '🖼️': 'deko_mural' }[m], m)}</span>`); $('#tv').classList.toggle('hidden', !up('tv')); if (SPR.up_tv) $('#tv').innerHTML = `<img src="${SPR.up_tv}" alt="">`; if (SPR.up_kipas) { $('#fan').innerHTML = `<img src="${SPR.up_kipas}" alt="">`; $('#fan').classList.add('spr'); } $('#fan').classList.toggle('hidden', !up('fan'));
+  $('#door').innerHTML = `<span class="av">${ico('pintu', '🚪')}</span>`;
   $('#menuBoard').textContent = menuItems().map(k => ITEMS[k].e).join(' ');
   $('#notifs').innerHTML = '';
   const fl = document.querySelector('.shop-floor'); fl.classList.toggle('rain', R.ev === 'hujan'); fl.classList.toggle('senja', R.ev === 'berbuka');
@@ -405,11 +406,12 @@ function leave(c, angry) {
   if (angry && c.t === 'influencer') { const f = Math.min(R.earned, 8 + R.day); R.earned -= f; setTimeout(() => R && notify(`📸😡 Mira post review buruk! -${rm(f)}`, 'bad'), 200); }
   if (angry) { if (R.combo >= 3) notify(`💔 Combo x${R.combo} putus!`, 'bad'); R.combo = 0; hudCombo(); R.lost++; SFX.bad(); buzz([30, 40, 30]); notify(`😠 <b>${c.who.n}</b> ${pick(['blah... lambat sangat!', 'merajuk, tak jadi makan!', 'kata: "Kedai lain lagi laju!"'])}`, 'bad'); emote(el, '💢'); }
   if (el) el.classList.add('leave');
+  if (!c.grab) chefSay(angry ? '😰' : '👋');
   setTimeout(() => {
     if (!R) return;
     if (c.grab) { if (R.grab === c) R.grab = null; renderSide(); }
     else { const i = R.tables.indexOf(c); if (i >= 0) R.tables[i] = null; renderTables(); }
-  }, 450);
+  }, c.grab ? 450 : 850);
   c.gone = true;
 }
 function calm(c) {
@@ -443,6 +445,7 @@ const wantsK = k => [R.grab, ...R.tables].some(c => c && !c.gone && c.items.some
 function deliver(item, fromEl) {
   const c = needers(item)[0];
   if (c) {
+    setTimeout(() => { clearTimeout(chefT); chefSet('serve'); chefT = setTimeout(() => chefSet('idle'), 700); }, 120);
     const it = c.items.find(i => !i.done && matches(item, i)); it.done = true;
     if (item.m.kaw || item.m.garing) c.perf = (c.perf || 0) + 2;
     flyItem(fromEl, custEl(c), item.k);
@@ -493,10 +496,11 @@ function fitTables() {
 addEventListener('resize', fitTables);
 function renderTables() {
   if (!R) return;
-  requestAnimationFrame(fitTables);
-  $('#tables').innerHTML = R.tables.map((c, ti) => `<div class="table${SPR.meja ? ' spr' : ''}" style="z-index:${ti + 1}"><span class="shadow"></span>${SPR.meja ? `<img class="meja" src="${SPR.meja}" alt="">` : '<span class="top"></span><span class="stool l"></span><span class="stool r"></span>'}${c ? `
-    <div class="cust ${c.angry ? 'angry' : ''}" data-id="${c.id}">${orderHTML(c)}<span class="av">${ico('cust_' + c.who.k, c.who.e)}</span>${c.t ? `<span class="trait">${TRAITS[c.t].ic}</span>` : ''}${c.angry ? '<span class="calm-tag">TAP: Sabar!</span>' : ''}</div>` : ''}</div>`).join('');
+  requestAnimationFrame(fitTables); setTimeout(markShown, 0);
+  $('#tables').innerHTML = R.tables.map((c, ti) => `<div class="table spot" style="z-index:${ti + 1}"><span class="shadow"></span>${c ? `
+    <div class="cust ${c.angry ? 'angry' : ''} ${c.shown ? '' : 'enter'} ${c.gone ? 'leave' : ''}" data-id="${c.id}">${orderHTML(c)}<span class="av">${ico('cust_' + c.who.k, c.who.e)}</span>${c.t ? `<span class="trait">${TRAITS[c.t].ic}</span>` : ''}${c.angry ? '<span class="calm-tag">TAP: Sabar!</span>' : ''}</div>` : ''}</div>`).join('');
 }
+function markShown() { R.tables.forEach(c => { if (c) c.shown = true; }); }
 function renderSide() {
   if (!R) return;
   const g = R.grab;
@@ -507,6 +511,27 @@ $('#catSpot').addEventListener('pointerdown', () => {
   if (!R || !R.cat) return; R.cat = null; renderSide();
   notify(pick(['🐈 Shuh shuh! Oyen lari.', '🐈 Oyen kena halau. Meow 😿', '🐈 Selamat makanan!']), 'good'); SFX.tap(); buzz(10);
 });
+
+/* ---------- Chef (gaya Cooking Diary) ---------- */
+let chefT = 0, chefPose = 'idle';
+function chefSet(pose) {
+  chefPose = pose; const el = $('#chef'); if (!el) return;
+  el.className = 'chef ' + pose;
+  const k = 'chef_' + (pose === 'walk' ? 'walk' : pose), v = ico(SPR[k] ? k : 'chef_idle', '👨🏽‍🍳');
+  const a = el.querySelector('.av'); if (a._v !== v) { a._v = v; a.innerHTML = v; }
+}
+function chefTo(target, pose = 'cook') {
+  const ch = $('#chef'), kit = $('#kitchen'); if (!ch || !kit || !target) return;
+  const kb = kit.getBoundingClientRect(), tb = target.getBoundingClientRect();
+  const x = Math.max(0, Math.min(kb.width - ch.offsetWidth, tb.left - kb.left + tb.width / 2 - ch.offsetWidth / 2));
+  const cur = parseFloat(ch.style.left) || 0, far = Math.abs(x - cur) > 8;
+  ch.style.setProperty('--flip', x < cur ? -1 : 1);
+  ch.style.left = x + 'px';
+  clearTimeout(chefT);
+  if (far) { chefSet('walk'); chefT = setTimeout(() => { chefSet(pose); chefT = setTimeout(() => chefSet('idle'), 900); }, 380); }
+  else { chefSet(pose); chefT = setTimeout(() => chefSet('idle'), 900); }
+}
+function chefSay(e) { const ch = $('#chef'); if (ch) emote(ch, e); }
 
 /* ---------- Stesen ---------- */
 const ROTI_KINDS = [
@@ -550,6 +575,8 @@ function renderStations() {
   $('#stTeh').classList.toggle('has-chips', chips.length > 0);
   R.chooseKeys = {};
   bindStations(); drawStations();
+  $('#stations').onpointerdown = e => { if (!live()) return; const t = e.target.closest('.pan') || e.target.closest('.st'); if (t) chefTo(t, t.id === 'stTeh' ? 'tarik' : 'cook'); };
+  requestAnimationFrame(() => { const st = $('#stations .st'); if (st) chefTo(st, 'idle'); chefSet('idle'); });
 }
 function setChoose(el, key, html) {
   if (!el) return; const box = el.querySelector(':scope > .choose'); if (!box) return;
