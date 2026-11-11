@@ -60,5 +60,19 @@
   "deko_lampu",
   "deko_mural",
   "cust_mira",
-  "cust_ain"
+  "cust_ain",
+  "loc_mamak",
+  "loc_satay",
+  "item_satay",
+  "item_satayd",
+  "item_kuah",
+  "st_bara",
+  "st_satay_bakar",
+  "st_hangus_satay",
+  "st_periuk_kuah",
+  "up_bara_1",
+  "up_bara_2",
+  "up_bara_3",
+  "bg_dinding_satay",
+  "bg_lantai_satay"
 ]
