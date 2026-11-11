@@ -106,7 +106,7 @@ const P = Object.assign({ day: 1, coins: 0, stars: {}, up: {}, reg: {} }, store.
 P.reg = P.reg || {};
 const up = k => P.up[k] || 0;
 const save = () => store.set('save', P);
-const target = d => Math.round(25 + d * 12 + d * d);
+const target = d => Math.round(26 + d * 7 + d * d * .1);
 
 /* ---------- Bunyi ---------- */
 let AC = null, soundOn = store.get('sound', true);
@@ -389,10 +389,10 @@ function orderHTML(c) { return `<div class="order${c.reg ? ' reg' : ''}">${c.hid
 function patCls(c) { const f = c.pat / c.max; return f > .5 ? '' : f > .25 ? 'mid' : 'low'; }
 function fitTables() {
   const box = $('#tables'); if (!box || !R) return;
-  const n = R.tables.length, rows = n === 5 ? 2 : Math.ceil(n / 2), h = box.clientHeight - 30;
+  const n = R.tables.length, rows = n <= 3 ? 1 : 2, h = box.clientHeight - 26;
   if (h > 50) {
-    const th = Math.max(110, Math.min(240, h / rows - 6)); box.style.setProperty('--th', th + 'px');
-    const t = box.querySelector('.table'); if (t) { const w = t.clientWidth * (n === 5 ? 1.12 : 1.06); box.style.setProperty('--mh', Math.min(th * .66, w * .75) + 'px'); }
+    const th = Math.max(80, Math.min(240, h / rows - 6)); box.style.setProperty('--th', th + 'px');
+    const t = box.querySelector('.table'); if (t) { const w = t.clientWidth * (n === 5 || n === 3 ? 1.12 : 1.06); box.style.setProperty('--mh', Math.min(th * .66, w * .75) + 'px'); }
   }
 }
 addEventListener('resize', fitTables);
@@ -436,6 +436,7 @@ function renderStations() {
   if (feat(d, 'maggi')) h.push(`<div class="st sub" id="stMaggi"><span class="lbl">${feat(d, 'mee') ? 'KUALI' : 'MAGGI'}</span>${R.maggi.map((_, i) => `<div class="pan" data-i="${i}"><span class="big av"></span><span class="hint"></span><div class="choose"></div><span class="bar"><b></b></span></div>`).join('')}</div>`);
   if (feat(d, 'nasi')) h.push(`<div class="st" id="stNasi"><span class="lbl">NASI LEMAK</span><span class="cnt"></span><span class="big av"></span><span class="hint"></span><span class="bar"><b></b></span></div>`);
   $('#stations').innerHTML = h.join('');
+  $('#stations').className = 'stations s' + h.length; $('#stations').style.setProperty('--sc', h.length);
   $('#stTeh').classList.toggle('has-tarik', !!SPR.st_tarik);
   $('#stTeh').classList.toggle('has-chips', chips.length > 0);
   R.chooseKeys = {};

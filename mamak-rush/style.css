@@ -301,7 +301,7 @@ body{background:#5b3a22}
 .table{height:var(--th)}
 .tables{overflow:visible;padding-top:30px}
 .table.spr .meja{width:106%;height:calc(var(--th)*.66);object-fit:contain;object-position:50% 100%}
-.tables.n5 .table.spr .meja{width:112%}
+.tables.n5 .table.spr .meja,.tables.n3 .table.spr .meja{width:112%}
 .cust>.av{width:min(clamp(96px,14vh,140px),calc(var(--th)*.6))!important;height:min(clamp(96px,14vh,140px),calc(var(--th)*.6))!important;line-height:min(clamp(96px,14vh,140px),calc(var(--th)*.6))!important}
 .table.spr .cust>.av{margin-bottom:calc(var(--th)*-.2)!important}
 .tables.n5 .table.spr .cust{margin-bottom:calc(var(--th)*.4)}
@@ -362,4 +362,23 @@ body.has-bg_dinding #tv,body.has-bg_dinding #fan{display:none}
 .cust>.av{width:min(clamp(96px,14vh,140px),calc(var(--mh)*.95))!important;height:min(clamp(96px,14vh,140px),calc(var(--mh)*.95))!important}
 .table.spr .cust>.av{margin-bottom:calc(var(--mh)*-.28)!important}
 .notif{font-size:12px;padding:5px 10px}
-.tables:not(.n5) .table.spr .cust{margin-bottom:calc(var(--mh)*.86)}
+.tables.n4 .table.spr .cust{margin-bottom:calc(var(--mh)*.86)}
+
+/* ===== v5: layout ikut bilangan stesen & meja (iPhone sebenar) ===== */
+.stations.s2,.stations.s3{grid-template-columns:repeat(var(--sc),1fr)}
+.stations.s3 .st{height:clamp(112px,15vh,150px)}
+.stations.s4 .st{height:clamp(104px,12.5vh,140px)}
+.stations.s4 .st .big{width:clamp(48px,6.5vh,68px);height:clamp(48px,6.5vh,68px)}
+.stations.s4 .st .pan .big{width:clamp(40px,5.5vh,56px);height:clamp(40px,5.5vh,56px)}
+.stations.s3 .st .hint{font-size:12px}
+.stations.s3 .choose button{font-size:10px}
+.stations.s3 .st:not(.sub) .choose:has(button:nth-child(3)){grid-template-columns:repeat(2,minmax(0,1fr))}
+.tables.n3 .table{width:32.5%}
+.tables{padding-top:26px}
+.tables.n3 .table.spr .cust{margin-bottom:calc(var(--mh)*.74)}
+.stations.s4 .st:not(.sub) .choose:has(button:nth-child(4)){grid-template-columns:repeat(2,minmax(0,1fr))}
+.stations.s4 .st:not(.sub) .choose:has(button:nth-child(3)) button{flex-direction:row;gap:3px;font-size:11px}
+.stations.s4 .st:not(.sub) .choose:has(button:nth-child(3)) button .av{width:26px!important;height:26px!important;font-size:19px!important}
+.stations.s4 .choose:has(button:nth-child(2):last-child) button{flex-direction:row;gap:4px;font-size:12px}
+.stations.s4 .choose:has(button:nth-child(2):last-child) button .av{width:30px!important;height:30px!important;font-size:22px!important}
+.stations.s4 .choose:has(button:nth-child(2):last-child) button small{display:none}
