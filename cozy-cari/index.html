@@ -44,7 +44,7 @@ header a{text-decoration:none;color:#3b2a1e;background:#fff;border-radius:12px;p
 
 #scene.word{aspect-ratio:1;max-width:min(100%,62vh);background:#fffaf2;display:grid;touch-action:none;padding:4px;gap:2px}
 .cell{display:flex;align-items:center;justify-content:center;font:calc(var(--cs)*.6) "Lilita One";color:#3b2a1e;border-radius:6px;background:#fff;position:relative}
-.cell.sel{background:#ffd166}.cell.f{color:#fff}
+.cell.sel{background:#ffd166}.cell.fog{color:transparent;background:radial-gradient(circle at 35% 40%,#fff,#d7dde4);}.cell.fog::after{content:'☁️';position:absolute;font-size:calc(var(--cs)*.45);opacity:.7}.cell.fog.sel{background:#ffe08a}.cell.f{color:#fff}
 .cell.hint{animation:hint2 1s 3}@keyframes hint2{50%{background:#ff3d7f;color:#fff}}
 .toggle{display:flex;gap:6px;justify-content:center;margin:6px 0}
 .toggle button{font:16px "Lilita One";padding:8px 12px;margin:0;background:#e8d5bd;color:#3b2a1e;box-shadow:0 4px 0 #c9ad8a}
@@ -127,18 +127,38 @@ function shuffle(a,r){for(let i=a.length-1;i>0;i--){const j=Math.floor(r()*(i+1)
 // ================= MOD CARI PERKATAAN (word search) =================
 let MODE=localStorage.getItem('cari_mode')||'objek',LANG=localStorage.getItem('cari_lang')||'mix';
 const K=()=>MODE==='kata'?'w':'';
+
+// Bank perkataan tambahan (mod perkataan sahaja) — [emoji, BM, EN]
+const WCATS=[
+ {n:'Haiwan',items:[['🐈','kucing','cat'],['🐕','anjing','dog'],['🐓','ayam','chicken'],['🐄','lembu','cow'],['🐐','kambing','goat'],['🐘','gajah','elephant'],['🐅','harimau','tiger'],['🐒','monyet','monkey'],['🐍','ular','snake'],['🐊','buaya','crocodile'],['🐢','penyu','turtle'],['🐟','ikan','fish'],['🐦','burung','bird'],['🦆','itik','duck'],['🐸','katak','frog'],['🦋','kupukupu','butterfly'],['🐜','semut','ant'],['🐝','lebah','bee'],['🐇','arnab','rabbit'],['🦌','rusa','deer'],['🐎','kuda','horse'],['🐁','tikus','mouse']]},
+ {n:'Buah-buahan',items:[['🍌','pisang','banana'],['🥭','mangga','mango'],['🍍','nanas','pineapple'],['🍉','tembikai','watermelon'],['🍎','epal','apple'],['🍊','oren','orange'],['🍇','anggur','grape'],['🥥','kelapa','coconut'],['🍋','limau','lemon'],['🍓','strawberi','strawberry'],['🍈','betik','papaya'],['🍐','pir','pear'],['🍒','ceri','cherry'],['🥝','kiwi','kiwi'],['🍑','pic','peach']]},
+ {n:'Makanan',items:[['🍚','nasi','rice'],['🍜','mi','noodles'],['🍞','roti','bread'],['🥚','telur','egg'],['🧀','keju','cheese'],['🍗','ayam goreng','fried chicken'],['🍲','sup','soup'],['🍰','kek','cake'],['🍪','biskut','biscuit'],['🍦','aiskrim','ice cream'],['🥛','susu','milk'],['☕','kopi','coffee'],['🍵','teh','tea'],['🍯','madu','honey'],['🧂','garam','salt'],['🍬','gula gula','candy'],['🥗','salad','salad'],['🌶️','cili','chilli']]},
+ {n:'Badan',items:[['👁️','mata','eye'],['👂','telinga','ear'],['👃','hidung','nose'],['👄','mulut','mouth'],['🦷','gigi','tooth'],['✋','tangan','hand'],['🦶','kaki','foot'],['💪','lengan','arm'],['🧠','otak','brain'],['❤️','jantung','heart'],['👅','lidah','tongue'],['💇','rambut','hair'],['🦴','tulang','bone'],['👆','jari','finger'],['🦵','lutut','knee']]},
+ {n:'Warna & Bentuk',items:[['🔴','merah','red'],['🔵','biru','blue'],['🟢','hijau','green'],['🟡','kuning','yellow'],['⚫','hitam','black'],['⚪','putih','white'],['🟣','ungu','purple'],['🟠','jingga','orange'],['🟤','coklat','brown'],['🌸','merah jambu','pink'],['⭕','bulat','circle'],['🔺','segi tiga','triangle'],['⬛','segi empat','square'],['⭐','bintang','star'],['💖','hati','heart']]},
+ {n:'Kerjaya',items:[['👨‍⚕️','doktor','doctor'],['👩‍🏫','cikgu','teacher'],['👮','polis','police'],['👨‍🚒','bomba','fireman'],['👨‍🍳','tukang masak','chef'],['👨‍🌾','petani','farmer'],['👷','buruh','builder'],['🧑‍✈️','juruterbang','pilot'],['👩‍⚕️','jururawat','nurse'],['🧑‍🎨','pelukis','artist'],['🧑‍🔧','mekanik','mechanic'],['💂','askar','soldier'],['🎣','nelayan','fisherman'],['👨‍💻','jurutera','engineer']]},
+ {n:'Sukan & Main',items:[['⚽','bola sepak','football'],['🏸','badminton','badminton'],['🏊','renang','swimming'],['🚴','berbasikal','cycling'],['🏃','lari','running'],['🏀','bola keranjang','basketball'],['🏓','ping pong','ping pong'],['🥋','silat','martial art'],['🪁','wau','kite'],['🎯','sasaran','target'],['🏆','piala','trophy'],['🥇','pingat','medal'],['🎳','boling','bowling'],['⛸️','luncur','skate']]},
+ {n:'Kenderaan',items:[['🚗','kereta','car'],['🚌','bas','bus'],['🚲','basikal','bicycle'],['🏍️','motosikal','motorcycle'],['✈️','kapal terbang','aeroplane'],['🚢','kapal','ship'],['🚂','kereta api','train'],['🚁','helikopter','helicopter'],['🚕','teksi','taxi'],['🚑','ambulans','ambulance'],['🚒','jentera bomba','fire engine'],['🛶','sampan','canoe'],['🚜','traktor','tractor'],['🚀','roket','rocket'],['🛵','skuter','scooter']]},
+ {n:'Alam',items:[['☀️','matahari','sun'],['🌙','bulan','moon'],['⭐','bintang','star'],['☁️','awan','cloud'],['🌧️','hujan','rain'],['🌈','pelangi','rainbow'],['⛰️','gunung','mountain'],['🌊','laut','sea'],['🏝️','pulau','island'],['🌳','pokok','tree'],['🌸','bunga','flower'],['🍃','daun','leaf'],['🔥','api','fire'],['💧','air','water'],['⚡','kilat','lightning'],['🪨','batu','stone'],['🏖️','pantai','beach'],['🌲','hutan','forest']]},
+ {n:'Sekolah',items:[['📚','buku','book'],['✏️','pensel','pencil'],['🖊️','pen','pen'],['📏','pembaris','ruler'],['✂️','gunting','scissors'],['🎒','beg','bag'],['🧮','sempoa','abacus'],['📓','nota','notebook'],['🏫','sekolah','school'],['👩‍🏫','guru','teacher'],['🪑','kerusi','chair'],['🖍️','krayon','crayon'],['🔔','loceng','bell'],['🗺️','peta','map'],['🔬','mikroskop','microscope'],['🧑‍🎓','murid','student']]}
+];
+const WALL=()=>THEMES.concat(WCATS);
 function wcfg(lv){
   const D=[[0,1],[1,0]];if(lv>2)D.push([1,1]);if(lv>5)D.push([-1,1]);
   if(lv>8)D.slice().forEach(d=>D.push([-d[0],-d[1]]));
-  return{theme:THEMES[(lv-1)%THEMES.length],n:Math.min(7+Math.floor(lv/2),14),words:Math.min(5+Math.floor((lv-1)/2),10),dirs:D,time:lv<=20?Math.min(120+lv*6,300):Math.max(240-(lv-20)*4,90)};
+  const A=WALL();
+  return{theme:A[(lv-1)%A.length],fog:lv<10?0:Math.min(.12+(lv-10)*.01,.35),n:Math.min(7+Math.floor(lv/2),14),words:Math.min(5+Math.floor((lv-1)/2),10),dirs:D,time:lv<=20?Math.min(120+lv*6,300):Math.max(240-(lv-20)*4,90)};
 }
-let grid=[],wtargets=[],selStart=null,selCells=[];
+let fogSet=new Set(),hintUsed=0,grid=[],wtargets=[],selStart=null,selCells=[];
 const clean=s=>s.toUpperCase().replace(/[^A-Z]/g,'');
 function startWord(lv){
   LV=lv;const C=wcfg(lv),t=C.theme,rng=mulberry(lv*131+Date.now()%1000);
-  $('sub').textContent=`Level ${lv} · ${t.n} · Perkataan`;
+  $('sub').textContent=`Level ${lv} · ${t.n}`;
   const N=C.n;grid=Array.from({length:N},()=>Array(N).fill(''));
-  let cand=shuffle(t.items.map(x=>{const bm=LANG==='bm'||(LANG==='mix'&&rng()<.5);return{w:clean(bm?x[1]:x[2]),show:bm?x[1]:x[2],e:x[0],lang:bm?'BM':'EN'}}).filter(o=>o.w.length>=3&&o.w.length<=N),rng);
+  const pPic=lv<5?0:Math.min((lv-4)*.08,.5),pTr=lv<13?0:Math.min(.2+(lv-13)*.02,.45);
+  let cand=shuffle(t.items.map(x=>{const bm=LANG==='bm'||(LANG==='mix'&&rng()<.5),w=clean(bm?x[1]:x[2]),other=bm?x[2]:x[1],r=rng();
+    let ty=r<pTr&&clean(other)!==w?'trans':r<pTr+pPic?'pic':'word';
+    const show=ty==='word'?(bm?x[1]:x[2]).toUpperCase():ty==='trans'?`${other} → ${bm?'BM':'EN'}`:`${bm?'BM':'EN'} · ${w.length} huruf`;
+    return{w,show,e:ty==='trans'?'🔁':x[0],lang:bm?'BM':'EN',ty,ans:(bm?x[1]:x[2]).toUpperCase()}}).filter(o=>o.w.length>=3&&o.w.length<=N),rng);
   wtargets=[];
   for(const o of cand){if(wtargets.length>=C.words)break;if(wtargets.some(x=>x.w===o.w))continue;
     for(let a=0;a<300;a++){const d=C.dirs[Math.floor(rng()*C.dirs.length)],L=o.w.length;
@@ -149,13 +169,14 @@ function startWord(lv){
       o.r=r0;o.c=c0;o.d=d;wtargets.push(o);break;}}
   const AB='ABCDEFGHIJKLMNOPRSTUW';
   for(let r=0;r<N;r++)for(let c=0;c<N;c++)if(!grid[r][c])grid[r][c]=AB[Math.floor(rng()*AB.length)];
+  fogSet=new Set();for(let i=0;i<N*N;i++)if(rng()<C.fog)fogSet.add(i);
   const sc=$('scene');sc.className='word';sc.style.gridTemplateColumns=`repeat(${N},1fr)`;
-  sc.innerHTML=grid.flat().map((ch,i)=>`<div class="cell" data-r="${Math.floor(i/N)}" data-c="${i%N}">${ch}</div>`).join('');
+  sc.innerHTML=grid.flat().map((ch,i)=>`<div class="cell${fogSet.has(i)?' fog':''}" data-r="${Math.floor(i/N)}" data-c="${i%N}">${ch}</div>`).join('');
   sc.style.setProperty('--cs',(sc.clientWidth/N)+'px');
-  $('list').innerHTML=wtargets.map((o,i)=>`<div class="item word" id="it${i}"><b>${o.e}</b><span>${o.show.toUpperCase()}</span></div>`).join('');
-  left=wtargets.length;time=C.time;hints=3;$('hintBtn').textContent='💡 3';
+  $('list').innerHTML=wtargets.map((o,i)=>`<div class="item word" id="it${i}"><b>${o.e}</b><span>${o.show}</span></div>`).join('');
+  left=wtargets.length;time=0;hints=3;hintUsed=0;$('hintBtn').textContent='💡 3';
   $('overlay').classList.add('hide');playing=true;
-  clearInterval(tick);tick=setInterval(()=>{time--;showTime();if(time<=0)end(false)},1000);showTime();
+  clearInterval(tick);tick=setInterval(()=>{time++;showTime()},1000);showTime();
 }
 const cellAt=(x,y)=>{const e=document.elementFromPoint(x,y);return e&&e.classList.contains('cell')?e:null};
 function line(a,b){const r0=+a.dataset.r,c0=+a.dataset.c,r1=+b.dataset.r,c1=+b.dataset.c,dr=r1-r0,dc=c1-c0;
@@ -168,9 +189,11 @@ addEventListener('pointerup',()=>{if(MODE!=='kata'||!selStart)return;selStart=nu
   const s=selCells.map(c=>c.textContent).join(''),rs=[...s].reverse().join('');
   const i=wtargets.findIndex(o=>!o.found&&(o.w===s||o.w===rs));
   if(i>=0&&s.length>1){const o=wtargets[i];o.found=true;const col=`hsl(${(i*47)%360} 65% 55%)`;
-    selCells.forEach(c=>{c.classList.add('f');c.style.background=col});$('it'+i).classList.add('done');buzz(20);
+    selCells.forEach(c=>{c.classList.add('f');c.style.background=col;const r=+c.dataset.r,cc=+c.dataset.c,N=grid.length;
+      for(let a=-1;a<=1;a++)for(let b=-1;b<=1;b++){const rr=r+a,c2=cc+b;if(rr>=0&&rr<N&&c2>=0&&c2<N)$('scene').children[rr*N+c2].classList.remove('fog')}});
+    const it=$('it'+i);it.classList.add('done');if(o.ty!=='word')it.querySelector('span').textContent=o.ans;buzz(20);
     if(--left===0)end(true);}
-  else if(s.length>1){time=Math.max(time-3,0);showTime();buzz([30,40,30])}
+  else if(s.length>1){buzz(15)}
   selCells=[];paint();});
 
 function start(lv){
@@ -209,7 +232,7 @@ function start(lv){
 }
 function sizeVar(){const sc=$('scene');sc.style.setProperty('--w',sc.clientWidth/100+'px')}
 addEventListener('resize',sizeVar);
-function showTime(){$('timer').textContent='⏱ '+Math.max(time,0);$('timer').style.color=time<=10?'#e63946':''}
+function showTime(){if(MODE==='kata'){$('timer').textContent='☕ '+Math.floor(time/60)+':'+String(time%60).padStart(2,'0');$('timer').style.color='';return}$('timer').textContent='⏱ '+Math.max(time,0);$('timer').style.color=time<=10?'#e63946':''}
 
 $('scene').addEventListener('pointerdown',e=>{
   if(!playing||MODE==='kata')return;
@@ -226,7 +249,7 @@ $('scene').addEventListener('pointerdown',e=>{
 });
 $('hintBtn').onclick=()=>{
   if(!playing||hints<=0)return;
-  if(MODE==='kata'){const o=wtargets.find(x=>!x.found);if(!o)return;hints--;$('hintBtn').textContent='💡 '+hints;const c=$('scene').children[o.r*grid.length+o.c];c.classList.remove('hint');void c.offsetWidth;c.classList.add('hint');return}
+  if(MODE==='kata'){const o=wtargets.find(x=>!x.found);if(!o)return;hints--;$('hintBtn').textContent='💡 '+hints;hintUsed++;const c=$('scene').children[o.r*grid.length+o.c];c.classList.remove('fog');c.classList.remove('hint');void c.offsetWidth;c.classList.add('hint');return}
   const o=[...document.querySelectorAll('.obj[data-t]:not(.found)')][0];if(!o)return;
   hints--;$('hintBtn').textContent='💡 '+hints;o.style.zIndex=99;o.classList.remove('hint');void o.offsetWidth;o.classList.add('hint');
 };
@@ -235,11 +258,11 @@ function buzz(p){try{navigator.vibrate&&navigator.vibrate(p)}catch(_){}}
 function end(win){
   playing=false;clearInterval(tick);
   const C=MODE==='kata'?wcfg(LV):cfg(LV);let st=0;
-  if(win){st=time>C.time*.5?3:time>C.time*.2?2:1;
+  if(win){st=MODE==='kata'?Math.max(3-hintUsed,1):time>C.time*.5?3:time>C.time*.2?2:1;
     best[K()+LV]=Math.max(best[K()+LV]||0,st);setUnl(Math.max(unl(),LV+1));
     try{localStorage.setItem('cari_stars',JSON.stringify(best))}catch(_){}}
   $('card').innerHTML=win
-   ?`<h1>Jumpa semua! 🎉</h1><div class="stars">${'⭐'.repeat(st)}${'☆'.repeat(3-st)}</div><p>Baki masa: ${time}s</p><button onclick="start(${LV+1})">Level ${LV+1} ▶</button><button class="alt" onclick="menu()">Menu</button>`
+   ?`<h1>Jumpa semua! 🎉</h1><div class="stars">${'⭐'.repeat(st)}${'☆'.repeat(3-st)}</div><p>${MODE==='kata'?'Masa: '+Math.floor(time/60)+'m '+(time%60)+'s · Tanpa hint = ⭐⭐⭐':'Baki masa: '+time+'s'}</p><button onclick="start(${LV+1})">Level ${LV+1} ▶</button><button class="alt" onclick="menu()">Menu</button>`
    :`<h1>Masa tamat ⏰</h1><p>Tinggal ${left} lagi ${MODE==='kata'?'perkataan':'objek'} tak jumpa.</p><button onclick="start(${LV})">Cuba lagi</button><button class="alt" onclick="menu()">Menu</button>`;
   $('overlay').classList.remove('hide');
 }
@@ -255,9 +278,9 @@ function menu(){
   const tb=(cur,v,l,f)=>`<button class="${cur===v?'on':''}" onclick="${f}('${v}')">${l}</button>`;
   $('card').innerHTML=`${SPR.has('logo')?'<img src="sprites/logo.webp" style="width:80%;max-height:120px;object-fit:contain">':'<h1>🔍 Cari Cari</h1>'}
   <div class="toggle">${tb(MODE,'objek','🧸 Cari Barang','setMode')}${tb(MODE,'kata','🔤 Cari Perkataan','setMode')}</div>
-  ${MODE==='kata'?`<div class="toggle">${tb(LANG,'bm','BM','setLang')}${tb(LANG,'en','English','setLang')}${tb(LANG,'mix','Campur','setLang')}</div><p>Leret jari atas huruf untuk bulatkan perkataan!</p>`:'<p>Jumpa semua barang dalam senarai sebelum masa habis!</p>'}
+  ${MODE==='kata'?`<div class="toggle">${tb(LANG,'bm','BM','setLang')}${tb(LANG,'en','English','setLang')}${tb(LANG,'mix','Campur','setLang')}</div><p>Leret jari atas huruf untuk bulatkan perkataan. Santai je, tak ada had masa ☕</p>`:'<p>Jumpa semua barang dalam senarai sebelum masa habis!</p>'}
   <button onclick="start(${u})">▶ Teruskan Level ${u}</button>
-  <p style="font-size:13px;color:#8a6a50">Level tanpa had ♾️ · Salah = −3s</p><div class="lv">${g}</div>
+  <p style="font-size:13px;color:#8a6a50">Level tanpa had ♾️${MODE==='kata'?'':' · Salah = −3s'}</p><div class="lv">${g}</div>
   <div class="toggle"><button ${PG<=0?'disabled':''} onclick="PG--;menu()">◀</button><button class="on">${s0}–${s0+29}</button><button ${s0+30>u?'disabled':''} onclick="PG++;menu()">▶</button></div>`;
   $('overlay').classList.remove('hide');
 }
