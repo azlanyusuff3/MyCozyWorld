@@ -581,30 +581,34 @@ const D3 = (() => {
 })();
 function roll3d(el, n, idx) {
   return new Promise(res => {
-    const W = 170, cv = document.createElement('canvas');
-    cv.width = W; cv.height = W; cv.className = 'd3';
-    el.classList.remove('img'); el.innerHTML = ''; el.appendChild(cv);
+    const W = 170; let cv = el.querySelector('canvas.d3');
+    if (!cv) { cv = document.createElement('canvas'); cv.width = cv.height = W; cv.className = 'd3'; el.classList.remove('img'); el.innerHTML = ''; el.appendChild(cv); }
+    cv.dataset.n = '';
     const ctx = cv.getContext('2d');
     const sx = (2 + (Math.random() * 2 | 0)) * Math.PI * 2, sy = (1 + (Math.random() * 2 | 0)) * Math.PI * 2, sz = (Math.random() < .5 ? -1 : 1) * Math.PI * 2;
     const T = 1150 + idx * 120, t0 = performance.now(), base = D3.FACE_UP[n];
     let lastBounce = 0;
     const frame = now => {
       const t = Math.min(1, (now - t0) / T), e = 1 - Math.pow(1 - t, 3);
-      const rx = .62 + sx * (1 - e), ry = .55 + sy * (1 - e), rz = sz * (1 - e) * (1 - e);
+      const rx = .95 + sx * (1 - e), ry = .55 + sy * (1 - e), rz = sz * (1 - e) * (1 - e);
       const M = D3.mul(D3.Ry(ry), D3.mul(D3.Rx(rx), D3.mul(D3.Rz(rz), base)));
       // bounces getting smaller
       const ph = t * 3.2, lift = Math.abs(Math.sin(ph * Math.PI)) * (1 - t) * W * .26;
       const b = Math.floor(ph); if (b !== lastBounce && t < .95) { lastBounce = b; beep(330 + Math.random() * 120, .05, 'triangle', .05); }
       D3.draw(ctx, W, M, lift);
-      if (t < 1) requestAnimationFrame(frame); else { beep(520, .06, 'triangle', .05); setTimeout(res, 120); }
+      if (t < 1) requestAnimationFrame(frame); else { cv.dataset.n = n; beep(520, .06, 'triangle', .05); setTimeout(res, 120); }
     };
     requestAnimationFrame(frame);
   });
 }
 function setDie(el, n) {
-  if (DICE_IMG[n]) { el.classList.add('img'); el.innerHTML = `<img src="${DICE_IMG[n]}" alt="${n}">`; return; }
-  el.classList.remove('img');
-  el.innerHTML = `<div class="face">${[...Array(9)].map((_, i) => `<i class="${PIPS[n].includes(i) ? 'on' : ''}"></i>`).join('')}</div>`;
+  // always the same 3D canvas dice (resting pose shows n on top)
+  let cv = el.querySelector('canvas.d3');
+  if (cv && cv.dataset.n === String(n)) return;
+  if (!cv) { el.classList.remove('img'); el.innerHTML = ''; cv = document.createElement('canvas'); cv.width = cv.height = 170; cv.className = 'd3'; el.appendChild(cv); }
+  cv.dataset.n = n;
+  const M = D3.mul(D3.Ry(.55), D3.mul(D3.Rx(.95), D3.FACE_UP[n]));
+  D3.draw(cv.getContext('2d'), 170, M, 0);
 }
 /* camera: pseudo-3D tilt toward moving token, then back flat */
 function cam(pos) {

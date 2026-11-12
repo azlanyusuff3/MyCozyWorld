@@ -1,5 +1,5 @@
 // Versi app (semver): naikkan nombor HUJUNG setiap update kecil (1.1.0 -> 1.1.1), tengah untuk update besar (1.1.x -> 1.2.0).
-const VERSION = 'mycozyworld-1.2.1';
+const VERSION = 'mycozyworld-1.2.2';
 const ASSETS = [
   './', 'index.html', 'game.js', 'manifest.json', 'salon/index.html', 'salon/style.css', 'salon/game.js', 'salon/sprites/list.json', 'cozy-chess/', 'cozy-chess/index.html', 'cozy-chess/style.css', 'cozy-chess/chess-core.js', 'cozy-chess/ai-worker.js', 'cozy-chess/game.js', 'cozy-chess/sprites/list.json', 'cozy-tycoon/', 'cozy-tycoon/index.html', 'cozy-tycoon/style.css', 'cozy-tycoon/game.js', 'cozy-tycoon/sprites/list.json', 'cozy-kampung/', 'cozy-kampung/index.html', 'cozy-kampung/style.css', 'cozy-kampung/game.js', 'cozy-kampung/sprites/list.json', 'mamak-rush/', 'mamak-rush/index.html', 'mamak-rush/style.css', 'mamak-rush/game.js', 'mamak-rush/sprites/list.json', 'cozy-cari/', 'cozy-cari/index.html',
   ...['white', 'black'].flatMap(c => ['king', 'queen', 'rook', 'bishop', 'knight', 'pawn'].flatMap(t => ['idle', 'attack', 'hurt'].map(n => `cozy-chess/sprites/${c}_${t}_${n}.webp`))),
