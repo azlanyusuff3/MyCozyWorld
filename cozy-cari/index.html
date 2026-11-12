@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Cari Cari — Cozy Hidden Objects</title>
+<link rel="icon" href="../assets/icons/icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none}
+html,body{margin:0;height:100%;background:#fdf1df;font-family:Nunito,sans-serif;color:#3b2a1e;overflow:hidden}
+#app{height:100%;display:flex;flex-direction:column;max-width:900px;margin:0 auto}
+header{display:flex;align-items:center;gap:8px;padding:8px 10px}
+header a{text-decoration:none;color:#3b2a1e;background:#fff;border-radius:12px;padding:6px 10px;box-shadow:0 3px 0 #e2c9a8;font-weight:800}
+.title{flex:1;font:22px "Lilita One";color:#c8553d;line-height:1}
+.title small{display:block;font:800 12px Nunito;color:#8a6a50}
+.pill{background:#fff;border-radius:12px;padding:6px 10px;font-weight:800;box-shadow:0 3px 0 #e2c9a8;white-space:nowrap}
+#hintBtn{border:0;font:inherit;cursor:pointer;background:#ffd166}
+#sceneWrap{flex:1;display:flex;align-items:center;justify-content:center;padding:0 8px;min-height:0}
+#scene{position:relative;width:100%;aspect-ratio:4/3;max-height:100%;border-radius:18px;overflow:hidden;box-shadow:0 6px 0 #d9b994,0 10px 24px #0002;border:4px solid #fff}
+#scene svg.bg{position:absolute;inset:0;width:100%;height:100%}
+.obj{position:absolute;transform:translate(-50%,-50%) rotate(var(--r)) scaleX(var(--f));line-height:1;cursor:pointer;filter:drop-shadow(0 2px 1px #0003);transition:transform .25s}
+.obj.found{animation:pop .6s forwards;pointer-events:none}
+@keyframes pop{40%{transform:translate(-50%,-50%) scale(1.8);filter:drop-shadow(0 0 10px #fff) drop-shadow(0 0 6px gold)}100%{transform:translate(-50%,-50%) scale(0);opacity:0}}
+.obj.hint{animation:hint 1s 3}
+@keyframes hint{50%{filter:drop-shadow(0 0 12px #fff) drop-shadow(0 0 8px #ff3d7f);transform:translate(-50%,-50%) scale(1.5)}}
+.miss{position:absolute;pointer-events:none;font:800 16px Nunito;color:#e63946;transform:translate(-50%,-50%);animation:up .8s forwards}
+@keyframes up{to{transform:translate(-50%,-150%);opacity:0}}
+#list{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;padding:8px 8px 14px}
+.item{background:#fff;border-radius:12px;padding:4px 8px;display:flex;align-items:center;gap:6px;box-shadow:0 3px 0 #e2c9a8;min-width:92px}
+.item b{font-size:24px}.item span{font-size:12px;line-height:1.1}.item span i{display:block;color:#8a6a50;font-weight:700}
+.item.done{opacity:.45;text-decoration:line-through;background:#d8f3dc}
+#overlay{position:fixed;inset:0;background:#3b2a1e99;display:flex;align-items:center;justify-content:center;z-index:9}
+.card{background:#fffaf2;border-radius:24px;padding:22px;text-align:center;width:min(92%,380px);box-shadow:0 8px 0 #d9b994}
+.card h1{font:32px "Lilita One";color:#c8553d;margin:0 0 6px}
+.card p{margin:6px 0}
+.stars{font-size:40px;letter-spacing:4px}
+.card button{border:0;font:22px "Lilita One";background:#5cc9a7;color:#fff;padding:10px 26px;border-radius:16px;box-shadow:0 5px 0 #3b9a7d;margin:8px 4px 0;cursor:pointer}
+.card button.alt{background:#f4a261;box-shadow:0 5px 0 #c97b3a}
+.hide{display:none!important}
+.lv{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:10px 0}
+.lv button{font:18px "Lilita One";padding:8px 0;margin:0;background:#9fd8f5;box-shadow:0 4px 0 #5fa6c9}
+.lv button[disabled]{opacity:.35}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <a href="../">⌂</a>
+    <div class="title" id="title">Cari Cari<small id="sub">Bilik Stor</small></div>
+    <div class="pill" id="timer">⏱ 90</div>
+    <button class="pill" id="hintBtn">💡 3</button>
+  </header>
+  <div id="sceneWrap"><div id="scene"></div></div>
+  <div id="list"></div>
+</div>
+<div id="overlay"><div class="card" id="card"></div></div>
+<script>
+// ---------- Data ----------
+// Setiap tema: nama, palet latar, objek tema [emoji, BM, BI]
+const THEMES=[
+ {n:'Bilik Stor',e:'Store Room',wall:'#f2d7b6',floor:'#b98a5e',acc:'#7a4e2d',items:[['🧹','penyapu','broom'],['🪣','baldi','bucket'],['🔨','tukul','hammer'],['🪚','gergaji','saw'],['🪛','pemutar skru','screwdriver'],['🔧','sepana','spanner'],['🪜','tangga','ladder'],['🧤','sarung tangan','gloves'],['⛑️','topi keselamatan','safety hat'],['🖌️','berus cat','paint brush'],['🪴','pokok pasu','potted plant'],['📦','kotak','box'],['🔦','lampu suluh','torch'],['✏️','pensel','pencil'],['🍶','botol','bottle']]},
+ {n:'Dapur Nenek',e:'Grandma\'s Kitchen',wall:'#fbe3c4',floor:'#c9a27a',acc:'#2a9d8f',items:[['🍳','kuali','frying pan'],['🥄','sudu','spoon'],['🍴','garpu','fork'],['🔪','pisau','knife'],['🫖','teko','teapot'],['☕','cawan','cup'],['🍚','nasi','rice'],['🧂','garam','salt'],['🥚','telur','egg'],['🧅','bawang','onion'],['🌶️','cili','chilli'],['🥥','kelapa','coconut'],['🍌','pisang','banana'],['🧺','bakul','basket'],['🕯️','lilin','candle']]},
+ {n:'Pasar Malam',e:'Night Market',wall:'#2b2d42',floor:'#6d597a',acc:'#ffb703',items:[['🍢','satay','satay'],['🌽','jagung','corn'],['🍉','tembikai','watermelon'],['🥭','mangga','mango'],['🍍','nanas','pineapple'],['🎈','belon','balloon'],['🧸','anak patung','teddy bear'],['👟','kasut','shoes'],['🧢','topi','cap'],['🕶️','cermin mata','sunglasses'],['🏮','tanglung','lantern'],['🍦','aiskrim','ice cream'],['🥤','air','drink'],['💡','mentol','light bulb'],['🪀','yoyo','yo-yo']]},
+ {n:'Bilik Tidur',e:'Bedroom',wall:'#cde7f0',floor:'#e9c46a',acc:'#e76f51',items:[['🛏️','katil','bed'],['🧸','teddy','teddy bear'],['📚','buku','books'],['⏰','jam loceng','alarm clock'],['🎒','beg','school bag'],['👕','baju','shirt'],['🧦','stoking','socks'],['🪥','berus gigi','toothbrush'],['🎮','alat main','game pad'],['🖍️','krayon','crayon'],['⚽','bola','ball'],['🪞','cermin','mirror'],['🕹️','joystick','joystick'],['🎧','fon kepala','headphones'],['🧩','puzzle','puzzle']]},
+ {n:'Taman Atuk',e:'Grandpa\'s Garden',wall:'#a8dadc',floor:'#80b918',acc:'#55a630',items:[['🌻','bunga matahari','sunflower'],['🍄','cendawan','mushroom'],['🐌','siput','snail'],['🦋','rama-rama','butterfly'],['🐓','ayam','chicken'],['🐈','kucing','cat'],['🪺','sarang','nest'],['🥕','lobak','carrot'],['🍅','tomato','tomato'],['🌵','kaktus','cactus'],['🪨','batu','rock'],['🐸','katak','frog'],['🐝','lebah','bee'],['🚲','basikal','bicycle'],['🪁','layang-layang','kite']]}
+];
+// Objek pengalih (decoy) — bukan dalam senarai
+const DECOY='🍎🍐🍊🍋🍇🍓🫐🍒🥝🥑🥦🧀🥨🥐🍞🧁🍩🍪🎀🎁🧵🧶🪡🪢👒🎩👓💼👜👛🪙💎🔑🗝️📎📌📏📐✂️🖇️📒📕📗📘📙🗂️🧴🧽🧼🪒🧻🪤🪝🧲🔩⚙️🧰🔋🔌📻📺☎️⏳🕰️🌂☂️🧳🎲♟️🎯🎳🪃🏓🏸🥏🎻🥁🎷🪗🎺🐟🐠🦆🐦🐁🐇🐢🍂🍁🌸🌼🌷🪵🥫🫙🧃🍯🥜🌰🍬🍭🫔🪅🎐🧧📯🔔'.match(/\p{Extended_Pictographic}️?/gu);
+
+// ---------- Level config: makin tinggi makin semak ----------
+function cfg(lv){
+  return {
+    theme:THEMES[(lv-1)%THEMES.length],
+    targets:Math.min(5+Math.floor((lv-1)/2),10),
+    decoys:Math.min(14+lv*7,110),
+    size:Math.max(9-lv*0.35,4.2),        // % lebar scene
+    rot:Math.min(lv*12,180),            // putaran maksimum
+    hidePct:Math.min(lv*0.04,0.4),      // kadar objek separa tersorok (pudar/kecil)
+    time:Math.max(100-lv*2,60)+ (lv>5?lv*3:0),
+    clutter:Math.min(Math.floor(lv/2),8) // lapisan perabot latar
+  };
+}
+
+// ---------- Background SVG ----------
+function bgSVG(t,lv,rng){
+  const C=cfg(lv);let s=`<svg class="bg" viewBox="0 0 400 300" preserveAspectRatio="none">`;
+  s+=`<rect width="400" height="190" fill="${t.wall}"/>`;
+  // corak dinding
+  for(let x=0;x<400;x+=24)s+=`<rect x="${x}" y="0" width="12" height="190" fill="#fff" opacity=".12"/>`;
+  s+=`<rect y="190" width="400" height="110" fill="${t.floor}"/>`;
+  for(let y=200;y<300;y+=16)s+=`<line x1="0" y1="${y}" x2="400" y2="${y}" stroke="#0002"/>`;
+  // tingkap
+  s+=`<rect x="250" y="30" width="110" height="80" rx="6" fill="#bde0fe" stroke="${t.acc}" stroke-width="6"/><line x1="305" y1="30" x2="305" y2="110" stroke="${t.acc}" stroke-width="4"/><line x1="250" y1="70" x2="360" y2="70" stroke="${t.acc}" stroke-width="4"/>`;
+  // rak
+  s+=`<rect x="20" y="60" width="150" height="8" fill="${t.acc}"/><rect x="20" y="120" width="150" height="8" fill="${t.acc}"/>`;
+  // perabot tambahan ikut level (lebih semak)
+  const pals=['#e76f51','#f4a261','#2a9d8f','#8ecae6','#b5838d','#ffb703','#6d597a','#90be6d'];
+  for(let i=0;i<C.clutter+2;i++){
+    const x=rng()*360,y=150+rng()*110,w=40+rng()*70,h=25+rng()*45,c=pals[i%pals.length];
+    s+= i%3==0?`<ellipse cx="${x+w/2}" cy="${y}" rx="${w/2}" ry="${h/3}" fill="${c}" opacity=".85"/>`
+               :`<rect x="${x}" y="${y-h}" width="${w}" height="${h}" rx="5" fill="${c}" opacity=".9"/><rect x="${x+4}" y="${y-h+4}" width="${w-8}" height="4" fill="#fff" opacity=".35"/>`;
+  }
+  // corak bertompok (noise) — level tinggi lebih banyak
+  for(let i=0;i<lv*6;i++)s+=`<circle cx="${rng()*400}" cy="${rng()*300}" r="${2+rng()*6}" fill="${pals[i%8]}" opacity=".35"/>`;
+  return s+'</svg>';
+}
+
+// ---------- State ----------
+let LV=1,unlocked=+(localStorage.getItem('cari_unlock')||1),best=JSON.parse(localStorage.getItem('cari_stars')||'{}');
+let targets=[],left=0,time=0,tick=null,hints=3,playing=false;
+const $=id=>document.getElementById(id);
+function mulberry(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function shuffle(a,r){for(let i=a.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+
+function start(lv){
+  LV=lv;const C=cfg(lv),t=C.theme,rng=mulberry(lv*977+Date.now()%1000);
+  $('sub').textContent=`Level ${lv} · ${t.n}`;
+  const sc=$('scene');sc.innerHTML=bgSVG(t,lv,rng);
+  targets=shuffle(t.items.slice(),rng).slice(0,C.targets);
+  const tEm=new Set(targets.map(x=>x[0]));
+  // decoy: dari pool + objek tema yang tak dicari
+  let pool=DECOY.concat(t.items.filter(x=>!tEm.has(x[0])).map(x=>x[0])).filter(e=>!tEm.has(e));
+  const objs=[];
+  for(let i=0;i<C.decoys;i++)objs.push({e:pool[Math.floor(rng()*pool.length)],t:false});
+  targets.forEach((x,i)=>objs.push({e:x[0],t:true,i}));
+  shuffle(objs,rng);
+  objs.forEach((o,k)=>{
+    const d=document.createElement('div');d.className='obj';d.textContent=o.e;
+    let sz=C.size*(0.75+rng()*0.6);
+    if(o.t&&rng()<C.hidePct){sz*=0.7;d.style.opacity=.8}
+    d.style.left=(5+rng()*90)+'%';d.style.top=(8+rng()*86)+'%';
+    d.style.fontSize=`calc(${sz} * var(--w))`;
+    d.style.setProperty('--r',((rng()*2-1)*C.rot)+'deg');d.style.setProperty('--f',rng()<.5?1:-1);
+    d.style.zIndex=o.t?(rng()<C.hidePct?1:5+Math.floor(rng()*50)):Math.floor(rng()*50);
+    if(o.t)d.dataset.t=o.i;
+    sc.appendChild(d);
+  });
+  sizeVar();
+  $('list').innerHTML=targets.map((x,i)=>`<div class="item" id="it${i}"><b>${x[0]}</b><span>${x[1]}<i>${x[2]}</i></span></div>`).join('');
+  left=targets.length;time=C.time;hints=3;$('hintBtn').textContent='💡 3';
+  $('overlay').classList.add('hide');playing=true;
+  clearInterval(tick);tick=setInterval(()=>{time--;showTime();if(time<=0)end(false)},1000);showTime();
+}
+function sizeVar(){const sc=$('scene');sc.style.setProperty('--w',sc.clientWidth/100+'px')}
+addEventListener('resize',sizeVar);
+function showTime(){$('timer').textContent='⏱ '+Math.max(time,0);$('timer').style.color=time<=10?'#e63946':''}
+
+$('scene').addEventListener('pointerdown',e=>{
+  if(!playing)return;
+  const o=e.target.closest('.obj');
+  if(o&&o.dataset.t!==undefined){
+    o.classList.add('found');$('it'+o.dataset.t).classList.add('done');buzz(20);
+    if(--left===0)end(true);
+  }else{
+    time=Math.max(time-3,0);showTime();buzz([30,40,30]);
+    const r=$('scene').getBoundingClientRect(),m=document.createElement('div');
+    m.className='miss';m.textContent='-3s';m.style.left=(e.clientX-r.left)+'px';m.style.top=(e.clientY-r.top)+'px';
+    $('scene').appendChild(m);setTimeout(()=>m.remove(),800);
+  }
+});
+$('hintBtn').onclick=()=>{
+  if(!playing||hints<=0)return;
+  const o=[...document.querySelectorAll('.obj[data-t]:not(.found)')][0];if(!o)return;
+  hints--;$('hintBtn').textContent='💡 '+hints;o.style.zIndex=99;o.classList.remove('hint');void o.offsetWidth;o.classList.add('hint');
+};
+function buzz(p){try{navigator.vibrate&&navigator.vibrate(p)}catch(_){}}
+
+function end(win){
+  playing=false;clearInterval(tick);
+  const C=cfg(LV);let st=0;
+  if(win){st=time>C.time*.5?3:time>C.time*.2?2:1;
+    best[LV]=Math.max(best[LV]||0,st);unlocked=Math.max(unlocked,LV+1);
+    try{localStorage.setItem('cari_stars',JSON.stringify(best));localStorage.setItem('cari_unlock',unlocked)}catch(_){}}
+  $('card').innerHTML=win
+   ?`<h1>Jumpa semua! 🎉</h1><div class="stars">${'⭐'.repeat(st)}${'☆'.repeat(3-st)}</div><p>Baki masa: ${time}s</p><button onclick="start(${LV+1})">Level ${LV+1} ▶</button><button class="alt" onclick="menu()">Menu</button>`
+   :`<h1>Masa tamat ⏰</h1><p>Tinggal ${left} lagi objek tak jumpa.</p><button onclick="start(${LV})">Cuba lagi</button><button class="alt" onclick="menu()">Menu</button>`;
+  $('overlay').classList.remove('hide');
+}
+function menu(){
+  playing=false;clearInterval(tick);
+  let g='';for(let i=1;i<=30;i++)g+=`<button ${i>unlocked?'disabled':''} onclick="start(${i})">${i}<br><small style="font-size:10px">${best[i]?'⭐'.repeat(best[i]):''}</small></button>`;
+  $('card').innerHTML=`<h1>🔍 Cari Cari</h1><p>Jumpa semua barang dalam senarai sebelum masa habis! Salah tekan −3s.</p><div class="lv">${g}</div>`;
+  $('overlay').classList.remove('hide');
+}
+menu();
+</script>
+</body>
+</html>
