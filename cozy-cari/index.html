@@ -83,11 +83,11 @@ function cfg(lv){
   return {
     theme:THEMES[(lv-1)%THEMES.length],
     targets:Math.min(5+Math.floor((lv-1)/2),10),
-    decoys:Math.min(14+lv*7,110),
+    decoys:Math.min(14+lv*7,110+Math.max(0,lv-20)*2,160),
     size:Math.max(9-lv*0.35,4.2),        // % lebar scene
     rot:Math.min(lv*12,180),            // putaran maksimum
     hidePct:Math.min(lv*0.04,0.4),      // kadar objek separa tersorok (pudar/kecil)
-    time:Math.max(100-lv*2,60)+ (lv>5?lv*3:0),
+    time:lv<=20?Math.max(100-lv*2,60)+(lv>5?lv*3:0):Math.max(120-(lv-20)*2,45), // lepas lv20 masa makin singkat
     clutter:Math.min(Math.floor(lv/2),8) // lapisan perabot latar
   };
 }
@@ -130,7 +130,7 @@ const K=()=>MODE==='kata'?'w':'';
 function wcfg(lv){
   const D=[[0,1],[1,0]];if(lv>2)D.push([1,1]);if(lv>5)D.push([-1,1]);
   if(lv>8)D.slice().forEach(d=>D.push([-d[0],-d[1]]));
-  return{theme:THEMES[(lv-1)%THEMES.length],n:Math.min(7+Math.floor(lv/2),14),words:Math.min(5+Math.floor((lv-1)/2),10),dirs:D,time:Math.min(120+lv*6,300)};
+  return{theme:THEMES[(lv-1)%THEMES.length],n:Math.min(7+Math.floor(lv/2),14),words:Math.min(5+Math.floor((lv-1)/2),10),dirs:D,time:lv<=20?Math.min(120+lv*6,300):Math.max(240-(lv-20)*4,90)};
 }
 let grid=[],wtargets=[],selStart=null,selCells=[];
 const clean=s=>s.toUpperCase().replace(/[^A-Z]/g,'');
@@ -245,16 +245,20 @@ function end(win){
 }
 const unl=()=>+(localStorage.getItem('cari_unlock'+K())||1);
 function setUnl(v){try{localStorage.setItem('cari_unlock'+K(),v)}catch(_){}}
-function setMode(m){MODE=m;try{localStorage.setItem('cari_mode',m)}catch(_){}menu()}
+let PG=null;
+function setMode(m){MODE=m;PG=null;try{localStorage.setItem('cari_mode',m)}catch(_){}menu()}
 function setLang(l){LANG=l;try{localStorage.setItem('cari_lang',l)}catch(_){}menu()}
 function menu(){
   playing=false;clearInterval(tick);const u=unl();
-  let g='';for(let i=1;i<=30;i++){const b=best[K()+i];g+=`<button ${i>u?'disabled':''} onclick="start(${i})">${i}<br><small style="font-size:10px">${b?'⭐'.repeat(b):''}</small></button>`}
+  PG=Math.min(PG??Math.floor((u-1)/30),Math.floor((u-1)/30));const s0=PG*30+1;
+  let g='';for(let i=s0;i<s0+30;i++){const b=best[K()+i];g+=`<button ${i>u?'disabled':''} onclick="start(${i})">${i}<br><small style="font-size:10px">${b?'⭐'.repeat(b):''}</small></button>`}
   const tb=(cur,v,l,f)=>`<button class="${cur===v?'on':''}" onclick="${f}('${v}')">${l}</button>`;
   $('card').innerHTML=`${SPR.has('logo')?'<img src="sprites/logo.webp" style="width:80%;max-height:120px;object-fit:contain">':'<h1>🔍 Cari Cari</h1>'}
   <div class="toggle">${tb(MODE,'objek','🧸 Cari Barang','setMode')}${tb(MODE,'kata','🔤 Cari Perkataan','setMode')}</div>
   ${MODE==='kata'?`<div class="toggle">${tb(LANG,'bm','BM','setLang')}${tb(LANG,'en','English','setLang')}${tb(LANG,'mix','Campur','setLang')}</div><p>Leret jari atas huruf untuk bulatkan perkataan!</p>`:'<p>Jumpa semua barang dalam senarai sebelum masa habis!</p>'}
-  <p style="font-size:13px;color:#8a6a50">Salah = −3s</p><div class="lv">${g}</div>`;
+  <button onclick="start(${u})">▶ Teruskan Level ${u}</button>
+  <p style="font-size:13px;color:#8a6a50">Level tanpa had ♾️ · Salah = −3s</p><div class="lv">${g}</div>
+  <div class="toggle"><button ${PG<=0?'disabled':''} onclick="PG--;menu()">◀</button><button class="on">${s0}–${s0+29}</button><button ${s0+30>u?'disabled':''} onclick="PG++;menu()">▶</button></div>`;
   $('overlay').classList.remove('hide');
 }
 fetch('sprites/list.json',{cache:'no-cache'}).then(r=>r.ok?r.json():[]).catch(()=>[]).then(l=>{SPR=new Set(l);menu()});
