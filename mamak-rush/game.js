@@ -21,7 +21,7 @@ fetch('sprites/list.json', { cache: 'no-cache' }).then(r => r.ok ? r.json() : []
 
 function applyScene() {
   const b = document.body.classList, set = (k, v) => document.documentElement.style.setProperty(k, `url(${v})`);
-  ['bg_dinding', 'bg_lantai', 'kaunter', 'dulang', 'bg_dapur', 'kaunter_dapur'].forEach(n => { const v = LOC === 'satay' && SPR[n + '_satay'] || SPR[n]; if (v) { b.add('has-' + n); set('--' + n, v); } });
+  ['bg_dinding', 'bg_lantai', 'kaunter', 'dulang', 'bg_dapur', 'kaunter_dapur', 'bg_kedai', 'ui_hud', 'ui_papan', 'ui_panel', 'ui_butang'].forEach(n => { const v = LOC === 'satay' && SPR[n + '_satay'] || SPR[n]; if (v) { b.add('has-' + n); set('--' + n, v); } });
   b.toggle('satay-art', LOC === 'satay' && !!SPR.bg_dinding_satay);
 }
 // Elak menu "save image" bila tekan lama atas gambar (iOS/Android)
@@ -498,7 +498,7 @@ function renderTables() {
   if (!R) return;
   requestAnimationFrame(fitTables); setTimeout(markShown, 0);
   $('#tables').innerHTML = R.tables.map((c, ti) => `<div class="table spot" style="z-index:${ti + 1}"><span class="shadow"></span>${c ? `
-    <div class="cust ${c.angry ? 'angry' : ''} ${c.shown ? '' : 'enter'} ${c.gone ? 'leave' : ''}" data-id="${c.id}">${orderHTML(c)}<span class="av">${ico('cust_' + c.who.k, c.who.e)}</span>${c.t ? `<span class="trait">${TRAITS[c.t].ic}</span>` : ''}${c.angry ? '<span class="calm-tag">TAP: Sabar!</span>' : ''}</div>` : ''}</div>`).join('');
+    <div class="cust ${c.angry ? 'angry' : ''} ${c.shown ? '' : 'enter'} ${c.gone ? 'leave' : ''}" data-id="${c.id}">${orderHTML(c)}<span class="av">${ico('cust_' + c.who.k, c.who.e)}</span><div class="plate">${c.items.filter(i => i.done).map(i => `<span class="av">${ico('item_' + i.k, ITEMS[i.k].e)}</span>`).join('')}</div>${c.t ? `<span class="trait">${TRAITS[c.t].ic}</span>` : ''}${c.angry ? '<span class="calm-tag">TAP: Sabar!</span>' : ''}</div>` : ''}</div>`).join('');
 }
 function markShown() { R.tables.forEach(c => { if (c) c.shown = true; }); }
 function renderSide() {
@@ -561,6 +561,12 @@ function renderStations() {
     <div class="chips">${chips.map(([k, t]) => `<button type="button" class="chip" data-chip="${k}" title="${MOD_TXT[k]}">${t}</button>`).join('')}</div><div class="meter"><span class="zone"></span><span class="lvl"></span></div></div>`);
   if (LOC === 'satay' || feat(d, 'maggi')) h.push(`<div class="st sub${LOC === 'satay' ? ' bara' : ''}" id="stMaggi"><span class="lbl">${LOC === 'satay' ? 'PEMANGGANG' : feat(d, 'mee') ? 'KUALI' : 'MAGGI'}</span>${R.maggi.map((_, i) => `<div class="pan" data-i="${i}"><span class="big av"></span><span class="hint"></span><div class="choose"></div><span class="bar"><b></b></span></div>`).join('')}</div>`);
   if (feat(d, LOC === 'satay' ? 'kuah' : 'nasi')) h.push(`<div class="st" id="stNasi"><span class="lbl">${LOC === 'satay' ? 'KUAH KACANG' : 'NASI LEMAK'}</span><span class="cnt"></span><span class="big av"></span><span class="hint"></span><span class="bar"><b></b></span></div>`);
+  const unlockDay = f => { for (let x = d; x < 60; x++) if (feat(x, f)) return x; return '?'; };
+  const lockSt = (n, f, ic) => `<div class="st locked"><span class="lbl">${n}</span><span class="big av">${ic}</span><span class="hint">🔒 Hari ${unlockDay(f)}</span></div>`;
+  if (LOC !== 'satay') {
+    if (!feat(d, 'maggi')) h.splice(2, 0, lockSt('MAGGI', 'maggi', ico('st_kuali', '🍳')));
+    if (!feat(d, 'nasi')) h.push(lockSt('NASI LEMAK', 'nasi', ico('item_nasi', '🍛')));
+  } else if (!feat(d, 'kuah')) h.push(lockSt('KUAH KACANG', 'kuah', ico('item_kuah', '🥜')));
   $('#stations').innerHTML = h.join('');
   $('#stations').className = 'stations s' + h.length; $('#stations').style.setProperty('--sc', h.length);
   [['stRoti', 'tawa', 3], ['stTeh', 'teko', 3], LOC === 'satay' ? ['stMaggi', 'bara', 3] : ['stMaggi', 'api', 2], ['stNasi', 'periuk', 2]].forEach(([id, k, mx]) => {

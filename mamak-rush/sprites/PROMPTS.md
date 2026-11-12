@@ -165,3 +165,16 @@ Watak: *a cheerful young Malaysian mamak chef, tan skin, short black hair, thin 
 | `bg_dapur.webp` | **Landscape 1536×768, NOT transparent.** Back wall of a cosy mamak kitchen behind the counter: mint green and white tiles, steel shelves with jars of spices, hanging ladles and woks, warm lighting, empty floor area in the middle (no people) |
 | `kaunter_dapur.webp` | **Landscape 1536×512, NOT transparent.** Front view of a long stainless steel kitchen counter top with a wooden front panel, flat empty surface (no items) |
 | `pintu.webp` | **Transparent, 512×768.** A cute open wooden shop door with a small "BUKA" style sign shape (no text) and a bell |
+
+## Batch 13 — Cantikkan UI & ruang kedai (v1.1.0)
+Gaya sama: *cozy chibi mobile cooking game UI, Cooking Diary vibe, warm colours, thick soft outlines, glossy highlights, NO text, NO letters.*
+| Fail | Saiz | Prompt tambahan |
+|---|---|---|
+| `bg_kedai.webp` | **Portrait 1024×1024, NOT transparent** | Front-facing interior of a cosy Malaysian mamak restaurant, customer side. Back wall with green tiles, a menu chalkboard, wall clock, framed picture and string lights; an **open wooden entrance door built into the left wall**; potted plants and a ceiling fan; warm patterned floor. The bottom third is empty floor (customers will stand there). No people, no tables |
+| `kaunter.webp` | Landscape 1536×384, transparent | A long front customer counter (wooden front with tiles, stainless top) seen from the front, with small napkin box and sauce bottles only at the far left and right ends; the middle is an empty flat surface for placing food |
+| `ui_hud.webp` | Landscape 1536×192, transparent | A wide game top-bar banner: red and cream awning-striped wooden panel with rounded ends and golden trim, empty inside |
+| `ui_papan.webp` | 512×512, transparent | An empty cream kitchen equipment card / tray panel with a stainless steel top rim and rounded corners, subtle wood frame, empty centre |
+| `ui_panel.webp` | Portrait 768×1024, transparent | An empty popup window panel: cream paper inside, wooden frame with a red awning top edge and golden corners |
+| `ui_butang.webp` | Landscape 768×192, transparent | An empty glossy golden-yellow pill-shaped game button with a darker orange bottom edge |
+
+Lepas siap, naikkan `VERSION` dalam `sw.js` ikut format **1.1.x** (contoh `mycozyworld-1.1.1`), bukan v-nombor lagi.

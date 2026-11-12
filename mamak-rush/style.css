@@ -545,3 +545,23 @@ body.has-bg_dapur .kitchen{background-position:center 30%}
 .stations.s4 .st{min-height:118px}
 .stations.s4 .st .big{width:clamp(56px,7.5vh,84px)!important;height:clamp(56px,7.5vh,84px)!important}
 .table.spot .cust>.av{width:clamp(88px,14vh,130px)!important;height:clamp(88px,14vh,130px)!important}
+
+/* v1.1.0: dulang pindah ke dapur, makanan atas meja pelanggan, stesen terkunci nampak */
+.counter{justify-content:space-between}
+.pass{position:absolute;right:6px;top:8px;z-index:3;display:flex;flex-direction:column;align-items:center;max-width:58%}
+.pass-lbl{font-size:9px;font-weight:900;color:#fff;background:#4a2c14d9;border-radius:6px;padding:1px 6px;margin-bottom:-4px;z-index:1;letter-spacing:1px}
+.pass .tray{flex:none;height:54px!important;padding:0 6px;gap:3px}
+.pass .tray .slot{width:38px;height:38px;line-height:38px}
+.cust .plate{position:absolute;bottom:-30px;left:50%;transform:translateX(-50%);display:flex;gap:1px;z-index:5;pointer-events:none}
+.cust .plate .av{width:30px;height:30px;font-size:22px;line-height:30px;text-align:center;animation:pop .3s;filter:drop-shadow(0 2px 1px #0003)}
+.cust .plate img{width:100%;height:100%;object-fit:contain}
+.st.locked{filter:grayscale(1);opacity:.55;pointer-events:none}
+.st.locked .hint{background:#555d}
+body.has-bg_kedai .shop-floor{background:var(--bg_kedai) center top/cover no-repeat!important}
+body.has-bg_kedai .wall,body.has-bg_kedai .door{visibility:hidden}
+body.has-bg_kedai .shop-floor:before{display:none}
+
+body.has-ui_hud .hud{background:var(--ui_hud) center/100% 100% no-repeat;box-shadow:none}
+body.has-ui_papan .st{background:var(--ui_papan) center/100% 100% no-repeat!important;border-top:0!important;box-shadow:0 4px 6px #0003!important}
+body.has-ui_panel #modalCard,body.has-ui_panel .modal-card{background:var(--ui_panel) center/100% 100% no-repeat}
+body.has-ui_butang .btn.gold{background:var(--ui_butang) center/100% 100% no-repeat;box-shadow:none}
