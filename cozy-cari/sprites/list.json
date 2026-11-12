@@ -19,5 +19,20 @@
   "stor_box",
   "stor_torch",
   "stor_pencil",
-  "stor_bottle"
+  "stor_bottle",
+  "dapur_fryingpan",
+  "dapur_spoon",
+  "dapur_fork",
+  "dapur_knife",
+  "dapur_teapot",
+  "dapur_cup",
+  "dapur_rice",
+  "dapur_salt",
+  "dapur_egg",
+  "dapur_onion",
+  "dapur_chilli",
+  "dapur_coconut",
+  "dapur_banana",
+  "dapur_basket",
+  "dapur_candle"
 ]
