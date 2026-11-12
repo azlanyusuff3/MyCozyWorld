@@ -164,6 +164,7 @@ function resize() {
   const r = cv.getBoundingClientRect(); VW = r.width; VH = r.height;
   cv.width = VW * DPR; cv.height = VH * DPR;
   // tinggi dunia ~400; pastikan sekurang-kurangnya 560 lebar nampak
+  makeVignette();
   scale = Math.min(VH / 360, VW / (VW < VH ? 340 : 560));
 }
 addEventListener('resize', () => G && resize());
@@ -274,6 +275,7 @@ function update(dt) {
             damage(tgt, dmg, u);
             if (U.cleave) { const t2 = G.units.find(o => o !== tgt && o.side !== u.side && o.hp > 0 && Math.abs(o.x - u.x) < U.range + 8); if (t2) damage(t2, dmg, u); }
             if (u.type !== 'gergaji' || Math.random() < 0.25) hitSnd();
+            if (u.type === 'gergaji') for (let i = 0; i < 2; i++) G.parts.push({ x: u.x + u.dir * 30 * u.size, y: GROUND + u.y - 32 * u.size, vx: u.dir * rnd(40, 160), vy: rnd(-160, -20), life: 0.35, c: '#ffd36b', r: 1.6 });
           } else { shoot(u, tgt, dmg, 'arrow'); if (u.side === 0) snd('shoot'); }
         } else {
           foe.baseHp -= dmg * (U.melee ? 1 : 0.8); foe.flash = 0.15;
@@ -339,6 +341,8 @@ function damage(u, dmg, src, silent) {
   if (me.buff.shield) d *= 0.4;
   u.hp -= d;
   if (!silent) { u.hitFlash = 0.12; u.lastHitDir = src ? src.dir : -u.dir;
+    if (G.fx.length < 120) G.fx.push({ k: 'ring', x: u.x, y: GROUND + u.y - 32 * u.size, c: src && src.t ? src.t.c : '#fff', life: 0.22, max: 0.22 });
+    if (d >= 18 && G.fx.length < 120) G.fx.push({ k: 'text', x: u.x + rnd(-6, 6), y: GROUND + u.y - 62 * u.size, s: Math.round(d), c: '#fff', life: 0.7, sm: 1 });
     for (let i = 0; i < 3; i++) G.parts.push({ x: u.x, y: GROUND + u.y - 34 * u.size, vx: rnd(-70, 70) + (src ? src.dir * 60 : 0), vy: rnd(-110, -20), life: 0.35, c: '#fff', r: 1.6 }); }
   if (u.hp <= 0 && src && !u.killedBy) u.killedBy = src.side;
 }
@@ -449,6 +453,25 @@ function aiThink(s, si, dt) {
 }
 
 /* ================= DRAW ================= */
+const glowCache = {};
+function glow(col) {
+  if (glowCache[col]) return glowCache[col];
+  const key = col; if (col.length === 4) col = '#' + col[1] + col[1] + col[2] + col[2] + col[3] + col[3];
+  const g = document.createElement('canvas'); g.width = g.height = 64;
+  const x = g.getContext('2d'), r = x.createRadialGradient(32, 32, 0, 32, 32, 32);
+  r.addColorStop(0, col); r.addColorStop(0.25, col + 'aa'); r.addColorStop(1, col + '00');
+  x.fillStyle = r; x.fillRect(0, 0, 64, 64);
+  return (glowCache[key] = g);
+}
+const blob = (c, col, x, y, rx, ry, a) => { c.globalAlpha = a; c.drawImage(glow(col), x - rx, y - (ry ?? rx), rx * 2, (ry ?? rx) * 2); };
+const embers = [];
+let vign = null;
+function makeVignette() {
+  vign = document.createElement('canvas'); vign.width = Math.max(1, VW * DPR); vign.height = Math.max(1, VH * DPR);
+  const x = vign.getContext('2d'), r = x.createRadialGradient(vign.width / 2, vign.height * 0.62, vign.height * 0.15, vign.width / 2, vign.height * 0.62, Math.max(vign.width, vign.height) * 0.8);
+  r.addColorStop(0, '#00000000'); r.addColorStop(1, '#000000cc'); x.fillStyle = r; x.fillRect(0, 0, vign.width, vign.height);
+}
+
 function pose(u, ox, oy) {
   const s = u.size, d = u.dir ?? (u.side ? -1 : 1), gy = GROUND + (u.y || 0) + (oy || 0), x = u.x + (ox || 0);
   const moving = u.atk <= 0.01;
@@ -477,7 +500,7 @@ function drawWeapon(c, type, hx, hy, ang, d, s, col, atk) {
   if (type === 'pedang') {
     c.lineWidth = 2.2 * s; c.beginPath(); c.moveTo(-3 * s, 0); c.lineTo(26 * s, 0); c.stroke();
     c.lineWidth = 3 * s; c.beginPath(); c.moveTo(0, -5 * s); c.lineTo(0, 5 * s); c.stroke();
-    if (atk > 0.3) { c.globalAlpha = atk * 0.5; c.lineWidth = 7 * s; c.beginPath(); c.arc(0, 0, 24 * s, -0.9, 0.2); c.stroke(); }
+    if (atk > 0.25) { const ga = c.globalAlpha; c.globalCompositeOperation = 'lighter'; for (let i = 0; i < 3; i++) { c.globalAlpha = ga * atk * (0.45 - i * 0.12); c.lineWidth = (9 - i * 3) * s; c.beginPath(); c.arc(0, 0, (24 - i * 3) * s, -1.6 + i * 0.2, 0.25); c.stroke(); } c.globalCompositeOperation = 'source-over'; c.globalAlpha = ga; }
   } else if (type === 'panah') {
     c.lineWidth = 2 * s; c.beginPath(); c.arc(-4 * s, 0, 15 * s, -1.25, 1.25); c.stroke();
     c.lineWidth = 0.8; c.beginPath(); c.moveTo(1 * s, -14 * s); c.lineTo(-4 * s - atk * 6, 0); c.lineTo(1 * s, 14 * s); c.stroke();
@@ -497,8 +520,7 @@ function drawWeapon(c, type, hx, hy, ang, d, s, col, atk) {
 function drawStick(c, u, ox, oy, alpha) {
   const j = pose(u, ox, oy), s = u.size, d = u.dir ?? (u.side ? -1 : 1);
   const col = u.hitFlash > 0 ? '#ffffff' : u.t.c;
-  c.globalAlpha = alpha;
-  c.strokeStyle = col; c.lineWidth = 3 * s; c.lineCap = 'round'; c.lineJoin = 'round';
+  c.lineCap = 'round'; c.lineJoin = 'round'; c.strokeStyle = col;
   c.beginPath();
   c.moveTo(j.neck.x, j.neck.y); c.lineTo(j.hip.x, j.hip.y);
   // kaki dengan lutut
@@ -508,14 +530,23 @@ function drawStick(c, u, ox, oy, alpha) {
   c.moveTo(j.hip.x, j.hip.y); c.lineTo(kb.x, kb.y); c.lineTo(j.fb.x, j.fb.y);
   c.moveTo(j.neck.x, j.neck.y + 3 * s); c.lineTo(j.hb.x, j.hb.y);
   c.moveTo(j.neck.x, j.neck.y + 3 * s); c.lineTo(j.hf.x, j.hf.y);
-  c.stroke();
-  c.fillStyle = '#07060f'; c.lineWidth = 2.6 * s;
+  // tiub neon: cahaya luar, warna, teras putih
+  c.globalAlpha = alpha * 0.2; c.lineWidth = 9 * s; c.stroke();
+  c.globalAlpha = alpha; c.lineWidth = 3.2 * s; c.stroke();
+  c.globalAlpha = alpha * 0.75; c.strokeStyle = '#ffffff'; c.lineWidth = 1 * s; c.stroke();
+  c.strokeStyle = col; c.globalAlpha = alpha;
+  blob(c, col, j.head.x, j.head.y, 15 * s, 15 * s, alpha * 0.35);
+  c.globalAlpha = alpha; c.fillStyle = '#07060f'; c.lineWidth = 2.8 * s;
   c.beginPath(); c.arc(j.head.x, j.head.y, 7 * s, 0, 7); c.fill(); c.stroke();
+  c.globalAlpha = alpha * 0.7; c.strokeStyle = '#fff'; c.lineWidth = 0.9 * s; c.stroke(); c.strokeStyle = col; c.globalAlpha = alpha;
   // mata menyala
-  c.fillStyle = col; c.beginPath(); c.arc(j.head.x + 3 * d * s, j.head.y - 1, 1.5 * s, 0, 7); c.fill();
+  c.fillStyle = '#fff'; c.beginPath(); c.arc(j.head.x + 3 * d * s, j.head.y - 1, 1.5 * s, 0, 7); c.fill();
+  blob(c, col, j.head.x + 3 * d * s, j.head.y - 1, 4 * s, 4 * s, alpha * 0.9); c.globalAlpha = alpha;
   // tanda puak di kepala
   tribeMark(c, u.t.id, j.head.x, j.head.y, s, d, col);
+  c.shadowBlur = 9; c.shadowColor = u.stolen ? '#ffffff' : u.t.g;
   drawWeapon(c, u.type, j.hf.x, j.hf.y, j.ang, d, s, u.stolen ? '#ffffff' : col, u.atk);
+  c.shadowBlur = 0;
   if (u.stolen) { c.fillStyle = '#fff'; c.font = `${10 * s}px sans-serif`; c.fillText('★', j.head.x - 4, j.head.y - 11 * s); }
   c.globalAlpha = 1;
 }
@@ -533,10 +564,21 @@ function tribeMark(c, id, x, y, s, d, col) {
 }
 function drawBase(c, si) {
   const s = G.sides[si], x = si ? W - BASE_X : BASE_X, col = s.flash > 0 ? '#fff' : s.t.c, d = si ? -1 : 1;
+  const pulse = 0.5 + 0.5 * Math.sin(G.t * 3 + si);
+  blob(c, s.t.g, x, GROUND - 70, 120, 140, 0.18 + pulse * 0.08);
+  blob(c, s.t.g, x, GROUND + 6, 90, 18, 0.5);
+  c.globalAlpha = 1;
   c.strokeStyle = col; c.lineWidth = 3; c.fillStyle = '#0a0816';
+  c.shadowBlur = 14; c.shadowColor = s.t.g;
   c.beginPath(); c.moveTo(x - 34, GROUND + 30); c.lineTo(x - 26, GROUND - 120); c.lineTo(x + 26, GROUND - 120); c.lineTo(x + 34, GROUND + 30); c.closePath(); c.fill(); c.stroke();
   for (let i = -2; i <= 2; i++) c.strokeRect(x + i * 11 - 4, GROUND - 134, 8, 14);
   c.beginPath(); c.moveTo(x, GROUND - 134); c.lineTo(x, GROUND - 175); c.stroke();
+  c.shadowBlur = 0;
+  // tingkap menyala
+  c.fillStyle = s.t.c; [[-12, -95], [12, -95], [-12, -60], [12, -60]].forEach(([dx, dy], i) => { c.globalAlpha = 0.45 + 0.4 * Math.abs(Math.sin(G.t * 1.5 + i)); c.fillRect(x + dx - 3, GROUND + dy, 6, 9); });
+  // orb tenaga di atas
+  blob(c, s.t.c, x, GROUND - 145, 22 + pulse * 6, 22 + pulse * 6, 0.9);
+  c.globalAlpha = 1; c.fillStyle = '#fff'; c.beginPath(); c.arc(x, GROUND - 145, 3.5, 0, 7); c.fill();
   c.fillStyle = col; c.beginPath(); c.moveTo(x, GROUND - 175); c.lineTo(x + 26 * d, GROUND - 167 + Math.sin(G.t * 4) * 3); c.lineTo(x, GROUND - 157); c.fill();
   // pintu & simbol
   c.beginPath(); c.arc(x, GROUND + 10, 14, Math.PI, 0); c.lineTo(x + 14, GROUND + 30); c.moveTo(x - 14, GROUND + 10); c.lineTo(x - 14, GROUND + 30); c.stroke();
@@ -564,43 +606,78 @@ function draw() {
   const sx = G.shake ? rnd(-G.shake, G.shake) : 0, sy = G.shake ? rnd(-G.shake, G.shake) * 0.5 : 0;
   const oy = Math.max(VH / scale - 400, (VH / scale) * 0.68 - GROUND);
   c.setTransform(DPR * scale, 0, 0, DPR * scale, DPR * (-camX * scale + sx), DPR * (oy * scale + sy));
-  // langit & bintang
-  if (!bgStars) { bgStars = []; for (let i = 0; i < 90; i++) bgStars.push([rnd(0, W), rnd(-oy - 40, GROUND - 40), rnd(0.5, 1.6)]); }
-  const P = G.sides[0].t, E = G.sides[1].t;
-  let gr = c.createLinearGradient(0, 0, W, 0); gr.addColorStop(0, P.g + '22'); gr.addColorStop(0.5, '#00000000'); gr.addColorStop(1, E.g + '22');
-  c.fillStyle = gr; c.fillRect(0, -oy - 50, W, GROUND + oy + 50);
-  c.fillStyle = '#ffffff'; bgStars.forEach(([x, y, r]) => { c.globalAlpha = 0.25 + 0.25 * Math.sin(G.t + x); c.fillRect(x, y, r, r); }); c.globalAlpha = 1;
-  // bulan besar & gunung jauh
-  c.shadowBlur = 40; c.shadowColor = '#c9b8ff'; c.globalAlpha = 0.55; c.fillStyle = '#e9e2ff'; c.beginPath(); c.arc(camX * 0.6 + viewW * 0.5 + 120, GROUND - 230, 40, 0, 7); c.fill(); c.globalAlpha = 1; c.shadowBlur = 0;
-  c.fillStyle = '#09081400'; c.fillStyle = '#0a0918'; c.beginPath(); c.moveTo(camX * 0.5 - 200, GROUND);
-  for (let x = -200; x <= W + 400; x += 70) c.lineTo(camX * 0.5 + x, GROUND - 130 - Math.abs(Math.sin(x * 0.004)) * 90 - Math.sin(x * 0.013) * 25);
-  c.lineTo(camX * 0.5 + W + 400, GROUND); c.fill();
-  // bukit jauh
-  c.fillStyle = '#0c0a1a'; c.beginPath(); c.moveTo(0, GROUND);
-  for (let x = 0; x <= W; x += 50) c.lineTo(x, GROUND - 70 - Math.sin(x * 0.006) * 40 - Math.sin(x * 0.017) * 18);
-  c.lineTo(W, GROUND); c.fill();
-  // tanah
-  c.fillStyle = '#0a1410'; c.fillRect(0, GROUND - 4, W, 120);
-  c.strokeStyle = '#2ee6c455'; c.lineWidth = 2; c.beginPath(); c.moveTo(0, GROUND - 4); c.lineTo(W, GROUND - 4); c.stroke();
-  c.strokeStyle = '#2ee6c41c'; c.lineWidth = 1; c.beginPath();
-  for (let x = 0; x < W; x += 9) { const h = 4 + ((x * 7) % 6); c.moveTo(x, GROUND - 4); c.lineTo(x + 2, GROUND - 4 - h); }
-  c.stroke();
-  // akar / ais / racun visual atas tanah
-  [0, 1].forEach(si => {
-    const s = G.sides[si];
-    if (s.buff.root) { c.strokeStyle = '#7dff6a'; c.lineWidth = 2; c.globalAlpha = Math.min(1, s.buff.root);
-      G.units.forEach(u => { if (u.side === si) { c.beginPath(); c.moveTo(u.x - 8, GROUND + u.y); c.quadraticCurveTo(u.x - 14, GROUND + u.y - 18, u.x - 2, GROUND + u.y - 26); c.moveTo(u.x + 8, GROUND + u.y); c.quadraticCurveTo(u.x + 14, GROUND + u.y - 14, u.x + 3, GROUND + u.y - 20); c.stroke(); } }); c.globalAlpha = 1; }
-    if (s.buff.poison) { c.fillStyle = '#b8ff2a'; G.units.forEach(u => { if (u.side === si && Math.random() < 0.3) G.parts.push({ x: u.x + rnd(-8, 8), y: GROUND + u.y - rnd(10, 40), vx: 0, vy: -30, life: 0.5, c: '#b8ff2a', r: 2.5, ng: 1 }); }); }
-    if (s.buff.slow) G.units.forEach(u => { if (u.side === si && Math.random() < 0.15) G.parts.push({ x: u.x + rnd(-10, 10), y: GROUND + u.y - 60, vx: rnd(-10, 10), vy: 40, life: 0.8, c: '#e8faff', r: 1.8, ng: 1 }); });
+  const P = G.sides[0].t, E = G.sides[1].t, top = -oy - 60, T = G.t;
+  // langit
+  let gr = c.createLinearGradient(0, top, 0, GROUND);
+  gr.addColorStop(0, '#04030a'); gr.addColorStop(0.6, '#0d0920'); gr.addColorStop(1, '#1a0f2e');
+  c.fillStyle = gr; c.fillRect(camX - 20, top, viewW + 40, GROUND - top + 10);
+  gr = c.createLinearGradient(camX, 0, camX + viewW, 0);
+  const pl = clamp(1 - camX / W * 1.6, 0, 1), el = clamp((camX + viewW) / W * 1.6 - 0.6, 0, 1);
+  gr.addColorStop(0, P.g + Math.round(0x30 * pl).toString(16).padStart(2, '0')); gr.addColorStop(0.5, '#00000000'); gr.addColorStop(1, E.g + Math.round(0x30 * el).toString(16).padStart(2, '0'));
+  c.fillStyle = gr; c.fillRect(camX - 20, top, viewW + 40, GROUND - top + 10);
+  // bintang (parallax perlahan)
+  if (!bgStars) { bgStars = []; for (let i = 0; i < 140; i++) bgStars.push([rnd(0, W), rnd(-420, GROUND - 120), rnd(0.6, 1.8), rnd(0, 6)]); }
+  c.fillStyle = '#ffffff';
+  bgStars.forEach(([x, y, r, ph]) => { const sx = x + camX * 0.85; if (sx < camX - 5 || sx > camX + viewW + 5 || y < top) return; c.globalAlpha = 0.25 + 0.35 * Math.abs(Math.sin(T * 0.8 + ph)); c.fillRect(sx, y, r, r); });
+  // aurora
+  c.globalCompositeOperation = 'lighter';
+  for (let b = 0; b < 2; b++) {
+    const col = b ? E.g : P.g; c.strokeStyle = col; c.lineCap = 'round';
+    for (let l = 0; l < 3; l++) {
+      c.globalAlpha = 0.05; c.lineWidth = 26 - l * 8; c.beginPath();
+      for (let x = camX - 40; x <= camX + viewW + 40; x += 30) { const y = GROUND - 250 - b * 40 + Math.sin(x * 0.006 + T * 0.4 + b * 2) * 30 + Math.sin(x * 0.017 - T * 0.3) * 12 + l * 6; x === camX - 40 ? c.moveTo(x, y) : c.lineTo(x, y); }
+      c.stroke();
+    }
+  }
+  c.globalCompositeOperation = 'source-over';
+  // bulan
+  blob(c, '#c9b8ff', camX * 0.6 + viewW * 0.5 + 120, GROUND - 230, 110, 110, 0.35);
+  c.globalAlpha = 0.85; c.fillStyle = '#efeaff'; c.beginPath(); c.arc(camX * 0.6 + viewW * 0.5 + 120, GROUND - 230, 34, 0, 7); c.fill();
+  c.fillStyle = '#d9d0f5'; [[-10, -8, 7], [8, 6, 5], [-4, 12, 4], [12, -12, 3]].forEach(([dx, dy, r]) => { c.beginPath(); c.arc(camX * 0.6 + viewW * 0.5 + 120 + dx, GROUND - 230 + dy, r, 0, 7); c.fill(); });
+  c.globalAlpha = 1;
+  // 3 lapis gunung dengan rim cahaya
+  [[0.75, 175, 95, '#0b0918', '#3a2a6a'], [0.5, 120, 60, '#0e0b1f', '#4b3a88'], [0.25, 70, 38, '#100d22', '#5d4aa8']].forEach(([par, base, amp, fill, rim], li) => {
+    const off = camX * par;
+    c.beginPath(); c.moveTo(camX - 40, GROUND);
+    const pts = [];
+    for (let x = camX - 40; x <= camX + viewW + 60; x += 24) { const wx = x - off + li * 400; pts.push([x, GROUND - base + 40 - Math.abs(Math.sin(wx * 0.004)) * amp - Math.sin(wx * 0.013) * amp * 0.3 - Math.sin(wx * 0.041) * 6]); }
+    pts.forEach(([x, y]) => c.lineTo(x, y)); c.lineTo(camX + viewW + 60, GROUND); c.closePath();
+    c.fillStyle = fill; c.fill();
+    c.strokeStyle = rim; c.globalAlpha = 0.5; c.lineWidth = 1.2; c.beginPath(); pts.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); c.stroke(); c.globalAlpha = 1;
   });
+  // kabus dekat tanah
+  gr = c.createLinearGradient(0, GROUND - 90, 0, GROUND);
+  gr.addColorStop(0, '#2a1f5000'); gr.addColorStop(1, '#2a1f5066');
+  c.fillStyle = gr; c.fillRect(camX - 20, GROUND - 90, viewW + 40, 90);
+  // tanah: lantai gelap berkilat
+  gr = c.createLinearGradient(0, GROUND - 4, 0, GROUND + 120);
+  gr.addColorStop(0, '#0f1d1a'); gr.addColorStop(0.15, '#08100f'); gr.addColorStop(1, '#030506');
+  c.fillStyle = gr; c.fillRect(camX - 20, GROUND - 4, viewW + 40, 140);
+  // garis horizon bercahaya ikut warna puak
+  gr = c.createLinearGradient(0, 0, W, 0); gr.addColorStop(0, P.c); gr.addColorStop(0.5, '#2ee6c4'); gr.addColorStop(1, E.c);
+  c.strokeStyle = gr; c.globalAlpha = 0.18; c.lineWidth = 8; c.beginPath(); c.moveTo(0, GROUND - 4); c.lineTo(W, GROUND - 4); c.stroke();
+  c.globalAlpha = 0.8; c.lineWidth = 1.5; c.stroke(); c.globalAlpha = 1;
+  // rumput
+  c.strokeStyle = '#2ee6c4'; c.globalAlpha = 0.22; c.lineWidth = 1; c.beginPath();
+  for (let x = Math.floor((camX - 20) / 7) * 7; x < camX + viewW + 20; x += 7) { const h = 4 + ((x * 7) % 7), sw = Math.sin(T * 2 + x * 0.05) * 1.5; c.moveTo(x, GROUND - 4); c.lineTo(x + 1.5 + sw, GROUND - 4 - h); }
+  c.stroke(); c.globalAlpha = 1;
+  // garis perspektif lantai
+  c.strokeStyle = '#2ee6c4'; c.globalAlpha = 0.05; c.beginPath();
+  for (let x = Math.floor(camX / 80) * 80; x < camX + viewW + 80; x += 80) { c.moveTo(x, GROUND); c.lineTo(x + (x - camX - viewW / 2) * 0.6, GROUND + 110); }
+  for (let y = GROUND + 12; y < GROUND + 110;) { c.moveTo(camX - 20, y); c.lineTo(camX + viewW + 20, y); y += (y - GROUND) * 0.5 + 8; }
+  c.stroke(); c.globalAlpha = 1;
   drawBase(c, 0); drawBase(c, 1);
   c.shadowBlur = 10;
+  // kolam cahaya bawah askar
+  for (const u of G.units) blob(c, u.t.g, u.x, GROUND + u.y, 22 * u.size, 6 * u.size, G.sides[u.side].buff.ghost ? 0.1 : 0.35);
+  c.globalAlpha = 1;
   // senjata yang jatuh
   G.drops.forEach(d => { c.shadowColor = d.c; c.globalAlpha = d.life < 2 ? (Math.sin(G.t * 20) > 0 ? 0.9 : 0.3) : 0.9; drawWeapon(c, d.type, d.x - 10, GROUND + d.y - 3, d.rot, 1, 0.9, d.c, 0); c.globalAlpha = 1; });
   // mayat ragdoll
   for (const k of G.corpses) {
     c.shadowColor = k.g; c.globalAlpha = Math.min(1, k.life / 1.5) * 0.85; c.strokeStyle = k.c; c.lineWidth = 3 * k.size; c.lineCap = 'round';
-    c.beginPath(); BONES.forEach(([a, b]) => { if (a === 'head') return; c.moveTo(k.pts[a].x, k.pts[a].y); c.lineTo(k.pts[b].x, k.pts[b].y); }); c.stroke();
+    c.beginPath(); BONES.forEach(([a, b]) => { if (a === 'head') return; c.moveTo(k.pts[a].x, k.pts[a].y); c.lineTo(k.pts[b].x, k.pts[b].y); });
+    const ka = c.globalAlpha; c.globalAlpha = ka * 0.2; c.lineWidth = 8 * k.size; c.stroke(); c.globalAlpha = ka; c.lineWidth = 3 * k.size; c.stroke();
     c.fillStyle = '#07060f'; c.beginPath(); c.arc(k.pts.head.x, k.pts.head.y, 7 * k.size, 0, 7); c.fill(); c.stroke();
   }
   c.globalAlpha = 1;
@@ -608,7 +685,8 @@ function draw() {
   const sorted = G.units.slice().sort((a, b) => a.y - b.y);
   for (const u of sorted) {
     const me = G.sides[u.side];
-    c.shadowColor = me.buff.rage ? '#ff3b1f' : u.t.g; c.shadowBlur = me.buff.rage ? 18 : 10;
+    c.shadowBlur = 0;
+    if (me.buff.rage) { blob(c, '#ff3b1f', u.x, GROUND + u.y - 30 * u.size, 26 * u.size, 40 * u.size, 0.45); if (Math.random() < 0.2) G.parts.push({ x: u.x + rnd(-6, 6), y: GROUND + u.y - rnd(10, 50), vx: 0, vy: -60, life: 0.4, c: '#ff5a1f', r: 2 }); }
     drawStick(c, u, 0, 0, me.buff.ghost ? 0.35 : 1);
     if (me.buff.shield) { c.strokeStyle = '#9fd8ff'; c.lineWidth = 1.5; c.globalAlpha = 0.5; c.beginPath(); c.ellipse(u.x, GROUND + u.y - 28 * u.size, 18 * u.size, 34 * u.size, 0, 0, 7); c.stroke(); c.globalAlpha = 1; }
     if (u.hp < u.maxHp) { c.shadowBlur = 0; c.fillStyle = '#ffffff22'; c.fillRect(u.x - 10, GROUND + u.y - 74 * u.size, 20, 2.5); c.fillStyle = u.t.c; c.fillRect(u.x - 10, GROUND + u.y - 74 * u.size, 20 * Math.max(0, u.hp / u.maxHp), 2.5); c.shadowBlur = 10; }
@@ -619,8 +697,10 @@ function draw() {
     const x = p.sx + (tx - p.sx) * p.t, y = p.sy + (ty - p.sy) * p.t - Math.sin(p.t * Math.PI) * p.arc;
     const nx = p.sx + (tx - p.sx) * (p.t + 0.04), ny = p.sy + (ty - p.sy) * (p.t + 0.04) - Math.sin((p.t + 0.04) * Math.PI) * p.arc;
     const a = Math.atan2(ny - y, nx - x);
-    c.shadowColor = p.c; c.strokeStyle = p.c; c.lineWidth = 1.8;
-    c.beginPath(); c.moveTo(x - Math.cos(a) * 12, y - Math.sin(a) * 12); c.lineTo(x, y); c.stroke();
+    c.shadowBlur = 0; c.strokeStyle = p.c; c.lineCap = 'round';
+    c.globalAlpha = 0.25; c.lineWidth = 5; c.beginPath(); c.moveTo(x - Math.cos(a) * 26, y - Math.sin(a) * 26); c.lineTo(x, y); c.stroke();
+    c.globalAlpha = 1; c.lineWidth = 1.8; c.beginPath(); c.moveTo(x - Math.cos(a) * 13, y - Math.sin(a) * 13); c.lineTo(x, y); c.stroke();
+    blob(c, p.c, x, y, 7, 7, 0.9); c.globalAlpha = 1;
   }
   // efek
   for (const f of G.fx) {
@@ -633,16 +713,29 @@ function draw() {
       c.shadowColor = f.c; c.shadowBlur = 30; c.strokeStyle = f.c; c.lineWidth = 7; c.globalAlpha = Math.min(1, f.life);
       c.beginPath(); c.arc(f.x - f.dir * 30, GROUND - 50, 60, -1.1, 1.1); if (f.dir < 0) { c.beginPath(); c.arc(f.x + 30, GROUND - 50, 60, Math.PI - 1.1, Math.PI + 1.1); } c.stroke();
       c.lineWidth = 2; c.strokeStyle = '#fff'; c.stroke(); c.globalAlpha = 1;
+    } else if (f.k === 'ring') {
+      const k = 1 - f.life / f.max; c.shadowBlur = 0;
+      blob(c, f.c, f.x, f.y, 10 + k * 8, 10 + k * 8, (1 - k) * 0.8);
+      c.globalAlpha = 1 - k; c.strokeStyle = '#fff'; c.lineWidth = 1.5; c.beginPath(); c.arc(f.x, f.y, 4 + k * 14, 0, 7); c.stroke();
+      c.beginPath(); for (let i = 0; i < 4; i++) { const an = i * 1.57 + 0.6; c.moveTo(f.x + Math.cos(an) * (5 + k * 8), f.y + Math.sin(an) * (5 + k * 8)); c.lineTo(f.x + Math.cos(an) * (9 + k * 16), f.y + Math.sin(an) * (9 + k * 16)); } c.stroke();
+      c.globalAlpha = 1;
     } else if (f.k === 'text') {
-      c.shadowBlur = 8; c.shadowColor = f.c; c.fillStyle = f.c; c.font = '700 16px Teko, sans-serif'; c.textAlign = 'center';
+      c.shadowBlur = 8; c.shadowColor = f.c; c.fillStyle = f.c; c.font = f.sm ? '700 12px Teko, sans-serif' : '700 16px Teko, sans-serif'; c.textAlign = 'center';
       c.globalAlpha = Math.min(1, f.life * 2); c.fillText(f.s, f.x, f.y - (1 - f.life) * 20); c.globalAlpha = 1; c.textAlign = 'left';
     }
   }
   // partikel
   c.shadowBlur = 0;
-  for (const p of G.parts) { c.globalAlpha = Math.min(1, p.life * 3); c.fillStyle = p.c; c.fillRect(p.x - p.r / 2, p.y - p.r / 2, p.r, p.r); }
-  c.globalAlpha = 1;
-  // kilat skrin bila ult
+  c.globalCompositeOperation = 'lighter';
+  for (const p of G.parts) { const a = Math.min(1, p.life * 3); blob(c, p.c, p.x, p.y, p.r * 3, p.r * 3, a * 0.6); c.globalAlpha = a; c.fillStyle = p.c; c.fillRect(p.x - p.r / 2, p.y - p.r / 2, p.r, p.r); }
+  // bara terapung
+  if (embers.length < 40) embers.push({ x: rnd(0, W), y: GROUND + rnd(0, 20), vy: rnd(-25, -10), ph: rnd(0, 6), life: rnd(4, 9), c: Math.random() < 0.5 ? P.c : E.c });
+  for (const e of embers) { e.life -= 1 / 60; e.y += e.vy / 60; e.x += Math.sin(G.t + e.ph) * 0.3; blob(c, e.c, e.x, e.y, 4, 4, Math.min(1, e.life) * 0.7); }
+  for (let i = embers.length - 1; i >= 0; i--) if (embers[i].life <= 0) embers.splice(i, 1);
+  c.globalCompositeOperation = 'source-over'; c.globalAlpha = 1;
+  // kilat skrin bila ult + vignette
+  c.setTransform(1, 0, 0, 1, 0, 0);
+  if (vign) c.drawImage(vign, 0, 0);
   c.setTransform(DPR, 0, 0, DPR, 0, 0);
   for (const f of G.fx) if (f.k === 'flash') { c.fillStyle = f.c; c.globalAlpha = f.life / f.max * 0.3; c.fillRect(0, 0, VW, VH); c.globalAlpha = 1; }
   // minimap
