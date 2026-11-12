@@ -527,3 +527,6 @@ body.loc-satay .st.bara{background:radial-gradient(ellipse at 50% 85%,#ff6a3d88,
 .chef{top:0}
 .table.spot .cust>.av{width:clamp(100px,17vh,160px)!important;height:clamp(100px,17vh,160px)!important}
 .tables.n5 .cust>.av,.tables.n4 .cust>.av{width:clamp(80px,13vh,120px)!important;height:clamp(80px,13vh,120px)!important}
+.kitchen{padding-top:96px}
+.chef .av{width:124px;height:124px}
+body.has-bg_dapur .kitchen{background-position:center 30%}
