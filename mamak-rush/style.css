@@ -530,3 +530,18 @@ body.loc-satay .st.bara{background:radial-gradient(ellipse at 50% 85%,#ff6a3d88,
 .kitchen{padding-top:96px}
 .chef .av{width:124px;height:124px}
 body.has-bg_dapur .kitchen{background-position:center 30%}
+/* v4.1: dapur besar, ruang pelanggan kecil */
+.tables{flex:0 0 auto!important;height:29vh;min-height:190px}
+.table.spot .cust>.av{width:clamp(80px,12.5vh,120px)!important;height:clamp(80px,12.5vh,120px)!important}
+.tables.n5 .cust>.av,.tables.n4 .cust>.av{width:clamp(66px,10vh,96px)!important;height:clamp(66px,10vh,96px)!important}
+.door{top:62px}.door .av{width:44px;height:64px}
+.kitchen{flex:1;display:flex;flex-direction:column;padding-top:clamp(110px,17vh,170px)!important;min-height:0}
+.chef .av{width:clamp(130px,19vh,190px)!important;height:clamp(130px,19vh,190px)!important}
+.stations{flex:1;align-content:stretch;align-items:stretch}
+.st{height:auto!important;min-height:150px}
+.st .big{width:clamp(72px,10vh,104px)!important;height:clamp(72px,10vh,104px)!important}
+.st .pan .big{width:clamp(48px,7vh,72px)!important;height:clamp(48px,7vh,72px)!important}
+.stations{grid-auto-rows:1fr}
+.stations.s4 .st{min-height:118px}
+.stations.s4 .st .big{width:clamp(56px,7.5vh,84px)!important;height:clamp(56px,7.5vh,84px)!important}
+.table.spot .cust>.av{width:clamp(88px,14vh,130px)!important;height:clamp(88px,14vh,130px)!important}
