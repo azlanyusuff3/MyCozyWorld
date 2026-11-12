@@ -639,6 +639,7 @@ function buildBoard() {
 }
 function renderAll() {
   if (!G || !$('board').querySelector('.tile')) return;
+  applyWorld();
   $('players').style.gridTemplateColumns = `repeat(${G.players.length},1fr)`;
   $('players').innerHTML = G.players.map((p, k) =>
     `<div class="pchip ${k === G.turn ? 'turn' : ''} ${p.out ? 'out' : ''}" style="border-color:${k === G.turn ? CHARS[p.ci].color : '#fff'}">${p.sleep ? '<i class="zz">💤</i>' : ''}${avatar(p.ci)}<b>${pname(p)}</b><span>${p.out ? 'Bankrap' : rm(p.money)}</span><i class="cnt">🏠 ${G.own.filter(o => o === k).length} tanah</i></div>`).join('');
@@ -652,7 +653,7 @@ function renderAll() {
   });
   G.players.forEach((p, k) => placeToken(k, p.pos));
   const p = cur();
-  $('roundTxt').textContent = (G.maxRounds ? `Pusingan ${Math.min(G.round, G.maxRounds)}/${G.maxRounds}` : `Pusingan ${G.round} · sampai tinggal sorang`) + (festMult() > 1 ? ` · 🎉 Sewa ×${festMult().toFixed(1)}` : '');
+  $('roundTxt').textContent = ['☀️ ', '🌇 ', '🌙 '][phase()] + (G.maxRounds ? `Pusingan ${Math.min(G.round, G.maxRounds)}/${G.maxRounds}` : `Pusingan ${G.round} · sampai tinggal sorang`) + (festMult() > 1 ? ` · 🎉 Sewa ×${festMult().toFixed(1)}` : '');
   $('turnTxt').innerHTML = `${avatar(p.ci)} Giliran ${pname(p)}!`;
   $('log').innerHTML = G.log.slice(0, 3).map(l => `<div>${l}</div>`).join('');
   [...$('dice').children].forEach((d, i) => { if (!d.classList.contains('spin')) setDie(d, G.dice[i]); });
@@ -664,6 +665,7 @@ function placeToken(k, pos) {
   const ox = [.05, .38, .05, .38][idx < 0 ? 0 : idx], oy = [-.22, -.22, .05, .05][idx < 0 ? 0 : idx];
   el.style.left = `calc(${(c + ox) / 11 * 100}% + 3px)`; el.style.top = `calc(${(r + oy) / 11 * 100}% + 3px)`;
   el.style.display = G.players[k].out ? 'none' : '';
+  el.classList.toggle('sleeping', !!G.players[k].sleep);
   el.style.zIndex = k === G.turn ? 4 : 3;
 }
 function log(m) { G.log.unshift(m); G.log.length = Math.min(G.log.length, 12); renderAll(); }
@@ -692,7 +694,7 @@ function modal(html, buttons, autoMs) {
 // Musim Perayaan: from round 31, rent grows 10% per round (max x4) so long games finish
 const FEST_START = 30;
 function festMult() { return G && G.round > FEST_START ? Math.min(4, 1 + (G.round - FEST_START) * 0.1) : 1; }
-function rentOf(i, diceSum) { return Math.round(rawRent(i, diceSum) * festMult()); }
+function rentOf(i, diceSum) { return Math.round(rawRent(i, diceSum) * festMult() * evMult(i) * nightMult(i)); }
 function rawRent(i, diceSum) {
   const t = TILES[i], o = G.own[i]; if (o === null) return 0;
   if (t.t === 'stn') return 25 * Math.pow(2, TILES.filter((x, j) => x.t === 'stn' && G.own[j] === o).length - 1);
@@ -796,11 +798,12 @@ async function nextTurn(first) {
   if (G.over) return;
   if (!first) {
     let n = G.turn;
-    do { n = (n + 1) % G.players.length; if (n === 0) { G.round++; (!G.maxRounds || G.round <= G.maxRounds) && setTimeout(G.round === FEST_START + 1 ? festStart : (G.round > FEST_START && (G.round - FEST_START) % 10 === 0 ? festMore : folkChatter), 400); } } while (G.players[n].out);
+    do { n = (n + 1) % G.players.length; if (n === 0) { G.round++; onNewRound(); (!G.maxRounds || G.round <= G.maxRounds) && setTimeout(G.round === FEST_START + 1 ? festStart : (G.round > FEST_START && (G.round - FEST_START) % 10 === 0 ? festMore : folkChatter), 400); } } while (G.players[n].out);
     G.turn = n;
   }
   if ((G.maxRounds && G.round > G.maxRounds) || alive().length < 2) return endGame();
   renderAll(); save();
+  if (G.pendingEvent) await showEvent();
   const p = cur();
   if (p.sleep > 0) {
     p.sleep--; log(`💤 ${pname(p)} masih tidur kat Rumah Tok Wan...`);
@@ -869,7 +872,7 @@ async function landOn(k, sum) {
       if (ai) want = can && aiWantsBuy(k, i);
       else want = await modal(propHtml(i) + `<p>Duit kau: <b>${rm(p.money)}</b></p>`, [{ label: `🛒 BELI ${rm(t.price)}`, v: true, cls: 'mint', dis: !can }, { label: 'Tak nak', v: false, cls: 'grey' }]);
       if (want) {
-        p.money -= t.price; G.own[i] = k; sfx.buy(); st(k).bought++; if (!ai) G.lastBuy = { k, i, price: t.price }; sticker('first_buy', k); if (i === 39) sticker('klcc', k); if (t.set && TILES.every((x, j) => x.set !== t.set || G.own[j] === k)) sticker('set', k); floatText(k, '-' + t.price, '#e64980');
+        p.money -= t.price; G.own[i] = k; sfx.buy(); emote(k, 'happy'); st(k).bought++; if (!ai) G.lastBuy = { k, i, price: t.price }; sticker('first_buy', k); if (i === 39) sticker('klcc', k); if (t.set && TILES.every((x, j) => x.set !== t.set || G.own[j] === k)) sticker('set', k); floatText(k, '-' + t.price, '#e64980');
         log(`🛒 ${pname(p)} beli ${t.name}!`); renderAll(); tileFx(i, 'buy'); await wait(1000);
         say2(t.price >= 300 ? 'buyBig' : 'buy', { k, p: pname(p), t: t.name, m: rm(t.price) });
         if (ai) await modal(say(`${pname(p)}: "${fill(pick(AI_SAY.buy), { t: t.name })}"`) + propHtml(i), [{ label: 'OK' }], auto);
@@ -880,7 +883,7 @@ async function landOn(k, sum) {
         let up;
         if (ai) up = can && p.money - cost >= ai.upReserve;
         else up = await modal(propHtml(i) + `<p>Ni tempat kau! Nak naik taraf jadi <b>${LVL_IC[nx]} ${LVL[nx]}</b>?</p>`, [{ label: `🔨 UPGRADE ${rm(cost)}`, v: true, cls: 'mint', dis: !can }, { label: 'Nanti dulu', v: false, cls: 'grey' }]);
-        if (up) { p.money -= cost; G.lvl[i] = nx; sfx.buy(); if (nx === 2) sticker('bangunan', k); renderAll(); tileFx(i, nx === 2 ? 'big' : 'up'); await wait(1100); log(`🔨 ${pname(p)} naik taraf ${t.name} jadi ${LVL[nx]}!`); renderAll(); say2(nx === 2 ? 'bangunan' : 'upgrade', { k, p: pname(p), t: t.name, l: LVL[nx] }); if (ai) await modal(say(`${pname(p)}: "${fill(pick(AI_SAY.up), { t: t.name, l: LVL[nx] })} ${LVL_IC[nx]}"`) + propHtml(i), [{ label: 'OK' }], auto); }
+        if (up) { p.money -= cost; G.lvl[i] = nx; sfx.buy(); emote(k, 'happy'); if (nx === 2) sticker('bangunan', k); renderAll(); tileFx(i, nx === 2 ? 'big' : 'up'); await wait(1100); log(`🔨 ${pname(p)} naik taraf ${t.name} jadi ${LVL[nx]}!`); renderAll(); say2(nx === 2 ? 'bangunan' : 'upgrade', { k, p: pname(p), t: t.name, l: LVL[nx] }); if (ai) await modal(say(`${pname(p)}: "${fill(pick(AI_SAY.up), { t: t.name, l: LVL[nx] })} ${LVL_IC[nx]}"`) + propHtml(i), [{ label: 'OK' }], auto); }
       } else log(`${pname(p)} rehat kat ${t.name} sendiri 😌`);
     } else {
       let r = rentOf(i, sum); const owner = G.players[o];
@@ -899,6 +902,7 @@ async function landOn(k, sum) {
       }
       else await modal(say(`${pname(p)}: "${fill(pick(r >= 100 ? AI_SAY.payBig : AI_SAY.pay), { m: rm(r), o: pname(owner), t: t.name })}"`) + propHtml(i), [{ label: 'OK' }], 10000);
       st(k).rentPaid += r; st(o).rentEarn += r; G.tileEarn[i] += r;
+      emote(k, r >= 100 ? 'shock' : 'sad'); emote(o, 'happy');
       await pay(k, r, o);
     }
   } else if (t.t === 'tax') {
@@ -930,8 +934,8 @@ async function drawCard(k, type) {
   await modal(`<p style="margin:0 0 8px"><b>${pname(p)}</b> ambil kad...</p><div class="flip"><div class="flip-in"><div class="face back ${type} ${ART['card_' + type + '_back'] ? 'art' : ''}"><span>${type === 'rezeki' ? '🍀' : '🌧️'}</span>${type === 'rezeki' ? 'REZEKI' : 'MUSIBAH'}</div><div class="face front ${type} ${ART['card_' + type + '_front'] ? 'art' : ''}"><div class="big-ic">${c.ic}</div><h2>${c.txt}</h2>${extra ? `<b>${extra}</b>` : ''}</div></div></div>`, [{ label: 'OK!', cls: type === 'rezeki' ? 'mint' : 'pink' }], p.ai !== null ? 10000 : 0);
   log(`${c.ic} ${pname(p)}: ${c.txt}`);
   if (c.pasar) await pasarMalam(k);
-  else if (c.money > 0) gain(k, c.money);
-  else if (c.money < 0) await pay(k, -c.money);
+  else if (c.money > 0) { emote(k, 'happy'); gain(k, c.money); }
+  else if (c.money < 0) { emote(k, 'shock'); await pay(k, -c.money); }
   else if (c.each) {
     for (let j = 0; j < G.players.length; j++) if (j !== k && !G.players[j].out) {
       if (c.each > 0) await pay(j, c.each, k); else await pay(k, -c.each, j);
@@ -956,6 +960,108 @@ function aiWantsBuy(k, i) {
   }
   return left >= ai.reserve;
 }
+
+/* ===================== WORLD: events, day/night, emotes, music ===================== */
+// ---- day / night (cycles every round: siang -> petang -> malam) ----
+const phase = () => G ? (G.round - 1) % 3 : 0;
+function nightMult(i) { return phase() === 2 && [6, 8, 1].includes(i) ? 1.5 : 1; }
+// ---- events ----
+const EVENTS = {
+  banjir: { ic: '🌧️', name: 'Banjir di Pantai Timur', desc: 'Hujan lebat! Sewa Kota Bharu, Kuala Terengganu dan Kuantan jadi <b>separuh</b>.', tiles: [14, 16, 18], mult: .5, fx: 'rain' },
+  cuti: { ic: '🏖️', name: 'Cuti Sekolah!', desc: 'Ramai pelancong! Sewa Langkawi, Genting dan Cameron jadi <b>×2</b>.', tiles: [21, 23, 24], mult: 2, fx: 'sun' },
+  makan: { ic: '🍜', name: 'Pesta Makanan', desc: 'Semua orang lapar! Sewa Gerai Cendol, Roti Canai, Kedai Mamak, Ipoh dan Pulau Pinang <b>×1.5</b>.', tiles: [1, 3, 8, 13, 34], mult: 1.5, fx: 'food' },
+  merdeka: { ic: '🇲🇾', name: 'Hari Merdeka!', desc: 'Kerajaan bagi duit raya Merdeka: semua pemain dapat <b>RM100</b>!', tiles: [], mult: 1, fx: 'fireworks', once: true },
+  angin: { ic: '🌬️', name: 'Angin Kencang', desc: 'Pokok tumbang, jalan sesak! Sewa semua stesen jadi <b>separuh</b>.', tiles: [5, 15, 25, 35], mult: .5, fx: 'wind' },
+};
+function evMult(i) { const e = G && G.event && EVENTS[G.event.id]; return e && e.tiles.includes(i) ? e.mult : 1; }
+function onNewRound() {
+  if (G.event && G.round > G.event.until) { G.event = null; }
+  if (!G.event && G.round > 2 && G.round % 4 === 0 && G.round !== FEST_START + 1) {
+    const keys = Object.keys(EVENTS).filter(k => k !== G.lastEv);
+    G.pendingEvent = pick(keys);
+  }
+}
+async function showEvent() {
+  const id = G.pendingEvent; G.pendingEvent = null; const e = EVENTS[id]; if (!e) return;
+  G.lastEv = id; G.event = e.once ? null : { id, until: G.round + 2 };
+  applyWorld(); boardFx(e.fx);
+  await modal(`<div class="big-ic">${e.ic}</div><h2>${e.name}</h2><p>${e.desc}</p>${e.once ? '' : '<p class="hint">Berlaku selama 3 pusingan</p>'}`, [{ label: 'OK!' }], cur().ai !== null ? 10000 : 0);
+  if (id === 'merdeka') { alive().forEach(p => { const k = G.players.indexOf(p); gain(k, 100); emote(k, 'happy'); }); }
+  notify('ann', `${e.name}! ${e.desc.replace(/<[^>]+>/g, '')}`, true);
+  log(`${e.ic} ${e.name}`); renderAll(); save();
+}
+function applyWorld() {
+  const w = $('boardWrap'); if (!w || !G) return;
+  w.classList.remove('ph0', 'ph1', 'ph2'); w.classList.add('ph' + phase());
+  const e = G.event && EVENTS[G.event.id];
+  w.dataset.fx = e ? e.fx : '';
+  let ban = $('evBanner');
+  if (!ban) { ban = document.createElement('div'); ban.id = 'evBanner'; ban.className = 'ev-banner'; $('center').appendChild(ban); }
+  ban.innerHTML = e ? `${e.ic} ${e.name} · ${G.event.until - G.round + 1} pusingan lagi` : (phase() === 2 ? '🌙 Malam · Pasar Malam & Mamak sewa ×1.5' : '');
+  ban.style.display = ban.innerHTML ? '' : 'none';
+  TILES.forEach((t, i) => { const el = $('tile' + i); if (el) el.classList.toggle('ev', !!(e && e.tiles.includes(i))); });
+  ensureSky();
+}
+function ensureSky() {
+  const w = $('board'); if (!w || w.querySelector('.sky')) return;
+  const sky = document.createElement('div'); sky.className = 'sky';
+  sky.innerHTML = [...Array(14)].map(() => `<i style="left:${Math.random() * 100}%;top:${Math.random() * 100}%;animation-delay:${Math.random() * 2}s"></i>`).join('') +
+    '<div class="rain">' + [...Array(36)].map(() => `<b style="left:${Math.random() * 100}%;animation-delay:${Math.random()}s;animation-duration:${.5 + Math.random() * .4}s"></b>`).join('') + '</div>';
+  w.appendChild(sky);
+}
+function boardFx(kind) {
+  const w = $('boardWrap'); if (!w) return;
+  if (kind === 'fireworks' || kind === 'food' || kind === 'sun') {
+    const em = kind === 'fireworks' ? ['🎆', '🎇', '✨', '🇲🇾'] : kind === 'food' ? ['🍜', '🍢', '🍧', '🥟', '☕'] : ['☀️', '🏖️', '🌴', '😎'];
+    for (let n = 0; n < 18; n++) {
+      const f = document.createElement('span'); f.className = 'bfx'; f.textContent = pick(em);
+      f.style.left = 10 + Math.random() * 80 + '%'; f.style.top = 20 + Math.random() * 60 + '%'; f.style.animationDelay = Math.random() * .8 + 's';
+      w.appendChild(f); setTimeout(() => f.remove(), 2600);
+    }
+  }
+}
+// ---- pawn emotions ----
+function emote(k, type) {
+  const el = $('tok' + k); if (!el) return;
+  el.classList.remove('emo-happy', 'emo-sad', 'emo-shock'); void el.offsetWidth; el.classList.add('emo-' + type);
+  const b = document.createElement('div'); b.className = 'emo-bubble'; b.textContent = { happy: pick(['😄', '🥳', '😍', '✨']), sad: pick(['😕', '😢']), shock: pick(['😱', '😵', '💸']) }[type];
+  el.appendChild(b); setTimeout(() => { b.remove(); el.classList.remove('emo-' + type); }, 1600);
+}
+// ---- background music (generated, no files) ----
+let musicOn = localStorage.getItem('cozyTycoonMusic') !== '0', musT = null, musStep = 0, musNext = 0;
+const SCALE = [0, 2, 4, 7, 9, 12, 14, 16];
+const CHORDS = [[0, 4, 7], [-3, 0, 4], [-7, -3, 0], [-5, -1, 2]]; // I vi IV V (C major)
+function note(f, t, d, type, v) {
+  const o = AC.createOscillator(), g = AC.createGain();
+  o.type = type; o.frequency.value = f;
+  g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v, t + .02); g.gain.exponentialRampToValueAtTime(.0001, t + d);
+  o.connect(g).connect(AC.destination); o.start(t); o.stop(t + d + .05);
+}
+const hz = s => 261.63 * Math.pow(2, s / 12);
+function musicTick() {
+  if (!AC || !musicOn || !soundOn || document.hidden || $('play').classList.contains('hidden')) return;
+  const fest = typeof festMult === 'function' && festMult() > 1, night = phase() === 2;
+  const bpm = fest ? 128 : night ? 84 : 100, st = 60 / bpm / 2;
+  if (musNext < AC.currentTime) musNext = AC.currentTime + .05;
+  while (musNext < AC.currentTime + .25) {
+    const bar = Math.floor(musStep / 8) % 4, ch = CHORDS[bar], pos = musStep % 8, t = musNext;
+    if (pos === 0) note(hz(ch[0] - 12), t, st * 7, 'sine', .035);
+    if (pos === 4) note(hz(ch[1] - 12), t, st * 3, 'sine', .022);
+    if (pos % 2 === 0 || fest) {
+      const deg = (SCALE.indexOf(ch[0] % 12) + (Math.random() * 4 | 0)) % SCALE.length;
+      if (Math.random() < (fest ? .9 : .65)) note(hz(SCALE[Math.max(0, deg)] + (night ? -12 : 0) + 12), t, st * (fest ? 1.2 : 1.8), 'triangle', night ? .02 : .028);
+    }
+    if (fest && pos % 2 === 1) note(2400, t, .03, 'square', .006);
+    musNext += st; musStep++;
+  }
+}
+function startMusic() { if (!musT) musT = setInterval(() => { try { musicTick(); } catch (e) {} }, 60); }
+setTimeout(() => {
+  const b = $('musicBtn'); if (!b) return;
+  const upd = () => b.classList.toggle('off', !musicOn); upd();
+  b.onclick = () => { musicOn = !musicOn; localStorage.setItem('cozyTycoonMusic', musicOn ? '1' : '0'); upd(); beep(650); };
+  startMusic();
+});
 
 /* ===================== EXTRAS ===================== */
 function ensureState() {

@@ -337,3 +337,56 @@ button.kuih:active{transform:scale(.95)}
 .toast.player .face{background:#fff;overflow:hidden}.toast.player .face img,.toast.player .face svg{width:150%;height:150%;object-fit:cover;object-position:50% 0;margin-top:30%}
 .die canvas.d3{width:90px;height:90px;margin:-26px -15px -4px;display:block;position:relative;z-index:3}
 .die.spin{animation:none!important}
+
+/* ===== world: day/night, events, emotes ===== */
+.top-btns .icon-btn{width:34px}
+.board-wrap .sky{position:absolute;inset:0;pointer-events:none;z-index:7;border-radius:16px;overflow:hidden;transition:background 1.2s}
+.board-wrap.ph1 .sky{background:linear-gradient(180deg,#ff9a5a30,#ff6fa020)}
+.board-wrap.ph2 .sky{background:linear-gradient(180deg,#2a2f7a,#5a3f9a);mix-blend-mode:multiply;opacity:.9}
+.board-wrap.ph2 .sky i{mix-blend-mode:normal}
+.board-wrap .sky i{position:absolute;width:3px;height:3px;border-radius:50%;background:#fff;opacity:0;animation:twinkle 2.4s ease-in-out infinite}
+.board-wrap.ph2 .sky i{opacity:1}
+@keyframes twinkle{50%{transform:scale(1.8);opacity:.3}}
+.board-wrap .sky .rain{position:absolute;inset:0;display:none}
+.board-wrap[data-fx="rain"] .sky .rain{display:block}
+.board-wrap .sky .rain b{position:absolute;top:-10%;width:2px;height:14px;background:linear-gradient(#bfe6ff00,#bfe6ff);border-radius:2px;animation:rainfall linear infinite}
+@keyframes rainfall{to{transform:translateY(120vh)}}
+.board-wrap[data-fx="sun"] .sky{background:radial-gradient(circle at 85% 8%,#ffe27a90,transparent 45%)}
+.board-wrap.ph2[data-fx="sun"] .sky{background:linear-gradient(180deg,#2a2f7a,#5a3f9a)}
+.board-wrap[data-fx="wind"] .sky{background-image:repeating-linear-gradient(170deg,transparent 0 40px,#ffffff30 40px 42px);animation:wind 1s linear infinite}
+@keyframes wind{to{background-position:-80px 0}}
+.board-wrap.ph2 .tile.owned{box-shadow:inset 0 0 0 3px var(--own),0 0 10px 2px #ffd36baa,0 3px 0 #e2b6ca}
+.board-wrap.ph2 .tile .bld{filter:drop-shadow(0 0 4px #ffd36b) drop-shadow(0 0 2px #ffd36b)}
+.board-wrap.ph2 .tokens{z-index:8}
+.tile.ev{animation:evpulse 1.6s ease-in-out infinite}
+@keyframes evpulse{50%{box-shadow:inset 0 0 0 3px #ffd43b,0 0 12px #ffd43b}}
+.ev-banner{background:#fffffff0;border-radius:12px;padding:4px 10px;font-weight:900;font-size:clamp(9px,2.6vw,12px);color:#7a4f8c;box-shadow:0 3px 0 #ecc9da;max-width:92%}
+.bfx{position:absolute;z-index:9;font-size:26px;pointer-events:none;animation:bfx 2.2s ease-out forwards;opacity:0}
+@keyframes bfx{0%{transform:scale(.3) translateY(20px);opacity:0}20%{opacity:1;transform:scale(1.3)}100%{transform:scale(1) translateY(-60px);opacity:0}}
+/* pawn emotions */
+.token .emo-bubble{position:absolute;left:50%;top:-55%;transform:translateX(-50%);font-size:clamp(14px,4.4vw,22px);background:#fff;border-radius:50%;width:1.6em;height:1.6em;display:grid;place-items:center;box-shadow:0 2px 4px #0003;animation:bub 1.6s ease forwards;z-index:9}
+@keyframes bub{0%{transform:translateX(-50%) scale(0)}15%{transform:translateX(-50%) scale(1.2)}25%{transform:translateX(-50%) scale(1)}85%{opacity:1}100%{transform:translateX(-50%) translateY(-10px);opacity:0}}
+.token.emo-happy .stand svg{animation:joy .35s ease 3}
+@keyframes joy{50%{transform:translateY(-40%) scale(1.1,.95)}}
+.token.emo-sad .stand svg{animation:droop 1s ease}
+@keyframes droop{40%{transform:scaleY(.82) translateY(10%)}}
+.token.emo-shock .stand svg{animation:quake .08s linear 10}
+@keyframes quake{25%{transform:translateX(-12%) rotate(-6deg)}75%{transform:translateX(12%) rotate(6deg)}}
+.token.sleeping .stand svg{transform:rotate(-14deg) translateY(6%);filter:drop-shadow(0 0 1.2px #fff) grayscale(.3)}
+.token.sleeping::after{content:"💤";position:absolute;left:55%;top:-45%;font-size:clamp(12px,3.6vw,18px);animation:zz 1.8s ease-in-out infinite}
+@keyframes zz{50%{transform:translate(4px,-6px) scale(1.15);opacity:.6}}
+
+/* night v2: sky lives inside the tilted board; lit shops at night */
+.board .sky{position:absolute;inset:0;z-index:3;pointer-events:none;border-radius:16px;overflow:hidden}
+.board-wrap .board .sky{mix-blend-mode:normal!important;opacity:1!important}
+.board-wrap.ph0 .board .sky{background:none}
+.board-wrap.ph1 .board .sky{background:linear-gradient(180deg,#ff9a5a26,#ff6fa01a)}
+.board-wrap.ph2 .board .sky{background:linear-gradient(180deg,#1e2470,#3a2a7a);opacity:.28!important}
+.tokens{z-index:6}
+.board-wrap.ph2 .tile{filter:brightness(.66) saturate(.85);transition:filter 1s}
+.board-wrap.ph2 .center{filter:brightness(.72) saturate(.9);transition:filter 1s}
+.board-wrap.ph2 .tile.owned{filter:none;box-shadow:inset 0 0 0 3px var(--own),0 0 12px 3px #ffd36bcc,0 3px 0 #e2b6ca}
+.board-wrap.ph2 .tile.owned .bld{filter:drop-shadow(0 0 4px #ffe08a) drop-shadow(0 0 3px #ffe08a)}
+.board-wrap.ph2 .board{background:linear-gradient(180deg,#9a8fc6,#8a78b8)}
+.board-wrap.ph1 .tile{filter:sepia(.18) saturate(1.1)}
+.ev-banner{position:relative;z-index:4}
