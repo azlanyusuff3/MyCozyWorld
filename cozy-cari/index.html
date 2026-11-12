@@ -8,7 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@700;800&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none}
-html,body{margin:0;height:100%;background:#fdf1df;font-family:Nunito,sans-serif;color:#3b2a1e;overflow:hidden}
+html,body{margin:0;height:100%;background:#fdf1df url(sprites/bg_menu.webp) center/cover;font-family:Nunito,sans-serif;color:#3b2a1e;overflow:hidden}
 #app{height:100%;display:flex;flex-direction:column;max-width:900px;margin:0 auto}
 header{display:flex;align-items:center;gap:8px;padding:8px 10px}
 header a{text-decoration:none;color:#3b2a1e;background:#fff;border-radius:12px;padding:6px 10px;box-shadow:0 3px 0 #e2c9a8;font-weight:800}
@@ -59,15 +59,16 @@ header a{text-decoration:none;color:#3b2a1e;background:#fff;border-radius:12px;p
 // ---------- Data ----------
 // Setiap tema: nama, palet latar, objek tema [emoji, BM, BI]
 const THEMES=[
- {n:'Bilik Stor',e:'Store Room',wall:'#f2d7b6',floor:'#b98a5e',acc:'#7a4e2d',items:[['🧹','penyapu','broom'],['🪣','baldi','bucket'],['🔨','tukul','hammer'],['🪚','gergaji','saw'],['🪛','pemutar skru','screwdriver'],['🔧','sepana','spanner'],['🪜','tangga','ladder'],['🧤','sarung tangan','gloves'],['⛑️','topi keselamatan','safety hat'],['🖌️','berus cat','paint brush'],['🪴','pokok pasu','potted plant'],['📦','kotak','box'],['🔦','lampu suluh','torch'],['✏️','pensel','pencil'],['🍶','botol','bottle']]},
- {n:'Dapur Nenek',e:'Grandma\'s Kitchen',wall:'#fbe3c4',floor:'#c9a27a',acc:'#2a9d8f',items:[['🍳','kuali','frying pan'],['🥄','sudu','spoon'],['🍴','garpu','fork'],['🔪','pisau','knife'],['🫖','teko','teapot'],['☕','cawan','cup'],['🍚','nasi','rice'],['🧂','garam','salt'],['🥚','telur','egg'],['🧅','bawang','onion'],['🌶️','cili','chilli'],['🥥','kelapa','coconut'],['🍌','pisang','banana'],['🧺','bakul','basket'],['🕯️','lilin','candle']]},
- {n:'Pasar Malam',e:'Night Market',wall:'#2b2d42',floor:'#6d597a',acc:'#ffb703',items:[['🍢','satay','satay'],['🌽','jagung','corn'],['🍉','tembikai','watermelon'],['🥭','mangga','mango'],['🍍','nanas','pineapple'],['🎈','belon','balloon'],['🧸','anak patung','teddy bear'],['👟','kasut','shoes'],['🧢','topi','cap'],['🕶️','cermin mata','sunglasses'],['🏮','tanglung','lantern'],['🍦','aiskrim','ice cream'],['🥤','air','drink'],['💡','mentol','light bulb'],['🪀','yoyo','yo-yo']]},
- {n:'Bilik Tidur',e:'Bedroom',wall:'#cde7f0',floor:'#e9c46a',acc:'#e76f51',items:[['🛏️','katil','bed'],['🧸','teddy','teddy bear'],['📚','buku','books'],['⏰','jam loceng','alarm clock'],['🎒','beg','school bag'],['👕','baju','shirt'],['🧦','stoking','socks'],['🪥','berus gigi','toothbrush'],['🎮','alat main','game pad'],['🖍️','krayon','crayon'],['⚽','bola','ball'],['🪞','cermin','mirror'],['🕹️','joystick','joystick'],['🎧','fon kepala','headphones'],['🧩','puzzle','puzzle']]},
- {n:'Taman Atuk',e:'Grandpa\'s Garden',wall:'#a8dadc',floor:'#80b918',acc:'#55a630',items:[['🌻','bunga matahari','sunflower'],['🍄','cendawan','mushroom'],['🐌','siput','snail'],['🦋','rama-rama','butterfly'],['🐓','ayam','chicken'],['🐈','kucing','cat'],['🪺','sarang','nest'],['🥕','lobak','carrot'],['🍅','tomato','tomato'],['🌵','kaktus','cactus'],['🪨','batu','rock'],['🐸','katak','frog'],['🐝','lebah','bee'],['🚲','basikal','bicycle'],['🪁','layang-layang','kite']]}
+ {k:'stor',n:'Bilik Stor',e:'Store Room',wall:'#f2d7b6',floor:'#b98a5e',acc:'#7a4e2d',items:[['🧹','penyapu','broom'],['🪣','baldi','bucket'],['🔨','tukul','hammer'],['🪚','gergaji','saw'],['🪛','pemutar skru','screwdriver'],['🔧','sepana','spanner'],['🪜','tangga','ladder'],['🧤','sarung tangan','gloves'],['⛑️','topi keselamatan','safety hat'],['🖌️','berus cat','paint brush'],['🪴','pokok pasu','potted plant'],['📦','kotak','box'],['🔦','lampu suluh','torch'],['✏️','pensel','pencil'],['🍶','botol','bottle']]},
+ {k:'dapur',n:'Dapur Nenek',e:'Grandma\'s Kitchen',wall:'#fbe3c4',floor:'#c9a27a',acc:'#2a9d8f',items:[['🍳','kuali','frying pan'],['🥄','sudu','spoon'],['🍴','garpu','fork'],['🔪','pisau','knife'],['🫖','teko','teapot'],['☕','cawan','cup'],['🍚','nasi','rice'],['🧂','garam','salt'],['🥚','telur','egg'],['🧅','bawang','onion'],['🌶️','cili','chilli'],['🥥','kelapa','coconut'],['🍌','pisang','banana'],['🧺','bakul','basket'],['🕯️','lilin','candle']]},
+ {k:'pasar',n:'Pasar Malam',e:'Night Market',wall:'#2b2d42',floor:'#6d597a',acc:'#ffb703',items:[['🍢','satay','satay'],['🌽','jagung','corn'],['🍉','tembikai','watermelon'],['🥭','mangga','mango'],['🍍','nanas','pineapple'],['🎈','belon','balloon'],['🧸','anak patung','teddy bear'],['👟','kasut','shoes'],['🧢','topi','cap'],['🕶️','cermin mata','sunglasses'],['🏮','tanglung','lantern'],['🍦','aiskrim','ice cream'],['🥤','air','drink'],['💡','mentol','light bulb'],['🪀','yoyo','yo-yo']]},
+ {k:'bilik',n:'Bilik Tidur',e:'Bedroom',wall:'#cde7f0',floor:'#e9c46a',acc:'#e76f51',items:[['🛏️','katil','bed'],['🧸','teddy','teddy bear'],['📚','buku','books'],['⏰','jam loceng','alarm clock'],['🎒','beg','school bag'],['👕','baju','shirt'],['🧦','stoking','socks'],['🪥','berus gigi','toothbrush'],['🎮','alat main','game pad'],['🖍️','krayon','crayon'],['⚽','bola','ball'],['🪞','cermin','mirror'],['🕹️','joystick','joystick'],['🎧','fon kepala','headphones'],['🧩','puzzle','puzzle']]},
+ {k:'taman',n:'Taman Atuk',e:'Grandpa\'s Garden',wall:'#a8dadc',floor:'#80b918',acc:'#55a630',items:[['🌻','bunga matahari','sunflower'],['🍄','cendawan','mushroom'],['🐌','siput','snail'],['🦋','rama-rama','butterfly'],['🐓','ayam','chicken'],['🐈','kucing','cat'],['🪺','sarang','nest'],['🥕','lobak','carrot'],['🍅','tomato','tomato'],['🌵','kaktus','cactus'],['🪨','batu','rock'],['🐸','katak','frog'],['🐝','lebah','bee'],['🚲','basikal','bicycle'],['🪁','layang-layang','kite']]}
 ];
-// Objek pengalih (decoy) — bukan dalam senarai
-const DECOY='🍎🍐🍊🍋🍇🍓🫐🍒🥝🥑🥦🧀🥨🥐🍞🧁🍩🍪🎀🎁🧵🧶🪡🪢👒🎩👓💼👜👛🪙💎🔑🗝️📎📌📏📐✂️🖇️📒📕📗📘📙🗂️🧴🧽🧼🪒🧻🪤🪝🧲🔩⚙️🧰🔋🔌📻📺☎️⏳🕰️🌂☂️🧳🎲♟️🎯🎳🪃🏓🏸🥏🎻🥁🎷🪗🎺🐟🐠🦆🐦🐁🐇🐢🍂🍁🌸🌼🌷🪵🥫🫙🧃🍯🥜🌰🍬🍭🫔🪅🎐🧧📯🔔'.match(/\p{Extended_Pictographic}️?/gu);
-
+// Objek pengalih (decoy) — bukan dalam senarai. [id sprite, emoji fallback]
+const DECOY=[['d_apple','🍎'],['d_orange','🍊'],['d_grapes','🍇'],['d_strawberry','🍓'],['d_cheese','🧀'],['d_bread','🍞'],['d_cupcake','🧁'],['d_donut','🍩'],['d_cookie','🍪'],['d_ribbon','🎀'],['d_gift','🎁'],['d_yarn','🧶'],['d_thread','🧵'],['d_hat','👒'],['d_glasses','👓'],['d_briefcase','💼'],['d_handbag','👜'],['d_coin','🪙'],['d_gem','💎'],['d_key','🔑'],['d_paperclip','📎'],['d_pin','📌'],['d_ruler','📏'],['d_scissors','✂️'],['d_notebook','📒'],['d_soap','🧼'],['d_sponge','🧽'],['d_tissue','🧻'],['d_magnet','🧲'],['d_bolt','🔩'],['d_gear','⚙️'],['d_toolbox','🧰'],['d_battery','🔋'],['d_plug','🔌'],['d_radio','📻'],['d_phone','☎️'],['d_hourglass','⏳'],['d_umbrella','☂️'],['d_suitcase','🧳'],['d_dice','🎲'],['d_target','🎯'],['d_drum','🥁'],['d_trumpet','🎺'],['d_fish','🐟'],['d_duck','🦆'],['d_bird','🐦'],['d_mouse','🐁'],['d_rabbit','🐇'],['d_turtle','🐢'],['d_leaf','🍂'],['d_flower','🌸'],['d_log','🪵'],['d_can','🥫'],['d_jar','🫙'],['d_honey','🍯'],['d_candy','🍬'],['d_lollipop','🍭'],['d_bell','🔔'],['d_shell','🐚'],['d_feather','🪶']];
+const iid=(t,x)=>t.k+'_'+x[2].toLowerCase().replace(/[^a-z]/g,'');
+let SPR=new Set();
 // ---------- Level config: makin tinggi makin semak ----------
 function cfg(lv){
   return {
@@ -116,17 +117,20 @@ function shuffle(a,r){for(let i=a.length-1;i>0;i--){const j=Math.floor(r()*(i+1)
 function start(lv){
   LV=lv;const C=cfg(lv),t=C.theme,rng=mulberry(lv*977+Date.now()%1000);
   $('sub').textContent=`Level ${lv} · ${t.n}`;
-  const sc=$('scene');sc.innerHTML=bgSVG(t,lv,rng);
+  const sc=$('scene');
+  if(SPR.has('bg_'+t.k)){sc.innerHTML=`<img class="bg" src="sprites/bg_${t.k}.webp" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">`;rng();}
+  else sc.innerHTML=bgSVG(t,lv,rng);
   targets=shuffle(t.items.slice(),rng).slice(0,C.targets);
   const tEm=new Set(targets.map(x=>x[0]));
   // decoy: dari pool + objek tema yang tak dicari
-  let pool=DECOY.concat(t.items.filter(x=>!tEm.has(x[0])).map(x=>x[0])).filter(e=>!tEm.has(e));
+  let pool=DECOY.map(d=>({id:d[0],e:d[1]})).concat(t.items.filter(x=>!tEm.has(x[0])).map(x=>({id:iid(t,x),e:x[0]}))).filter(o=>!tEm.has(o.e));
   const objs=[];
-  for(let i=0;i<C.decoys;i++)objs.push({e:pool[Math.floor(rng()*pool.length)],t:false});
-  targets.forEach((x,i)=>objs.push({e:x[0],t:true,i}));
+  for(let i=0;i<C.decoys;i++)objs.push({...pool[Math.floor(rng()*pool.length)],t:false});
+  targets.forEach((x,i)=>objs.push({id:iid(t,x),e:x[0],t:true,i}));
   shuffle(objs,rng);
   objs.forEach((o,k)=>{
-    const d=document.createElement('div');d.className='obj';d.textContent=o.e;
+    const d=document.createElement('div');d.className='obj';
+    if(SPR.has(o.id)){const im=new Image();im.src='sprites/'+o.id+'.webp';im.draggable=false;im.style.cssText='width:1.2em;height:1.2em;object-fit:contain;display:block;pointer-events:none';d.appendChild(im)}else d.textContent=o.e;
     let sz=C.size*(0.75+rng()*0.6);
     if(o.t&&rng()<C.hidePct){sz*=0.7;d.style.opacity=.8}
     d.style.left=(5+rng()*90)+'%';d.style.top=(8+rng()*86)+'%';
@@ -137,7 +141,7 @@ function start(lv){
     sc.appendChild(d);
   });
   sizeVar();
-  $('list').innerHTML=targets.map((x,i)=>`<div class="item" id="it${i}"><b>${x[0]}</b><span>${x[1]}<i>${x[2]}</i></span></div>`).join('');
+  $('list').innerHTML=targets.map((x,i)=>`<div class="item" id="it${i}"><b>${SPR.has(iid(t,x))?`<img src="sprites/${iid(t,x)}.webp" style="width:28px;height:28px;object-fit:contain;vertical-align:middle">`:x[0]}</b><span>${x[1]}<i>${x[2]}</i></span></div>`).join('');
   left=targets.length;time=C.time;hints=3;$('hintBtn').textContent='💡 3';
   $('overlay').classList.add('hide');playing=true;
   clearInterval(tick);tick=setInterval(()=>{time--;showTime();if(time<=0)end(false)},1000);showTime();
@@ -180,10 +184,10 @@ function end(win){
 function menu(){
   playing=false;clearInterval(tick);
   let g='';for(let i=1;i<=30;i++)g+=`<button ${i>unlocked?'disabled':''} onclick="start(${i})">${i}<br><small style="font-size:10px">${best[i]?'⭐'.repeat(best[i]):''}</small></button>`;
-  $('card').innerHTML=`<h1>🔍 Cari Cari</h1><p>Jumpa semua barang dalam senarai sebelum masa habis! Salah tekan −3s.</p><div class="lv">${g}</div>`;
+  $('card').innerHTML=`${SPR.has('logo')?'<img src="sprites/logo.webp" style="width:80%;max-height:120px;object-fit:contain">':'<h1>🔍 Cari Cari</h1>'}<p>Jumpa semua barang dalam senarai sebelum masa habis! Salah tekan −3s.</p><div class="lv">${g}</div>`;
   $('overlay').classList.remove('hide');
 }
-menu();
+fetch('sprites/list.json',{cache:'no-cache'}).then(r=>r.ok?r.json():[]).catch(()=>[]).then(l=>{SPR=new Set(l);menu()});
 </script>
 </body>
 </html>

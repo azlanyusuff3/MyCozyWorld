@@ -34,7 +34,7 @@ if('serviceWorker' in navigator){var hadController=!!navigator.serviceWorker.con
 <script>
 // Kalau ada key art penuh (assets/hub/card_<game>.webp), guna terus atas kad.
 fetch('assets/hub/list.json').then(function(r){return r.ok?r.json():[]}).catch(function(){return[]}).then(function(l){
-  ['arena','salon','chess','tycoon','kampung','mamak'].forEach(function(k){if(l.indexOf('card_'+k)<0)return;var a=document.querySelector('.game-art.'+k);a.classList.add('has-art');var i=new Image();i.className='card-art-full';i.alt='';i.src='assets/hub/card_'+k+'.webp';a.prepend(i);});
+  ['arena','salon','chess','tycoon','kampung','mamak','cari'].forEach(function(k){if(l.indexOf('card_'+k)<0)return;var a=document.querySelector('.game-art.'+k);a.classList.add('has-art');var i=new Image();i.className='card-art-full';i.alt='';i.src='assets/hub/card_'+k+'.webp';a.prepend(i);});
   if(l.indexOf('logo_chess')>=0){var t=document.getElementById('chessTitle');var i=new Image();i.className='chess-logo';i.alt='Cozy Chess';i.src='assets/hub/logo_chess.webp';t.replaceWith(i);}
 });
 </script>
