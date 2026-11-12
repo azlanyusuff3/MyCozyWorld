@@ -353,8 +353,8 @@ function spawnCustomer(at, vip) {
   else if (c.t === 'influencer') notify('📸 <b>Mira Influencer</b> datang! Layan laju, boleh viral!', 'info');
   if (regK) {
     R.regToday.push(regK); const st = P.reg[regK] = P.reg[regK] || { h: 0, seen: false };
-    c.hidden = st.seen; c.asked = true;
-    if (!st.seen) { st.seen = true; save(); notify(`⭐ <b>${who.n}</b> nak jadi pelanggan tetap! Ingat order dia: ${c.items.map(i => ITEMS[i.k].name.toLowerCase() + (Object.keys(i.m).length ? ' (' + Object.keys(i.m).map(x => MOD_TXT[x]).join(', ') + ')' : '')).join(' + ')}`, 'info'); }
+    c.hidden = false; c.biasa = st.seen; c.asked = true;
+    if (!st.seen) { st.seen = true; save(); notify(`⭐ <b>${who.n}</b> nak jadi pelanggan tetap! Order kegemaran dia: ${c.items.map(i => ITEMS[i.k].name.toLowerCase() + (Object.keys(i.m).length ? ' (' + Object.keys(i.m).map(x => MOD_TXT[x]).join(', ') + ')' : '')).join(' + ')}`, 'info'); }
     else notify(`⭐ <b>${who.n}:</b> ${pick(['Macam biasa ya!', 'Biasa bos!', 'Yang selalu tu, ya!'])} <small>(${'❤️'.repeat(Math.min(5, st.h)) || '🤍'})</small>`, 'info');
   }
   if (vip) { notify('🎩 <b>Datuk Seri</b> dah sampai! Layan baik-baik, tip besar menanti!', 'info'); SFX.bell(); }
@@ -483,7 +483,7 @@ $('#tray').addEventListener('pointerdown', e => {
 /* ---------- Render meja ---------- */
 const heartsN = c => Math.max(0, Math.ceil(c.pat / c.max * 3));
 const heartsTxt = n => '❤️'.repeat(n) + '🤍'.repeat(3 - n);
-function orderHTML(c) { return `<div class="order${c.reg ? ' reg' : ''}"><span class="hearts" data-h="${heartsN(c)}">${heartsTxt(heartsN(c))}</span>${c.hidden ? '<i class="biasa">macam biasa</i>' : ''}${c.items.map(i => c.hidden && !i.done ? '<span class="it"><span class="av q">❓</span></span>' : `<span class="it ${i.done ? 'done' : ''}"><span class="av">${ico('item_' + i.k, ITEMS[i.k].e)}</span>${tagHTML(i.m)}</span>`).join('')}<div class="pat"><b class="${patCls(c)}" style="width:${c.pat / c.max * 100}%"></b></div></div>`; }
+function orderHTML(c) { return `<div class="order${c.reg ? ' reg' : ''}"><span class="hearts" data-h="${heartsN(c)}">${heartsTxt(heartsN(c))}</span>${c.hidden || c.biasa ? '<i class="biasa">⭐ macam biasa</i>' : ''}${c.items.map(i => c.hidden && !i.done ? '<span class="it"><span class="av q">❓</span></span>' : `<span class="it ${i.done ? 'done' : ''}"><span class="av">${ico('item_' + i.k, ITEMS[i.k].e)}</span>${tagHTML(i.m)}</span>`).join('')}<div class="pat"><b class="${patCls(c)}" style="width:${c.pat / c.max * 100}%"></b></div></div>`; }
 function patCls(c) { const f = c.pat / c.max; return f > .5 ? '' : f > .25 ? 'mid' : 'low'; }
 function fitTables() {
   const box = $('#tables'); if (!box || !R) return;
@@ -540,7 +540,7 @@ const ROTI_KINDS = [
   { k: 'murtabak', f: 'murtabak', n: 'Murtabak', e: '🥙', eggs: 2, cook: () => 6 * tawaMul() },
   { k: 'tosai', f: 'tosai', n: 'Tosai', e: '🥞', eggs: 0, circle: true, cook: () => 3 * tawaMul() }
 ];
-const READY_WIN = 5, MAGGI_COOK = 4.2, MEE_COOK = 5.5, NASI_COOK = 5, GARING_AT = .4;
+const READY_WIN = 5, MAGGI_COOK = 4.2, MEE_COOK = 5.5, NASI_COOK = 5, GARING_AT = .62;
 const tehZone = () => { const w = .14 + up('teko') * .05; return [.72 - w / 2, .72 + w / 2]; };
 const MILO_ZONE = [.75, 1.1];
 const rotiOpts = () => ROTI_KINDS.filter(x => !x.f || feat(R.day, x.f));
