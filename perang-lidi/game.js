@@ -59,6 +59,22 @@ const store = (() => { try { return JSON.parse(localStorage.getItem('perangLidi'
 const save = () => { try { localStorage.setItem('perangLidi', JSON.stringify(store)); } catch (e) {} };
 let mode = store.mode || 'quick', diff = store.diff ?? 1, myTribe = store.tribe || 'pendekar';
 let G = null;        // battle state
+/* ---- gambar pilihan (sprites/list.json). Kalau tiada, semua dilukis neon. ---- */
+const IMG = {};
+const img = k => { const i = IMG[k]; return i && i.complete && i.naturalWidth ? i : null; };
+fetch('sprites/list.json', { cache: 'no-cache' }).then(r => r.ok ? r.json() : []).catch(() => []).then(l => {
+  let n = l.length; if (!n) return;
+  l.forEach(k => { const i = new Image(); i.onload = i.onerror = () => { if (--n === 0) applyArt(); }; i.src = 'sprites/' + k + '.webp'; IMG[k] = i; });
+});
+function applyArt() {
+  if (img('logo')) document.querySelector('#menu .logo').innerHTML = `<img src="${IMG.logo.src}" alt="Perang Lidi">`;
+  if (img('bg_menu')) ['menu', 'bracket'].forEach(id => { $(id).style.background = `linear-gradient(#07060f99,#07060fcc 60%,#07060f), url(${IMG.bg_menu.src}) center top/cover no-repeat, #07060f`; });
+  if (img('frame_modal')) document.querySelector('.modal .box').style.background = `url(${IMG.frame_modal.src}) center/100% 100% no-repeat, #100d20`;
+  buildTribeGrid();
+  if (G) buildPanel();
+  if (tour && !$('bracket').classList.contains('hidden')) renderBracket();
+}
+const chiefImg = (id, cls) => img('chief_' + id) ? `<img class="${cls}" src="${IMG['chief_' + id].src}" alt="">` : '';
 let tour = null;     // tournament state
 
 /* ================= MENU ================= */
@@ -86,7 +102,7 @@ function buildTribeGrid() {
     const b = document.createElement('button');
     b.type = 'button'; b.className = 'tribe' + (t.id === myTribe ? ' on' : ''); b.style.setProperty('--c', t.c);
     b.innerHTML = `<b style="color:${t.c}">${t.name.replace('Puak ', '')}</b><small>✦ ${t.ult}: ${t.desc}</small>`;
-    b.prepend(miniStick(t.id, pick(UNIT_KEYS)));
+    if (img('chief_' + t.id)) b.insertAdjacentHTML('afterbegin', chiefImg(t.id, 'chief')); else b.prepend(miniStick(t.id, pick(UNIT_KEYS)));
     b.onclick = () => { myTribe = t.id; store.tribe = t.id; save(); [...g.children].forEach(x => x.classList.remove('on')); b.classList.add('on'); };
     g.appendChild(b);
   });
@@ -120,17 +136,17 @@ function renderBracket() {
     ms.forEach((m, mi) => {
       const w = tour.winners[ri][mi];
       const isNext = !w && !tour.done && ri === tour.r && m.includes(myTribe);
-      const side = (id, r) => `<span class="t ${r ? 'r' : ''} ${w && w !== id ? 'lose' : ''} ${id === myTribe ? 'you' : ''}">${r ? '' : `<span class="dot" style="color:${tCol(id)};background:${tCol(id)}"></span>`}${tName(id)}${id === myTribe ? ' (Kau)' : ''}${r ? `<span class="dot" style="color:${tCol(id)};background:${tCol(id)}"></span>` : ''}</span>`;
+      const side = (id, r) => `<span class="t ${r ? 'r' : ''} ${w && w !== id ? 'lose' : ''} ${id === myTribe ? 'you' : ''}">${r ? '' : (chiefImg(id, 'cp') || `<span class="dot" style="color:${tCol(id)};background:${tCol(id)}"></span>`)}${tName(id)}${id === myTribe ? ' (Kau)' : ''}${r ? (chiefImg(id, 'cp') || `<span class="dot" style="color:${tCol(id)};background:${tCol(id)}"></span>`) : ''}</span>`;
       d.innerHTML += `<div class="match ${isNext ? 'next' : ''}">${side(m[0])}<em>vs</em>${side(m[1], 1)}</div>`;
     });
     body.appendChild(d);
   });
   const alive = !tour.done && tour.rounds[tour.r].some(m => m.includes(myTribe));
   if (tour.done) {
-    $('brTitle').textContent = tour.champ === myTribe ? '🏆 JUARA!' : 'Tamat Kejohanan';
+    $('brTitle').innerHTML = tour.champ === myTribe ? (img('trophy') ? `<img class="trophy" src="${IMG.trophy.src}" alt=""><br>` : '🏆 ') + 'JUARA!' : 'Tamat Kejohanan';
     $('brBtn').textContent = 'KEMBALI KE MENU';
   } else {
-    $('brTitle').textContent = 'Kejohanan · ' + RNAMES[tour.r];
+    $('brTitle').innerHTML = 'Kejohanan · ' + RNAMES[tour.r];
     $('brBtn').textContent = alive ? 'MULA PERLAWANAN ▶' : 'TERUSKAN ▶';
   }
 }
@@ -179,7 +195,7 @@ function startBattle(pT, eT, d) {
   const P = G.sides[0], E = G.sides[1];
   $('pName').textContent = P.t.name + ' (Kau)'; $('pName').style.color = P.t.c; $('pHp').style.background = P.t.c; $('pHp').style.boxShadow = `0 0 8px ${P.t.c}`;
   $('eName').textContent = E.t.name + ' · AI ' + ['Mudah', 'Sedang', 'Susah'][d]; $('eName').style.color = E.t.c; $('eHp').style.background = E.t.c; $('eHp').style.boxShadow = `0 0 8px ${E.t.c}`;
-  $('ultBtn').style.setProperty('--c', P.t.c); $('ultName').textContent = '✦ ' + P.t.ult;
+  $('ultBtn').style.setProperty('--c', P.t.c); $('ultName').innerHTML = (img('icon_ult') ? `<img class="ic" src="${IMG.icon_ult.src}" alt=""> ` : '✦ ') + P.t.ult;
   $('speedBtn').textContent = '1x';
   buildPanel();
   toast('PERANG!', P.t.c);
@@ -199,7 +215,7 @@ function buildPanel() {
   const up = $('ups'); up.innerHTML = '';
   Object.keys(UPS).forEach(k => {
     const b = document.createElement('button'); b.type = 'button'; b.dataset.k = k;
-    b.innerHTML = `<span class="lv"></span><b>${UPS[k].icon} ${UPS[k].name}</b><small></small>`;
+    b.innerHTML = `<span class="lv"></span><b>${img('icon_' + k) ? `<img class="ic" src="${IMG['icon_' + k].src}" alt="">` : UPS[k].icon} ${UPS[k].name}</b><small></small>`;
     b.onclick = () => { if (upgrade(0, k)) snd('up'); };
     up.appendChild(b);
   });
@@ -497,10 +513,17 @@ function pose(u, ox, oy) {
 function drawWeapon(c, type, hx, hy, ang, d, s, col, atk) {
   c.save(); c.translate(hx, hy); c.scale(d, 1); c.rotate(ang);
   c.strokeStyle = col; c.fillStyle = col; c.lineCap = 'round';
+  const wi = img('weapon_' + type);
+  if (wi) {
+    const r = { pedang: [-7, -6, 42, 13], panah: [-12, -19, 19, 38], perisai: [-2, -18, 20, 36], gergaji: [-9, -9, 50, 17] }[type];
+    c.drawImage(wi, r[0] * s, r[1] * s, r[2] * s, r[3] * s);
+    if (type === 'pedang' && atk > 0.25) slash(c, s, atk);
+    c.restore(); return;
+  }
   if (type === 'pedang') {
     c.lineWidth = 2.2 * s; c.beginPath(); c.moveTo(-3 * s, 0); c.lineTo(26 * s, 0); c.stroke();
     c.lineWidth = 3 * s; c.beginPath(); c.moveTo(0, -5 * s); c.lineTo(0, 5 * s); c.stroke();
-    if (atk > 0.25) { const ga = c.globalAlpha; c.globalCompositeOperation = 'lighter'; for (let i = 0; i < 3; i++) { c.globalAlpha = ga * atk * (0.45 - i * 0.12); c.lineWidth = (9 - i * 3) * s; c.beginPath(); c.arc(0, 0, (24 - i * 3) * s, -1.6 + i * 0.2, 0.25); c.stroke(); } c.globalCompositeOperation = 'source-over'; c.globalAlpha = ga; }
+    if (atk > 0.25) slash(c, s, atk);
   } else if (type === 'panah') {
     c.lineWidth = 2 * s; c.beginPath(); c.arc(-4 * s, 0, 15 * s, -1.25, 1.25); c.stroke();
     c.lineWidth = 0.8; c.beginPath(); c.moveTo(1 * s, -14 * s); c.lineTo(-4 * s - atk * 6, 0); c.lineTo(1 * s, 14 * s); c.stroke();
@@ -516,6 +539,11 @@ function drawWeapon(c, type, hx, hy, ang, d, s, col, atk) {
     c.stroke();
   }
   c.restore();
+}
+function slash(c, s, atk) {
+  const ga = c.globalAlpha; c.globalCompositeOperation = 'lighter';
+  for (let i = 0; i < 3; i++) { c.globalAlpha = ga * atk * (0.45 - i * 0.12); c.lineWidth = (9 - i * 3) * s; c.beginPath(); c.arc(0, 0, (24 - i * 3) * s, -1.6 + i * 0.2, 0.25); c.stroke(); }
+  c.globalCompositeOperation = 'source-over'; c.globalAlpha = ga;
 }
 function drawStick(c, u, ox, oy, alpha) {
   const j = pose(u, ox, oy), s = u.size, d = u.dir ?? (u.side ? -1 : 1);
@@ -543,7 +571,9 @@ function drawStick(c, u, ox, oy, alpha) {
   c.fillStyle = '#fff'; c.beginPath(); c.arc(j.head.x + 3 * d * s, j.head.y - 1, 1.5 * s, 0, 7); c.fill();
   blob(c, col, j.head.x + 3 * d * s, j.head.y - 1, 4 * s, 4 * s, alpha * 0.9); c.globalAlpha = alpha;
   // tanda puak di kepala
-  tribeMark(c, u.t.id, j.head.x, j.head.y, s, d, col);
+  const hat = img('hat_' + u.t.id);
+  if (hat) { c.save(); c.translate(j.head.x, j.head.y - 4 * s); c.scale(d, 1); const hw = 24 * s; c.globalAlpha = alpha; c.drawImage(hat, -hw / 2, -hw * 0.85, hw, hw); c.restore(); c.globalAlpha = alpha; }
+  else tribeMark(c, u.t.id, j.head.x, j.head.y, s, d, col);
   c.shadowBlur = 9; c.shadowColor = u.stolen ? '#ffffff' : u.t.g;
   drawWeapon(c, u.type, j.hf.x, j.hf.y, j.ang, d, s, u.stolen ? '#ffffff' : col, u.atk);
   c.shadowBlur = 0;
@@ -568,6 +598,15 @@ function drawBase(c, si) {
   blob(c, s.t.g, x, GROUND - 70, 120, 140, 0.18 + pulse * 0.08);
   blob(c, s.t.g, x, GROUND + 6, 90, 18, 0.5);
   c.globalAlpha = 1;
+  const fi = img('fort_' + s.t.id);
+  if (fi) {
+    const h = 225, w = h * fi.width / fi.height;
+    c.save(); c.translate(x, GROUND + 28); c.scale(d, 1); c.shadowBlur = 16; c.shadowColor = s.flash > 0 ? '#fff' : s.t.g;
+    c.drawImage(fi, -w / 2, -h, w, h); c.restore(); c.shadowBlur = 0;
+    const r = Math.max(0, s.baseHp / BASE_HP);
+    c.fillStyle = '#ffffff22'; c.fillRect(x - 36, GROUND - 206, 72, 6); c.fillStyle = s.t.c; c.fillRect(x - 36, GROUND - 206, 72 * r, 6);
+    return;
+  }
   c.strokeStyle = col; c.lineWidth = 3; c.fillStyle = '#0a0816';
   c.shadowBlur = 14; c.shadowColor = s.t.g;
   c.beginPath(); c.moveTo(x - 34, GROUND + 30); c.lineTo(x - 26, GROUND - 120); c.lineTo(x + 26, GROUND - 120); c.lineTo(x + 34, GROUND + 30); c.closePath(); c.fill(); c.stroke();
@@ -615,6 +654,11 @@ function draw() {
   const pl = clamp(1 - camX / W * 1.6, 0, 1), el = clamp((camX + viewW) / W * 1.6 - 0.6, 0, 1);
   gr.addColorStop(0, P.g + Math.round(0x30 * pl).toString(16).padStart(2, '0')); gr.addColorStop(0.5, '#00000000'); gr.addColorStop(1, E.g + Math.round(0x30 * el).toString(16).padStart(2, '0'));
   c.fillStyle = gr; c.fillRect(camX - 20, top, viewW + 40, GROUND - top + 10);
+  const bi = img('bg_far');
+  if (bi) {
+    const h = GROUND + 10 - top, w = h * bi.width / bi.height, base = camX * 0.7;
+    for (let x = base + Math.floor((camX - base) / w) * w; x < camX + viewW; x += w) c.drawImage(bi, x, top, w, h);
+  } else {
   // bintang (parallax perlahan)
   if (!bgStars) { bgStars = []; for (let i = 0; i < 140; i++) bgStars.push([rnd(0, W), rnd(-420, GROUND - 120), rnd(0.6, 1.8), rnd(0, 6)]); }
   c.fillStyle = '#ffffff';
@@ -645,6 +689,7 @@ function draw() {
     c.fillStyle = fill; c.fill();
     c.strokeStyle = rim; c.globalAlpha = 0.5; c.lineWidth = 1.2; c.beginPath(); pts.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); c.stroke(); c.globalAlpha = 1;
   });
+  }
   // kabus dekat tanah
   gr = c.createLinearGradient(0, GROUND - 90, 0, GROUND);
   gr.addColorStop(0, '#2a1f5000'); gr.addColorStop(1, '#2a1f5066');
@@ -779,7 +824,8 @@ function endBattle(win) {
   if (win) { store.wins = (store.wins || 0) + 1; save(); }
   const P = G.sides[0];
   setTimeout(() => {
-    const txt = `${win ? 'Kubu ' + G.sides[1].t.name + ' roboh!' : 'Kubu kau dah roboh...'}<br>Musuh dibunuh: <b>${P.kills}</b> · Masa: <b>${Math.floor(G.t / 60)}:${String(Math.floor(G.t % 60)).padStart(2, '0')}</b>`;
+    const face = chiefImg(win ? G.sides[0].t.id : G.sides[1].t.id, 'win');
+    const txt = face + `${win ? 'Kubu ' + G.sides[1].t.name + ' roboh!' : 'Kubu kau dah roboh...'}<br>Musuh dibunuh: <b>${P.kills}</b> · Masa: <b>${Math.floor(G.t / 60)}:${String(Math.floor(G.t % 60)).padStart(2, '0')}</b>`;
     if (tour) modal(win ? 'MENANG!' : 'KALAH', txt + (win ? '' : '<br>Kau tersingkir dari kejohanan.'), [['Lihat Bracket', () => { G = null; advanceTour(win); }]], win ? '#ffd36b' : '#ff5a5a');
     else modal(win ? 'MENANG!' : 'KALAH', txt, [['Lawan Lagi', () => startBattle(G.sides[0].t.id, G.sides[1].t.id, G.sides[1].d)], ['Menu', () => { G = null; show('menu'); buildTribeGrid(); }, 1]], win ? '#ffd36b' : '#ff5a5a');
   }, 1600);
