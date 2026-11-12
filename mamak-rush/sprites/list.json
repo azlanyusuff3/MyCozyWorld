@@ -82,5 +82,10 @@
   "chef_serve",
   "bg_dapur",
   "kaunter_dapur",
-  "pintu"
+  "pintu",
+  "bg_kedai",
+  "ui_hud",
+  "ui_papan",
+  "ui_panel",
+  "ui_butang"
 ]
