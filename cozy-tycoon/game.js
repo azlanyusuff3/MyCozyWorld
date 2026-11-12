@@ -526,6 +526,81 @@ function startPlay() {
 /* ---------- Render ---------- */
 const PIPS = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
 const DICE_IMG = {};
+/* ---------- Real 3D dice roll on canvas (iPhone-safe, no CSS 3D) ---------- */
+const D3 = (() => {
+  const V = [[-1,-1,-1],[1,-1,-1],[1,1,-1],[-1,1,-1],[-1,-1,1],[1,-1,1],[1,1,1],[-1,1,1]].map(v => v.map(x => x * .5));
+  // face: vertex idx, outward normal, number, local axes (u,v) for pips
+  const F = [
+    { i: [4, 5, 6, 7], n: [0, 0, 1], num: 1, u: [1, 0, 0], v: [0, 1, 0] },
+    { i: [1, 0, 3, 2], n: [0, 0, -1], num: 6, u: [-1, 0, 0], v: [0, 1, 0] },
+    { i: [5, 1, 2, 6], n: [1, 0, 0], num: 3, u: [0, 0, -1], v: [0, 1, 0] },
+    { i: [0, 4, 7, 3], n: [-1, 0, 0], num: 4, u: [0, 0, 1], v: [0, 1, 0] },
+    { i: [7, 6, 2, 3], n: [0, 1, 0], num: 2, u: [1, 0, 0], v: [0, 0, -1] },
+    { i: [0, 1, 5, 4], n: [0, -1, 0], num: 5, u: [1, 0, 0], v: [0, 0, 1] },
+  ];
+  const PIP = { 1: [[0, 0]], 2: [[-1, -1], [1, 1]], 3: [[-1, -1], [0, 0], [1, 1]], 4: [[-1, -1], [1, -1], [-1, 1], [1, 1]], 5: [[-1, -1], [1, -1], [0, 0], [-1, 1], [1, 1]], 6: [[-1, -1], [1, -1], [-1, 0], [1, 0], [-1, 1], [1, 1]] };
+  const mul = (A, B) => A.map(r => [0, 1, 2].map(j => r[0] * B[0][j] + r[1] * B[1][j] + r[2] * B[2][j]));
+  const ap = (M, p) => [0, 1, 2].map(r => M[r][0] * p[0] + M[r][1] * p[1] + M[r][2] * p[2]);
+  const Rx = t => [[1, 0, 0], [0, Math.cos(t), -Math.sin(t)], [0, Math.sin(t), Math.cos(t)]];
+  const Ry = t => [[Math.cos(t), 0, Math.sin(t)], [0, 1, 0], [-Math.sin(t), 0, Math.cos(t)]];
+  const Rz = t => [[Math.cos(t), -Math.sin(t), 0], [Math.sin(t), Math.cos(t), 0], [0, 0, 1]];
+  const P = Math.PI / 2;
+  const FACE_UP = { 1: Rx(-P), 6: Rx(P), 3: Rz(P), 4: Rz(-P), 2: Rx(0), 5: Rx(2 * P) };
+  const L = (() => { const l = [-.45, .75, .55], m = Math.hypot(...l); return l.map(x => x / m); })();
+  function draw(ctx, W, M, lift) {
+    ctx.clearRect(0, 0, W, W);
+    const cx = W / 2, cy = W * .6 - lift, sc = W * .3;
+    // shadow
+    const sh = Math.max(.25, 1 - lift / (W * .5));
+    ctx.fillStyle = `rgba(150,70,110,${.28 * sh})`; ctx.beginPath(); ctx.ellipse(W / 2, W * .84, W * .22 * sh, W * .05 * sh, 0, 0, 7); ctx.fill();
+    const pr = p => { const z = 3.2 - p[2]; const k = 3.2 / z; return [cx + p[0] * sc * k, cy - p[1] * sc * k]; };
+    const vs = V.map(v => ap(M, v));
+    const faces = F.map(f => ({ f, n: ap(M, f.n), z: f.i.reduce((s, i) => s + vs[i][2], 0) / 4 })).filter(o => o.n[2] > 0.02).sort((a, b) => a.z - b.z);
+    for (const o of faces) {
+      const lit = Math.max(0, o.n[0] * L[0] + o.n[1] * L[1] + o.n[2] * L[2]);
+      const r = Math.round(238 + 17 * lit), g = Math.round(178 + 62 * lit), bl = Math.round(206 + 42 * lit);
+      const pts = o.f.i.map(i => pr(vs[i]));
+      ctx.beginPath(); pts.forEach((p, j) => j ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])); ctx.closePath();
+      ctx.fillStyle = `rgb(${r},${g},${bl})`; ctx.lineJoin = 'round'; ctx.lineWidth = W * .07; ctx.strokeStyle = `rgb(${r},${g},${bl})`; ctx.stroke(); ctx.fill();
+      ctx.lineWidth = W * .018; ctx.strokeStyle = `rgba(214,120,160,${.35 + .3 * (1 - lit)})`; ctx.stroke();
+      // pips
+      const u = ap(M, o.f.u), v = ap(M, o.f.v), c = ap(M, o.f.n.map(x => x * .5));
+      ctx.fillStyle = `rgba(224,69,122,${.75 + .25 * lit})`;
+      for (const [a, bb] of PIP[o.f.num]) {
+        ctx.beginPath();
+        for (let k = 0; k <= 12; k++) {
+          const t = k / 12 * Math.PI * 2, rr = .095, du = a * .27 + Math.cos(t) * rr, dv = bb * .27 + Math.sin(t) * rr;
+          const p = pr([c[0] + u[0] * du + v[0] * dv, c[1] + u[1] * du + v[1] * dv, c[2] + u[2] * du + v[2] * dv]);
+          k ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]);
+        }
+        ctx.fill();
+      }
+    }
+  }
+  return { draw, mul, Rx, Ry, Rz, FACE_UP };
+})();
+function roll3d(el, n, idx) {
+  return new Promise(res => {
+    const W = 170, cv = document.createElement('canvas');
+    cv.width = W; cv.height = W; cv.className = 'd3';
+    el.classList.remove('img'); el.innerHTML = ''; el.appendChild(cv);
+    const ctx = cv.getContext('2d');
+    const sx = (2 + (Math.random() * 2 | 0)) * Math.PI * 2, sy = (1 + (Math.random() * 2 | 0)) * Math.PI * 2, sz = (Math.random() < .5 ? -1 : 1) * Math.PI * 2;
+    const T = 1150 + idx * 120, t0 = performance.now(), base = D3.FACE_UP[n];
+    let lastBounce = 0;
+    const frame = now => {
+      const t = Math.min(1, (now - t0) / T), e = 1 - Math.pow(1 - t, 3);
+      const rx = .62 + sx * (1 - e), ry = .55 + sy * (1 - e), rz = sz * (1 - e) * (1 - e);
+      const M = D3.mul(D3.Ry(ry), D3.mul(D3.Rx(rx), D3.mul(D3.Rz(rz), base)));
+      // bounces getting smaller
+      const ph = t * 3.2, lift = Math.abs(Math.sin(ph * Math.PI)) * (1 - t) * W * .26;
+      const b = Math.floor(ph); if (b !== lastBounce && t < .95) { lastBounce = b; beep(330 + Math.random() * 120, .05, 'triangle', .05); }
+      D3.draw(ctx, W, M, lift);
+      if (t < 1) requestAnimationFrame(frame); else { beep(520, .06, 'triangle', .05); setTimeout(res, 120); }
+    };
+    requestAnimationFrame(frame);
+  });
+}
 function setDie(el, n) {
   if (DICE_IMG[n]) { el.classList.add('img'); el.innerHTML = `<img src="${DICE_IMG[n]}" alt="${n}">`; return; }
   el.classList.remove('img');
@@ -738,8 +813,7 @@ async function doRoll(dbl) {
   if (G.lastBuy && G.lastBuy.k === k) G.lastBuy = null;
   setRoll(false);
   const a = 1 + (Math.random() * 6 | 0), b = 1 + (Math.random() * 6 | 0);
-  dies.forEach(d => d.classList.add('spin'));
-  for (let i = 0; i < 10; i++) { dies.forEach(d => setDie(d, 1 + (Math.random() * 6 | 0))); beep(380 + i * 45, .03); await new Promise(r => setTimeout(r, 90)); }
+  await Promise.all(dies.map((d, i) => roll3d(d, [a, b][i], i)));
   dies.forEach((d, i) => setDie(d, [a, b][i]));
   dies.forEach(d => { d.classList.remove('spin'); d.classList.remove('land'); void d.offsetWidth; d.classList.add('land'); });
   G.dice = [a, b]; renderAll();

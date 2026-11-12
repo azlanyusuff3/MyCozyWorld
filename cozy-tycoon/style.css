@@ -335,3 +335,5 @@ button.kuih:active{transform:scale(.95)}
 .token{width:calc(100%/11*.72);height:calc(100%/11*.95)}
 .token .stand svg{filter:drop-shadow(0 0 1.2px #fff) drop-shadow(0 0 1.2px #fff) drop-shadow(0 0 .8px #fff) drop-shadow(0 2px 1.5px #0006)}
 .toast.player .face{background:#fff;overflow:hidden}.toast.player .face img,.toast.player .face svg{width:150%;height:150%;object-fit:cover;object-position:50% 0;margin-top:30%}
+.die canvas.d3{width:90px;height:90px;margin:-26px -15px -4px;display:block;position:relative;z-index:3}
+.die.spin{animation:none!important}
