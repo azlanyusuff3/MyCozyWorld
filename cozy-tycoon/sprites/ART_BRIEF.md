@@ -13,7 +13,7 @@ The game code is FINISHED and already loads every image listed in this brief aut
 4. **No text, letters, numbers or logos** inside images unless the item explicitly says so (only `logo_tycoon` has text).
 5. **Match the existing art.** Open and look at `token_kucing.webp`, `token_panda.webp` and `dice_1.webp` in this folder first. Every new image must feel like the same game: kawaii chibi, soft pastel colours (pink, peach, mint, sky blue, butter yellow, lavender), thick soft brown outline, glossy highlights, gentle soft shadows.
 6. **Register each image**: append its name WITHOUT `.webp` to the JSON array in `cozy-tycoon/sprites/list.json`. Keep every existing entry (tokens and dice). The file must stay valid JSON.
-7. After each batch, bump `VERSION` in `/sw.js` by one (e.g. `mycozyworld-v48` → `mycozyworld-v49`). Nothing else in `sw.js`.
+7. After each batch, bump the last number of `VERSION` in `/sw.js` (e.g. `mycozyworld-1.1.0` → `mycozyworld-1.1.1`). Nothing else in `sw.js`.
 8. One commit per batch, directly to `main`, message: `art(tycoon): batch N <short description>`.
 9. After each batch, reply with: the commit link, a preview of every image, and stop. Wait for the user to say "next batch" before continuing.
 10. Do not invent extra files, rename things, or skip items. If an item fails, redo it until it meets the spec.
