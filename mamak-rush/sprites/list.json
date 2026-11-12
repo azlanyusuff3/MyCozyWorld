@@ -79,5 +79,8 @@
   "chef_walk",
   "chef_cook",
   "chef_tarik",
-  "chef_serve"
+  "chef_serve",
+  "bg_dapur",
+  "kaunter_dapur",
+  "pintu"
 ]
