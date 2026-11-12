@@ -52,7 +52,7 @@ const SATAY_UNLOCK = {
   1: { ic: '🍢', t: 'Warung Satay dibuka!', d: 'Letak satay atas pemanggang. Separuh masak, tap <b>PUSING!</b> cepat, kalau tak hangus sebelah.' },
   2: { ic: '🥜', t: 'Kuah kacang', d: 'Tap periuk kuah untuk cedok. Bila habis, tap untuk masak baru.' },
   3: { ic: '🥩', t: 'Menu baru: Satay daging', d: 'Lebih mahal, lama sikit nak masak.' },
-  4: { ic: '🥤', t: 'Milo ais', d: 'Pilih Milo kat stesen air, swipe atas-bawah untuk goncang.' },
+  4: { ic: '🥤', t: 'Milo ais', d: 'Pilih Milo kat stesen air. Sama macam teh: tahan, lepas bila kat hijau.' },
   6: { ic: '🔥', t: 'Order custom: "Satay garing"', d: 'Biar satay lama sikit atas bara, ambik bila bar masuk zon merah!' }
 };
 let LOC = 'mamak';
@@ -84,14 +84,14 @@ const UNLOCK = {
   6: { ic: '🐈', t: 'Oyen si pencuri', d: 'Kucing kedai nak curi makanan atas dulang. Tap dia untuk halau!' },
   7: { ic: '🍛', t: 'Menu baru: Nasi lemak', d: 'Ambik terus dari periuk. Bila habis, tap untuk masak periuk baru.' },
   8: { ic: '☕✨', t: 'Order custom: "Teh tarik kaw"', d: 'Ada order dengan tag <b>kaw</b>. Kena lepas tepat kat zon hijau, kalau tak dia tak nak!' },
-  9: { ic: '🥤', t: 'Menu baru: Milo ais', d: 'Pilih Milo, lepas tu swipe atas-bawah untuk goncang. Lepas jari bila jarum kat hijau. Lebih goncang, melimpah!' },
+  9: { ic: '🥤', t: 'Menu baru: Milo ais', d: 'Pilih Milo, tahan macam teh tarik, lepas bila kat hijau. Senang!' },
   10: { ic: '🍬', t: 'Order custom: "Kurang manis"', d: 'Tekan butang 🍬 Kurang sebelum buat air. Air biasa tak boleh bagi pada orang yang nak kurang manis (dan sebaliknya)!' },
   11: { ic: '🍳', t: 'Menu baru: Roti telur', d: 'Pilih Telur kat tawa, tebar macam biasa, lepas tu tap untuk pecah telur.' },
   12: { ic: '🔥', t: 'Order custom: "Roti garing"', d: 'Biar roti lama sikit atas tawa. Ambik masa bar masuk zon merah (sebelum hangus)!' },
   13: { ic: '🍝', t: 'Menu baru: Mee goreng mamak', d: 'Pilih Mee kat kuali. Separuh jalan, tap <b>KACAU!</b> cepat, kalau tak dia melekat hangus.' },
   14: { ic: '🛍️', t: 'Order custom: "Ikat tepi"', d: 'Air bungkus dalam plastik. Tekan 🛍️ Ikat sebelum buat air.' },
   15: { ic: '🥙', t: 'Menu baru: Murtabak', d: 'Paling mahal! Tebar, pecah 2 telur, dan tunggu lama sikit.' },
-  16: { ic: '🦕', t: 'Order custom: "Milo Dinosaur"', d: 'Tekan 🦕 Dino sebelum goncang Milo, tabur serbuk Milo lebih kat atas.' },
+  16: { ic: '🦕', t: 'Order custom: "Milo Dinosaur"', d: 'Tekan 🦕 Dino sebelum buat Milo, tabur serbuk Milo lebih kat atas.' },
   17: { ic: '🥞', t: 'Menu baru: Tosai', d: 'Pilih Tosai, swipe bulat-bulat atas tawa untuk ratakan adunan.' }
 };
 const FEAT_SATAY = { satay: 1, tambah: 1, kuah: 2, sabar: 2, kaw: 2, satayd: 3, grab: 3, milo: 4, cat: 4, kurang: 5, garing: 6, ikat: 7 };
@@ -624,7 +624,7 @@ function drawStations() {
   tEl.querySelector('.meter').style.visibility = t.s === 'idle' && milo ? 'hidden' : 'visible';
   tEl.querySelector('.lvl').style.height = ((t.s === 'shake' ? t.prog / 1.25 : t.lvl) * 100) + '%';
   tEl.querySelector('.teh-stream').style.height = t.hold ? (20 + t.lvl * 60) + 'px' : '0';
-  setChoose(tEl, t.s === 'idle' && milo ? 'pick' : '', t.s === 'idle' && milo ? `<button type="button" data-air="teh"><span class="av">${ico('item_teh', '☕')}</span>Teh<small>tahan</small></button><button type="button" data-air="milo"><span class="av">${ico('item_milo', '🥤')}</span>Milo<small>goncang</small></button>` : '');
+  setChoose(tEl, t.s === 'idle' && milo ? 'pick' : '', t.s === 'idle' && milo ? `<button type="button" data-air="teh"><span class="av">${ico('item_teh', '☕')}</span>Teh<small>tahan</small></button><button type="button" data-air="milo"><span class="av">${ico('item_milo', '🥤')}</span>Milo<small>tahan</small></button>` : '');
   const setTxt = (e, v) => { if (e._v !== v) { e._v = v; e.innerHTML = v; } };
   if (t.s === 'idle') { setTxt(tEl.querySelector('.big'), milo ? '' : ico('st_teko', '🫖')); setTxt(tEl.querySelector('.hint'), milo ? '' : 'Tahan, lepas kat hijau'); }
   else if (t.s === 'shake') { setTxt(tEl.querySelector('.big'), ico('st_milo', '🥤')); setTxt(tEl.querySelector('.hint'), '↕️ Swipe atas-bawah, lepas kat hijau'); }
@@ -704,10 +704,11 @@ function bindStations() {
     const chip = e.target.closest('[data-chip]');
     if (chip) { R.chips[chip.dataset.chip] = !R.chips[chip.dataset.chip]; SFX.tap(); drawStations(); return; }
     if (t.s === 'idle') {
-      if (!feat(R.day, 'milo')) { startTeh(e); return; }
+      if (!feat(R.day, 'milo')) { startTeh(e); t.kind = 'teh'; return; }
       const b = e.target.closest('[data-air]'); if (!b) return;
-      if (b.dataset.air === 'teh') { startTeh(e); drawStations(); return; }
-      t.s = 'shake'; t.prog = 0; SFX.tap(); drawStations(); return;
+      startTeh(e); t.kind = b.dataset.air;
+      if (t.kind === 'milo') { tEl.querySelector('.big').innerHTML = ico('st_milo', '🥤'); tEl.querySelector('.hint').innerHTML = 'Tahan, lepas kat hijau'; }
+      drawStations(); return;
     }
     if (t.s === 'shake') { lastShakeY = e.clientY; tEl.setPointerCapture(e.pointerId); }
   });
@@ -727,7 +728,8 @@ function bindStations() {
     }
     if (!t.hold) return; t.hold = false; t.s = 'idle';
     const [a, b] = tehZone(), perf = t.lvl >= a && t.lvl <= b, ok = t.lvl >= .3;
-    if (!ok) { R.mist.teh++; notify('☕ Tarik tak cukup tinggi, cuba lagi!', 'bad'); t.lvl = 0; drawStations(); return; }
+    if (!ok) { R.mist.teh++; notify(t.kind === 'milo' ? '🥤 Milo tak cukup penuh, cuba lagi!' : '☕ Tarik tak cukup tinggi, cuba lagi!', 'bad'); t.lvl = 0; drawStations(); return; }
+    if (t.kind === 'milo') { if (perf) { R.perfect++; SFX.perfect(); notify('✨ Milo ais penuh, sejuk gila!', 'good'); buzz(20); } else SFX.tap(); deliver({ k: 'milo', m: drinkMods('milo') }, tEl); t.lvl = 0; t.kind = 'teh'; drawStations(); return; }
     if (perf) { R.perfect++; SFX.perfect(); notify(feat(R.day, 'kaw') ? '✨ Teh tarik KAW! Buih tebal!' : '✨ Teh tarik buih tebal! Perfect!', 'good'); buzz(20); } else SFX.tap();
     const m = drinkMods('teh'); if (perf) m.kaw = true;
     deliver({ k: 'teh', m }, tEl); t.lvl = 0; drawStations();
