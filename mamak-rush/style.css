@@ -565,3 +565,10 @@ body.has-ui_hud .hud{background:var(--ui_hud) center/100% 100% no-repeat;box-sha
 body.has-ui_papan .st{background:var(--ui_papan) center/100% 100% no-repeat!important;border-top:0!important;box-shadow:0 4px 6px #0003!important}
 body.has-ui_panel #modalCard,body.has-ui_panel .modal-card{background:var(--ui_panel) center/100% 100% no-repeat}
 body.has-ui_butang .btn.gold{background:var(--ui_butang) center/100% 100% no-repeat;box-shadow:none}
+/* 1.1.2: kemas lepas aset Batch 13 */
+body.has-bg_kedai .shop-floor{background-position:center 78%!important;background-size:cover!important}
+body.has-ui_hud .hud,body.has-ui_hud .hud *{color:#5a2a0c!important;text-shadow:0 1px 0 #fff8!important}
+body.has-ui_hud .hud{padding-top:calc(6px + env(safe-area-inset-top))}
+body.has-ui_papan .st .lbl{background:#4a2c14e0;color:#fff!important;border-radius:8px;padding:1px 8px;top:4px}
+body.has-ui_papan .st .lbl .lvb{color:#ffd54a}
+body.has-bg_kedai .shop-floor{background-size:100% auto!important;background-position:center -70px!important;background-color:#7a4a2a}
