@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="ms">
+<head>
+<script src="../assets/ios-audio.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#07060f">
+<title>Perang Lidi | MyCozyWorld</title>
+<link rel="manifest" href="../manifest.json">
+<link rel="icon" href="../assets/icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Teko:wght@500;700&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css?v=1">
+</head>
+<body>
+
+<!-- MENU -->
+<main id="menu" class="view">
+  <a class="hub-link" href="../">‹ GAMES</a>
+  <h1 class="logo">PERANG <span>LIDI</span></h1>
+  <p class="tag">Pilih puak, hantar askar lidi, rampas senjata musuh, robohkan kubu lawan.</p>
+
+  <section class="card">
+    <h3>Mod</h3>
+    <div class="seg" id="modeSeg">
+      <button data-v="quick" type="button">⚔️ Lawan Cepat</button>
+      <button data-v="tour" type="button">🏆 Kejohanan 8 Puak</button>
+    </div>
+    <div id="diffBox">
+      <h3>Kesukaran AI</h3>
+      <div class="seg" id="diffSeg">
+        <button data-v="0" type="button">Mudah</button>
+        <button data-v="1" type="button">Sedang</button>
+        <button data-v="2" type="button">Susah</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h3>Pilih Puak Kau</h3>
+    <div id="tribeGrid"></div>
+  </section>
+
+  <button id="startBtn" class="big-btn" type="button">MULA PERANG ▶</button>
+  <p class="foot" id="trophies"></p>
+</main>
+
+<!-- BRACKET -->
+<main id="bracket" class="view hidden">
+  <h2 class="title" id="brTitle">Kejohanan</h2>
+  <div id="brBody"></div>
+  <button id="brBtn" class="big-btn" type="button">SETERUSNYA ▶</button>
+  <button id="brQuit" class="ghost-btn" type="button">Keluar ke menu</button>
+</main>
+
+<!-- BATTLE -->
+<div id="battle" class="hidden">
+  <div class="hud">
+    <button id="pauseBtn" class="icon" type="button" aria-label="Pause">⏸</button>
+    <div class="bar left"><b id="pName">Puak</b><i><em id="pHp"></em></i></div>
+    <div class="vs">VS</div>
+    <div class="bar right"><b id="eName">Puak</b><i><em id="eHp"></em></i></div>
+    <button id="speedBtn" class="icon" type="button">1x</button>
+  </div>
+  <canvas id="cv"></canvas>
+  <div class="panel">
+    <div class="row top">
+      <div class="gold">🪙 <span id="gold">0</span><small id="goldRate">+6/s</small></div>
+      <div class="ups" id="ups"></div>
+      <button id="ultBtn" type="button"><span class="ult-name" id="ultName">ULT</span><i><em id="ultFill"></em></i></button>
+    </div>
+    <div class="row units" id="units"></div>
+  </div>
+  <div id="toast"></div>
+</div>
+
+<!-- PAUSE / END -->
+<div id="modal" class="modal hidden">
+  <div class="box">
+    <h2 id="mTitle">Pause</h2>
+    <p id="mText"></p>
+    <div class="btns" id="mBtns"></div>
+  </div>
+</div>
+
+<script src="game.js?v=1"></script>
+<script src="../assets/version.js" data-game="Perang Lidi"></script>
+</body>
+</html>
