@@ -4,5 +4,20 @@
   "bg_pasar",
   "bg_bilik",
   "bg_taman",
-  "bg_menu"
+  "bg_menu",
+  "stor_broom",
+  "stor_bucket",
+  "stor_hammer",
+  "stor_saw",
+  "stor_screwdriver",
+  "stor_spanner",
+  "stor_ladder",
+  "stor_gloves",
+  "stor_safetyhat",
+  "stor_paintbrush",
+  "stor_pottedplant",
+  "stor_box",
+  "stor_torch",
+  "stor_pencil",
+  "stor_bottle"
 ]
