@@ -41,6 +41,15 @@ header a{text-decoration:none;color:#3b2a1e;background:#fff;border-radius:12px;p
 .lv{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:10px 0}
 .lv button{font:18px "Lilita One";padding:8px 0;margin:0;background:#9fd8f5;box-shadow:0 4px 0 #5fa6c9}
 .lv button[disabled]{opacity:.35}
+
+#scene.word{aspect-ratio:1;max-width:min(100%,62vh);background:#fffaf2;display:grid;touch-action:none;padding:4px;gap:2px}
+.cell{display:flex;align-items:center;justify-content:center;font:calc(var(--cs)*.6) "Lilita One";color:#3b2a1e;border-radius:6px;background:#fff;position:relative}
+.cell.sel{background:#ffd166}.cell.f{color:#fff}
+.cell.hint{animation:hint2 1s 3}@keyframes hint2{50%{background:#ff3d7f;color:#fff}}
+.toggle{display:flex;gap:6px;justify-content:center;margin:6px 0}
+.toggle button{font:16px "Lilita One";padding:8px 12px;margin:0;background:#e8d5bd;color:#3b2a1e;box-shadow:0 4px 0 #c9ad8a}
+.toggle button.on{background:#c8553d;color:#fff;box-shadow:0 4px 0 #8e3626}
+.item.word b{font-size:20px}.item.word span{font:15px "Lilita One";letter-spacing:1px}
 </style>
 </head>
 <body>
@@ -107,14 +116,66 @@ function bgSVG(t,lv,rng){
   return s+'</svg>';
 }
 
+
 // ---------- State ----------
-let LV=1,unlocked=+(localStorage.getItem('cari_unlock')||1),best=JSON.parse(localStorage.getItem('cari_stars')||'{}');
+let LV=1,best=JSON.parse(localStorage.getItem('cari_stars')||'{}');
 let targets=[],left=0,time=0,tick=null,hints=3,playing=false;
 const $=id=>document.getElementById(id);
 function mulberry(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
 function shuffle(a,r){for(let i=a.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
 
+// ================= MOD CARI PERKATAAN (word search) =================
+let MODE=localStorage.getItem('cari_mode')||'objek',LANG=localStorage.getItem('cari_lang')||'mix';
+const K=()=>MODE==='kata'?'w':'';
+function wcfg(lv){
+  const D=[[0,1],[1,0]];if(lv>2)D.push([1,1]);if(lv>5)D.push([-1,1]);
+  if(lv>8)D.slice().forEach(d=>D.push([-d[0],-d[1]]));
+  return{theme:THEMES[(lv-1)%THEMES.length],n:Math.min(7+Math.floor(lv/2),14),words:Math.min(5+Math.floor((lv-1)/2),10),dirs:D,time:Math.min(120+lv*6,300)};
+}
+let grid=[],wtargets=[],selStart=null,selCells=[];
+const clean=s=>s.toUpperCase().replace(/[^A-Z]/g,'');
+function startWord(lv){
+  LV=lv;const C=wcfg(lv),t=C.theme,rng=mulberry(lv*131+Date.now()%1000);
+  $('sub').textContent=`Level ${lv} · ${t.n} · Perkataan`;
+  const N=C.n;grid=Array.from({length:N},()=>Array(N).fill(''));
+  let cand=shuffle(t.items.map(x=>{const bm=LANG==='bm'||(LANG==='mix'&&rng()<.5);return{w:clean(bm?x[1]:x[2]),show:bm?x[1]:x[2],e:x[0],lang:bm?'BM':'EN'}}).filter(o=>o.w.length>=3&&o.w.length<=N),rng);
+  wtargets=[];
+  for(const o of cand){if(wtargets.length>=C.words)break;if(wtargets.some(x=>x.w===o.w))continue;
+    for(let a=0;a<300;a++){const d=C.dirs[Math.floor(rng()*C.dirs.length)],L=o.w.length;
+      const r0=Math.floor(rng()*N),c0=Math.floor(rng()*N),r1=r0+d[0]*(L-1),c1=c0+d[1]*(L-1);
+      if(r1<0||r1>=N||c1<0||c1>=N)continue;let ok=true;
+      for(let i=0;i<L;i++){const g=grid[r0+d[0]*i][c0+d[1]*i];if(g&&g!==o.w[i]){ok=false;break}}
+      if(!ok)continue;for(let i=0;i<L;i++)grid[r0+d[0]*i][c0+d[1]*i]=o.w[i];
+      o.r=r0;o.c=c0;o.d=d;wtargets.push(o);break;}}
+  const AB='ABCDEFGHIJKLMNOPRSTUW';
+  for(let r=0;r<N;r++)for(let c=0;c<N;c++)if(!grid[r][c])grid[r][c]=AB[Math.floor(rng()*AB.length)];
+  const sc=$('scene');sc.className='word';sc.style.gridTemplateColumns=`repeat(${N},1fr)`;
+  sc.innerHTML=grid.flat().map((ch,i)=>`<div class="cell" data-r="${Math.floor(i/N)}" data-c="${i%N}">${ch}</div>`).join('');
+  sc.style.setProperty('--cs',(sc.clientWidth/N)+'px');
+  $('list').innerHTML=wtargets.map((o,i)=>`<div class="item word" id="it${i}"><b>${o.e}</b><span>${o.show.toUpperCase()}</span></div>`).join('');
+  left=wtargets.length;time=C.time;hints=3;$('hintBtn').textContent='💡 3';
+  $('overlay').classList.add('hide');playing=true;
+  clearInterval(tick);tick=setInterval(()=>{time--;showTime();if(time<=0)end(false)},1000);showTime();
+}
+const cellAt=(x,y)=>{const e=document.elementFromPoint(x,y);return e&&e.classList.contains('cell')?e:null};
+function line(a,b){const r0=+a.dataset.r,c0=+a.dataset.c,r1=+b.dataset.r,c1=+b.dataset.c,dr=r1-r0,dc=c1-c0;
+  if(dr&&dc&&Math.abs(dr)!==Math.abs(dc))return null;const L=Math.max(Math.abs(dr),Math.abs(dc)),sr=Math.sign(dr),scn=Math.sign(dc),out=[];
+  for(let i=0;i<=L;i++)out.push($('scene').children[(r0+sr*i)*grid.length+c0+scn*i]);return out}
+function paint(){document.querySelectorAll('.cell.sel').forEach(c=>c.classList.remove('sel'));selCells.forEach(c=>c.classList.add('sel'))}
+$('scene').addEventListener('pointerdown',e=>{if(MODE!=='kata'||!playing)return;const c=cellAt(e.clientX,e.clientY);if(!c)return;selStart=c;selCells=[c];paint();$('scene').setPointerCapture(e.pointerId)},true);
+$('scene').addEventListener('pointermove',e=>{if(MODE!=='kata'||!selStart)return;const c=cellAt(e.clientX,e.clientY);if(!c)return;const l=line(selStart,c);if(l){selCells=l;paint()}});
+addEventListener('pointerup',()=>{if(MODE!=='kata'||!selStart)return;selStart=null;
+  const s=selCells.map(c=>c.textContent).join(''),rs=[...s].reverse().join('');
+  const i=wtargets.findIndex(o=>!o.found&&(o.w===s||o.w===rs));
+  if(i>=0&&s.length>1){const o=wtargets[i];o.found=true;const col=`hsl(${(i*47)%360} 65% 55%)`;
+    selCells.forEach(c=>{c.classList.add('f');c.style.background=col});$('it'+i).classList.add('done');buzz(20);
+    if(--left===0)end(true);}
+  else if(s.length>1){time=Math.max(time-3,0);showTime();buzz([30,40,30])}
+  selCells=[];paint();});
+
 function start(lv){
+  if(MODE==='kata')return startWord(lv);
+  $('scene').className='';$('scene').style.gridTemplateColumns='';
   LV=lv;const C=cfg(lv),t=C.theme,rng=mulberry(lv*977+Date.now()%1000);
   $('sub').textContent=`Level ${lv} · ${t.n}`;
   const sc=$('scene');
@@ -151,7 +212,7 @@ addEventListener('resize',sizeVar);
 function showTime(){$('timer').textContent='⏱ '+Math.max(time,0);$('timer').style.color=time<=10?'#e63946':''}
 
 $('scene').addEventListener('pointerdown',e=>{
-  if(!playing)return;
+  if(!playing||MODE==='kata')return;
   const o=e.target.closest('.obj');
   if(o&&o.dataset.t!==undefined){
     o.classList.add('found');$('it'+o.dataset.t).classList.add('done');buzz(20);
@@ -165,6 +226,7 @@ $('scene').addEventListener('pointerdown',e=>{
 });
 $('hintBtn').onclick=()=>{
   if(!playing||hints<=0)return;
+  if(MODE==='kata'){const o=wtargets.find(x=>!x.found);if(!o)return;hints--;$('hintBtn').textContent='💡 '+hints;const c=$('scene').children[o.r*grid.length+o.c];c.classList.remove('hint');void c.offsetWidth;c.classList.add('hint');return}
   const o=[...document.querySelectorAll('.obj[data-t]:not(.found)')][0];if(!o)return;
   hints--;$('hintBtn').textContent='💡 '+hints;o.style.zIndex=99;o.classList.remove('hint');void o.offsetWidth;o.classList.add('hint');
 };
@@ -172,19 +234,27 @@ function buzz(p){try{navigator.vibrate&&navigator.vibrate(p)}catch(_){}}
 
 function end(win){
   playing=false;clearInterval(tick);
-  const C=cfg(LV);let st=0;
+  const C=MODE==='kata'?wcfg(LV):cfg(LV);let st=0;
   if(win){st=time>C.time*.5?3:time>C.time*.2?2:1;
-    best[LV]=Math.max(best[LV]||0,st);unlocked=Math.max(unlocked,LV+1);
-    try{localStorage.setItem('cari_stars',JSON.stringify(best));localStorage.setItem('cari_unlock',unlocked)}catch(_){}}
+    best[K()+LV]=Math.max(best[K()+LV]||0,st);setUnl(Math.max(unl(),LV+1));
+    try{localStorage.setItem('cari_stars',JSON.stringify(best))}catch(_){}}
   $('card').innerHTML=win
    ?`<h1>Jumpa semua! 🎉</h1><div class="stars">${'⭐'.repeat(st)}${'☆'.repeat(3-st)}</div><p>Baki masa: ${time}s</p><button onclick="start(${LV+1})">Level ${LV+1} ▶</button><button class="alt" onclick="menu()">Menu</button>`
-   :`<h1>Masa tamat ⏰</h1><p>Tinggal ${left} lagi objek tak jumpa.</p><button onclick="start(${LV})">Cuba lagi</button><button class="alt" onclick="menu()">Menu</button>`;
+   :`<h1>Masa tamat ⏰</h1><p>Tinggal ${left} lagi ${MODE==='kata'?'perkataan':'objek'} tak jumpa.</p><button onclick="start(${LV})">Cuba lagi</button><button class="alt" onclick="menu()">Menu</button>`;
   $('overlay').classList.remove('hide');
 }
+const unl=()=>+(localStorage.getItem('cari_unlock'+K())||1);
+function setUnl(v){try{localStorage.setItem('cari_unlock'+K(),v)}catch(_){}}
+function setMode(m){MODE=m;try{localStorage.setItem('cari_mode',m)}catch(_){}menu()}
+function setLang(l){LANG=l;try{localStorage.setItem('cari_lang',l)}catch(_){}menu()}
 function menu(){
-  playing=false;clearInterval(tick);
-  let g='';for(let i=1;i<=30;i++)g+=`<button ${i>unlocked?'disabled':''} onclick="start(${i})">${i}<br><small style="font-size:10px">${best[i]?'⭐'.repeat(best[i]):''}</small></button>`;
-  $('card').innerHTML=`${SPR.has('logo')?'<img src="sprites/logo.webp" style="width:80%;max-height:120px;object-fit:contain">':'<h1>🔍 Cari Cari</h1>'}<p>Jumpa semua barang dalam senarai sebelum masa habis! Salah tekan −3s.</p><div class="lv">${g}</div>`;
+  playing=false;clearInterval(tick);const u=unl();
+  let g='';for(let i=1;i<=30;i++){const b=best[K()+i];g+=`<button ${i>u?'disabled':''} onclick="start(${i})">${i}<br><small style="font-size:10px">${b?'⭐'.repeat(b):''}</small></button>`}
+  const tb=(cur,v,l,f)=>`<button class="${cur===v?'on':''}" onclick="${f}('${v}')">${l}</button>`;
+  $('card').innerHTML=`${SPR.has('logo')?'<img src="sprites/logo.webp" style="width:80%;max-height:120px;object-fit:contain">':'<h1>🔍 Cari Cari</h1>'}
+  <div class="toggle">${tb(MODE,'objek','🧸 Cari Barang','setMode')}${tb(MODE,'kata','🔤 Cari Perkataan','setMode')}</div>
+  ${MODE==='kata'?`<div class="toggle">${tb(LANG,'bm','BM','setLang')}${tb(LANG,'en','English','setLang')}${tb(LANG,'mix','Campur','setLang')}</div><p>Leret jari atas huruf untuk bulatkan perkataan!</p>`:'<p>Jumpa semua barang dalam senarai sebelum masa habis!</p>'}
+  <p style="font-size:13px;color:#8a6a50">Salah = −3s</p><div class="lv">${g}</div>`;
   $('overlay').classList.remove('hide');
 }
 fetch('sprites/list.json',{cache:'no-cache'}).then(r=>r.ok?r.json():[]).catch(()=>[]).then(l=>{SPR=new Set(l);menu()});
