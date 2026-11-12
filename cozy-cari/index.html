@@ -137,7 +137,9 @@ function mulberry(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1
 function shuffle(a,r){for(let i=a.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
 
 // ================= MOD CARI PERKATAAN (word search) =================
-let MODE=localStorage.getItem('cari_mode')||'objek',LANG=localStorage.getItem('cari_lang')||'mix';
+// Mod Cari Barang disorok buat sementara (kod masih ada). Tukar SHOW_OBJEK=true untuk buka balik.
+const SHOW_OBJEK=false;
+let MODE=SHOW_OBJEK?(localStorage.getItem('cari_mode')||'kata'):'kata',LANG=localStorage.getItem('cari_lang')||'mix';
 const K=()=>MODE==='kata'?'w':'';
 
 // Bank perkataan tambahan (mod perkataan sahaja) — [emoji, BM, EN]
@@ -324,7 +326,7 @@ function menu(){
   let g='';for(let i=s0;i<s0+30;i++){const b=best[K()+i];g+=`<button ${i>u?'disabled':''} onclick="start(${i})">${i}<br><small style="font-size:10px">${b?'⭐'.repeat(b):''}</small></button>`}
   const tb=(cur,v,l,f)=>`<button class="${cur===v?'on':''}" onclick="${f}('${v}')">${l}</button>`;
   $('card').innerHTML=`${SPR.has('logo')?'<img src="sprites/logo.webp" style="width:80%;max-height:120px;object-fit:contain">':'<h1>🔍 Cari Cari</h1>'}
-  <div class="toggle">${tb(MODE,'objek','🧸 Cari Barang','setMode')}${tb(MODE,'kata','🔤 Cari Perkataan','setMode')}</div>
+  ${SHOW_OBJEK?`<div class="toggle">${tb(MODE,'objek','🧸 Cari Barang','setMode')}${tb(MODE,'kata','🔤 Cari Perkataan','setMode')}</div>`:''}
   ${MODE==='kata'?`<div class="toggle">${tb(LANG,'bm','BM','setLang')}${tb(LANG,'en','English','setLang')}${tb(LANG,'mix','Campur','setLang')}</div><p>Leret jari atas huruf untuk bulatkan perkataan. Santai je, tak ada had masa ☕</p>`:'<p>Jumpa semua barang dalam senarai sebelum masa habis!</p>'}
   <button onclick="start(${u})">▶ Teruskan Level ${u}</button>
   <p style="font-size:13px;color:#8a6a50">Level tanpa had ♾️${MODE==='kata'?'':' · Salah = −3s'}</p><div class="lv">${g}</div>
