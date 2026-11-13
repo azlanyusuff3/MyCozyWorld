@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="ms">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#145c57">
+<title>Mamak Lab (dev)</title>
+<link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}html,body{margin:0;height:100%;overflow:hidden;background:#20302e;font-family:Nunito,system-ui,sans-serif;touch-action:none;user-select:none;-webkit-user-select:none}
+canvas{display:block;width:100vw;height:100vh}
+.hud{position:fixed;top:calc(8px + env(safe-area-inset-top));left:8px;right:8px;display:flex;gap:8px;pointer-events:none}
+.pill{background:#145c57;color:#fff;border:3px solid #0d3f3b;border-radius:14px;padding:6px 12px;font:16px "Lilita One",sans-serif;box-shadow:0 3px 0 #0a2e2b}
+.pill.light{background:#fff8ec;color:#145c57;border-color:#e8d9bd}
+.tag{max-width:94vw;overflow:hidden;text-overflow:ellipsis;position:fixed;bottom:calc(10px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);background:#0009;color:#fff;font-size:11px;padding:5px 10px;border-radius:10px;pointer-events:none;white-space:nowrap}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="hud"><div class="pill" id="money">RM 0.00</div><div class="pill light" id="clock">6:00 am</div><div class="pill light" id="rate">♥ 5.0</div></div>
+<div class="tag">Mamak Lab v0.1 · tap 💬 untuk hantar order</div>
+<script>
+// ===== Mamak Lab v0.1 — prototaip isometric (belum link ke Mamak Rush) =====
+const cv=document.getElementById('c'),cx=cv.getContext('2d');
+let W,H,DPR;function resize(){DPR=Math.min(devicePixelRatio||1,2);W=innerWidth;H=innerHeight;cv.width=W*DPR;cv.height=H*DPR}addEventListener('resize',resize);resize();
+
+const TW=64,TH=32; // saiz jubin isometric 2:1
+const GX=10,GY=8;  // saiz kedai
+let cam={x:0,y:-40,z:Math.min(1.6,Math.max(.7,innerWidth/470))};
+function iso(gx,gy,h=0){return{x:(gx-gy)*TW/2,y:(gx+gy)*TH/2-h}}
+
+// ---------- simpan ----------
+let money=0;try{money=+localStorage.getItem('mamakLabMoney')||0}catch(e){}
+function save(){try{localStorage.setItem('mamakLabMoney',money)}catch(e){}}
+
+// ---------- susun atur kedai ----------
+const TABLES=[{x:2,y:3},{x:7,y:3},{x:2,y:5.8},{x:7,y:5.8}];
+const SEATS=[];TABLES.forEach((t,i)=>{SEATS.push({x:t.x-1,y:t.y,t:i,who:null},{x:t.x+1,y:t.y,t:i,who:null})});
+const MENU=[{n:'Roti Canai',e:'🫓',p:2.5},{n:'Teh Tarik',e:'☕',p:2.2},{n:'Maggi Goreng',e:'🍜',p:6.5},{n:'Nasi Lemak',e:'🍛',p:5},{n:'Milo Ais',e:'🧋',p:3}];
+const SKIN=['#8a5a3c','#c68a5e','#e8b48a','#6b4128','#f1c9a0'],SHIRT=['#3b7dd8','#e05a5a','#5cb85c','#f0a030','#8a5cd8','#2aa198','#eee'];
+
+// ---------- watak ----------
+const people=[],floaters=[];
+function spawn(){
+  const seat=SEATS.filter(s=>!s.who);if(!seat.length)return;
+  const s=seat[Math.random()*seat.length|0];
+  const p={x:13,y:8.6,path:[{x:5,y:8.6},{x:5,y:s.y},{x:s.x,y:s.y}],seat:s,st:'walk',t:0,
+    skin:SKIN[Math.random()*SKIN.length|0],shirt:SHIRT[Math.random()*SHIRT.length|0],cap:Math.random()<.4,
+    order:MENU[Math.random()*MENU.length|0],pat:1};
+  s.who=p;people.push(p);
+}
+const cooks=[{x:3,y:0.1,c:'#fff'},{x:6,y:0.1,c:'#fff'}];
+
+function update(dt){
+  for(const p of [...people]){
+    if(p.st==='walk'||p.st==='leave'){
+      const w=p.path[0];if(!w){if(p.st==='walk'){p.st='wait';p.t=0}else{people.splice(people.indexOf(p),1)}continue}
+      const dx=w.x-p.x,dy=w.y-p.y,d=Math.hypot(dx,dy),sp=2.2*dt;
+      if(d<sp){p.x=w.x;p.y=w.y;p.path.shift()}else{p.x+=dx/d*sp;p.y+=dy/d*sp}
+      p.t+=dt;
+    }else if(p.st==='wait'){p.t+=dt;p.pat=Math.max(0,1-p.t/25);if(p.pat<=0){leave(p,false)}}
+    else if(p.st==='eat'){p.t+=dt;if(p.t>6){pay(p);leave(p,true)}}
+  }
+  for(const f of [...floaters]){f.t+=dt;if(f.t>1.4)floaters.splice(floaters.indexOf(f),1)}
+}
+let ratings=[5];
+function leave(p,happy){p.st='leave';p.seat.who=null;p.path=[{x:5,y:p.y},{x:5,y:8.6},{x:-4,y:8.6}];
+  ratings.push(happy?(p.pat>.5?5:4):1);if(ratings.length>20)ratings.shift();
+  if(!happy)floaters.push({x:p.x,y:p.y,txt:'😠',t:0})}
+function pay(p){const tip=p.pat>.6?1:0;const amt=p.order.p+tip;money+=amt;save();floaters.push({x:p.x,y:p.y,txt:'+RM'+amt.toFixed(2),t:0})}
+
+// ---------- jam & siang/malam ----------
+let gameMin=6*60;const MIN_PER_SEC=6; // 1 hari = 4 minit sebenar
+function darkness(){const h=gameMin/60%24;if(h>=7&&h<18)return 0;if(h>=20||h<5)return .55;if(h>=18)return (h-18)/2*.55;return (7-h)/2*.55}
+
+// ---------- lukis ----------
+function poly(pts,fill,stroke){cx.beginPath();pts.forEach((p,i)=>i?cx.lineTo(p.x,p.y):cx.moveTo(p.x,p.y));cx.closePath();cx.fillStyle=fill;cx.fill();if(stroke){cx.strokeStyle=stroke;cx.lineWidth=1;cx.stroke()}}
+function tile(gx,gy,c,s){poly([iso(gx,gy),iso(gx+1,gy),iso(gx+1,gy+1),iso(gx,gy+1)],c,s)}
+function shade(hex,k){const n=parseInt(hex.slice(1),16);let r=n>>16,g=n>>8&255,b=n&255;r=Math.min(255,r*k|0);g=Math.min(255,g*k|0);b=Math.min(255,b*k|0);return`rgb(${r},${g},${b})`}
+function box(x,y,w,d,h,c,z=0){ // kotak isometric
+  const A=iso(x,y+d,z),B=iso(x+w,y+d,z),C=iso(x+w,y,z),T=(px,py)=>iso(px,py,z+h);
+  poly([A,B,T(x+w,y+d),T(x,y+d)],shade(c,.82));
+  poly([B,C,T(x+w,y),T(x+w,y+d)],shade(c,.65));
+  poly([T(x,y),T(x+w,y),T(x+w,y+d),T(x,y+d)],c);
+}
+function person(p,cook){
+  const sit=p.st==='wait'||p.st==='eat';const s=iso(p.x+.5,p.y+.5);const bob=(!sit&&!cook)?Math.abs(Math.sin(p.t*9))*2:0;
+  const y0=s.y-(sit?6:0)-bob;
+  cx.fillStyle='#0003';cx.beginPath();cx.ellipse(s.x,s.y,9,4,0,0,7);cx.fill();
+  cx.fillStyle=cook?'#fff':p.shirt;cx.beginPath();cx.roundRect(s.x-7,y0-24,14,16,5);cx.fill();
+  if(!sit&&!cook){cx.fillStyle='#334';cx.fillRect(s.x-6,y0-9,5,9);cx.fillRect(s.x+1,y0-9,5,9)}
+  cx.fillStyle=cook?'#c68a5e':p.skin;cx.beginPath();cx.arc(s.x,y0-33,10,0,7);cx.fill();
+  cx.fillStyle='#1d1410';cx.beginPath();cx.arc(s.x,y0-36,10,Math.PI,0);cx.fill();
+  cx.fillStyle='#222';cx.fillRect(s.x-4,y0-34,2,3);cx.fillRect(s.x+2,y0-34,2,3);
+  if(cook){cx.fillStyle='#fff';cx.fillRect(s.x-8,y0-46,16,7);cx.beginPath();cx.arc(s.x,y0-48,7,0,7);cx.fill()}
+  else if(p.cap){cx.fillStyle=p.shirt==='#eee'?'#e05a5a':p.shirt;cx.beginPath();cx.arc(s.x,y0-38,9,Math.PI,0);cx.fill();cx.fillRect(s.x,y0-39,12,3)}
+  if(p.st==='wait'){ // bubble order
+    const bx=s.x,by=y0-66;cx.fillStyle='#fff';cx.strokeStyle='#145c57';cx.lineWidth=2;
+    cx.beginPath();cx.roundRect(bx-17,by-15,34,28,10);cx.fill();cx.stroke();
+    cx.font='18px system-ui';cx.textAlign='center';cx.textBaseline='middle';cx.fillText(p.order.e,bx,by-1);
+    cx.fillStyle=p.pat>.5?'#5cb85c':p.pat>.25?'#f0a030':'#e05a5a';cx.fillRect(bx-14,by+15,28*p.pat,4);
+  }
+  if(p.st==='eat'){cx.font='14px system-ui';cx.textAlign='center';cx.fillText(p.order.e,s.x+(p.seat.x<TABLES[p.seat.t].x?16:-16),y0-14)}
+}
+
+function draw(){
+  cx.setTransform(DPR,0,0,DPR,0,0);cx.fillStyle='#2b3b38';cx.fillRect(0,0,W,H);
+  cx.setTransform(DPR*cam.z,0,0,DPR*cam.z,W/2*DPR+cam.x*DPR*cam.z,H/2*DPR-80*DPR*cam.z+cam.y*DPR*cam.z);
+  // jalan & kaki lima
+  for(let gx=-6;gx<16;gx++){for(let gy=8;gy<14;gy++){
+    tile(gx,gy,gy<10?'#d9cfc0':gy===11?'#3d4145':'#44494d');
+    if(gy===11&&gx%2===0){const a=iso(gx+.2,gy+1),b=iso(gx+.8,gy+1);cx.strokeStyle='#e8e2c8';cx.lineWidth=2;cx.beginPath();cx.moveTo(a.x,a.y);cx.lineTo(b.x,b.y);cx.stroke()}
+  }}
+  // lantai jubin
+  for(let gx=0;gx<GX;gx++)for(let gy=0;gy<GY;gy++)tile(gx,gy,(gx+gy)%2?'#f6e3c9':'#fbeedb','#e9cfae');
+  // dinding belakang
+  for(let gx=0;gx<GX;gx++){const a=iso(gx,0),b=iso(gx+1,0);poly([a,b,{x:b.x,y:b.y-70},{x:a.x,y:a.y-70}],gx%2?'#f2c4b8':'#f5cdc2');poly([a,b,{x:b.x,y:b.y-22},{x:a.x,y:a.y-22}],'#e8a99a')}
+  for(let gy=0;gy<GY;gy++){const a=iso(0,gy),b=iso(0,gy+1);poly([a,b,{x:b.x,y:b.y-70},{x:a.x,y:a.y-70}],'#f8d9cf');poly([a,b,{x:b.x,y:b.y-22},{x:a.x,y:a.y-22}],'#efb8aa')}
+  // papan tanda
+  const s1=iso(3,0,74),s2=iso(8,0,74);poly([s1,s2,{x:s2.x,y:s2.y-24},{x:s1.x,y:s1.y-24}],'#145c57','#0d3f3b');
+  cx.save();cx.translate((s1.x+s2.x)/2,(s1.y+s2.y)/2-12);cx.transform(1,.5,0,1,0,0);cx.fillStyle='#ffe9a8';cx.font='15px "Lilita One"';cx.textAlign='center';cx.textBaseline='middle';cx.fillText('MAMAK LAB 24 JAM',0,0);cx.restore();
+
+  // entiti ikut kedalaman
+  const ents=[];
+  ents.push({d:6.2,f:()=>box(.5,1,GX-1,.6,14,'#2a8a7e')}); // kaunter
+  ents.push({d:6.3,f:()=>{box(1.3,1.05,.5,.5,6,'#888',14);const t=iso(1.55,1.3,22);cx.fillStyle='#ffd27a';cx.beginPath();cx.ellipse(t.x,t.y,10,5,0,0,7);cx.fill()}}); // tawa roti
+  ents.push({d:9.5,f:()=>{box(7.8,1.1,.4,.4,10,'#c0c0c0',14)}}); // dandang teh
+  TABLES.forEach(t=>{ents.push({d:t.x+t.y+1,f:()=>{box(t.x+.1,t.y+.1,.8,.8,13,'#fdfdfd');}})});
+  SEATS.forEach(s=>ents.push({d:s.x+s.y+.9,f:()=>box(s.x+.25,s.y+.25,.5,.5,7,'#e66a6a')}));
+  cooks.forEach(c=>ents.push({d:c.x+c.y+.5,f:()=>person({x:c.x,y:c.y,st:'cook',t:0},true)}));
+  people.forEach(p=>ents.push({d:p.x+p.y+1.05,f:()=>person(p,false)}));
+  // tiang lampu
+  [[-1,10],[10,10]].forEach(([x,y])=>ents.push({d:x+y,f:()=>{const b=iso(x+.5,y+.5);cx.fillStyle='#334';cx.fillRect(b.x-2,b.y-90,4,90);cx.fillStyle=darkness()>.1?'#ffe9a8':'#ccc';cx.beginPath();cx.arc(b.x,b.y-92,6,0,7);cx.fill()}}));
+  ents.sort((a,b)=>a.d-b.d).forEach(e=>e.f());
+
+  for(const f of floaters){const s=iso(f.x+.5,f.y+.5);cx.globalAlpha=1-f.t/1.4;cx.fillStyle='#1f8a4c';cx.font='16px "Lilita One"';cx.textAlign='center';cx.strokeStyle='#fff';cx.lineWidth=4;cx.strokeText(f.txt,s.x,s.y-60-f.t*30);cx.fillText(f.txt,s.x,s.y-60-f.t*30);cx.globalAlpha=1}
+
+  // malam
+  const dk=darkness();if(dk>0){cx.setTransform(DPR,0,0,DPR,0,0);cx.fillStyle=`rgba(15,25,60,${dk})`;cx.fillRect(0,0,W,H);
+    cx.globalCompositeOperation='lighter';cx.setTransform(DPR*cam.z,0,0,DPR*cam.z,W/2*DPR+cam.x*DPR*cam.z,H/2*DPR-80*DPR*cam.z+cam.y*DPR*cam.z);
+    const c=iso(5,4);const g=cx.createRadialGradient(c.x,c.y,10,c.x,c.y,260);g.addColorStop(0,`rgba(255,200,120,${dk*.35})`);g.addColorStop(1,'rgba(0,0,0,0)');cx.fillStyle=g;cx.fillRect(c.x-300,c.y-300,600,600);cx.globalCompositeOperation='source-over'}
+}
+
+// ---------- input: drag, zoom, tap ----------
+const ptr=new Map();let moved=0,pinch0=0,z0=1;
+cv.addEventListener('pointerdown',e=>{ptr.set(e.pointerId,{x:e.clientX,y:e.clientY});moved=0;if(ptr.size===2){const[a,b]=[...ptr.values()];pinch0=Math.hypot(a.x-b.x,a.y-b.y);z0=cam.z}});
+cv.addEventListener('pointermove',e=>{const o=ptr.get(e.pointerId);if(!o)return;
+  if(ptr.size===2){ptr.set(e.pointerId,{x:e.clientX,y:e.clientY});const[a,b]=[...ptr.values()];cam.z=Math.min(2.5,Math.max(.5,z0*Math.hypot(a.x-b.x,a.y-b.y)/pinch0));moved=99;return}
+  const dx=e.clientX-o.x,dy=e.clientY-o.y;moved+=Math.abs(dx)+Math.abs(dy);cam.x+=dx/cam.z;cam.y+=dy/cam.z;ptr.set(e.pointerId,{x:e.clientX,y:e.clientY})});
+function up(e){if(ptr.size===1&&moved<8)tap(e.clientX,e.clientY);ptr.delete(e.pointerId)}
+cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',e=>ptr.delete(e.pointerId));
+cv.addEventListener('wheel',e=>{e.preventDefault();cam.z=Math.min(2.5,Math.max(.5,cam.z*(e.deltaY<0?1.1:.9)))},{passive:false});
+function tap(sx,sy){
+  const wx=(sx-W/2)/cam.z-cam.x,wy=(sy-H/2+80*cam.z)/cam.z-cam.y;
+  let best=null,bd=40;for(const p of people){if(p.st!=='wait')continue;const s=iso(p.x+.5,p.y+.5);const d=Math.hypot(s.x-wx,s.y-40-wy);if(d<bd){bd=d;best=p}}
+  if(best){best.st='eat';best.t=0}
+}
+
+// ---------- loop ----------
+let last=performance.now(),spawnT=1;
+function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;
+  gameMin=(gameMin+dt*MIN_PER_SEC)%(24*60);
+  const h=gameMin/60;const busy=(h>=7&&h<10)||(h>=12&&h<14)||(h>=20||h<1)?.6:1.6;
+  spawnT-=dt;if(spawnT<=0){spawn();spawnT=busy*(1.5+Math.random()*2)}
+  update(dt);draw();
+  document.getElementById('money').textContent='RM '+money.toFixed(2);
+  const hh=Math.floor(h),mm=Math.floor(gameMin%60);document.getElementById('clock').textContent=`${(hh%12)||12}:${String(mm).padStart(2,'0')} ${hh<12?'am':'pm'}`;
+  document.getElementById('rate').textContent='♥ '+(ratings.reduce((a,b)=>a+b,0)/ratings.length).toFixed(1);
+  requestAnimationFrame(loop)}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
