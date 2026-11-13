@@ -103,7 +103,7 @@ const UPS = [
   { k: 'kuali', cat: 'dapur', ic: '🍳', spr: 'up_kuali', n: 'Kuali kedua', d: 'Masak 2 kuali serentak (Maggi/Mee)', cost: [60], max: 1, need: 2 },
   { k: 'api', cat: 'dapur', ic: '♨️', spr: 'up_api', n: 'Dapur gas', d: ['Kuali masak 20% laju', 'Api naga: kuali masak 35% laju'], cost: [70, 160], max: 2, need: 2 },
   { k: 'periuk', cat: 'dapur', ic: '🍚', spr: 'up_periuk', n: 'Periuk nasi', d: ['Periuk besar: 9 bungkus, masak laju', 'Periuk gergasi: 12 bungkus, masak paling laju'], cost: [60, 140], max: 2, need: 7 },
-  { k: 'bara', cat: 'dapur', loc: 'satay', ic: '🍢', spr: 'up_bara', n: 'Pemanggang satay', d: ['3 cucuk serentak', 'Bara kuat: satay masak 25% laju', 'Pemanggang emas: 4 cucuk + paling laju'], cost: [70, 150, 280], max: 3 },
+  { k: 'bara', cat: 'dapur', loc: 'satay', ic: '🍢', spr: 'up_bara', n: 'Pemanggang satay', d: ['Satay masak 15% laju', 'Bara kuat: satay masak 28% laju', 'Pemanggang emas: satay masak 40% laju'], cost: [70, 150, 280], max: 3 },
   { k: 'tray', cat: 'dapur', ic: '🍽️', spr: 'up_dulang', n: 'Dulang', d: ['Dulang muat 5 makanan', 'Dulang muat 6 makanan'], cost: [40, 120], max: 2 },
   // KEDAI — selesa = pelanggan lebih sabar & tip lebih
   { k: 'tables', cat: 'kedai', ic: '🪑', n: 'Meja tambahan', d: 'Lebih ramai pelanggan serentak', cost: [40, 120], max: 2 },
@@ -116,7 +116,7 @@ const UPS = [
 ];
 const upDesc = u => Array.isArray(u.d) ? u.d[Math.min(up(u.k), u.d.length - 1)] : u.d;
 const lvStars = u => u.max > 1 ? '★'.repeat(up(u.k)) + '☆'.repeat(u.max - up(u.k)) : '';
-const baraSlots = () => 2 + (up('bara') >= 1) + (up('bara') >= 3), baraMul = () => [1, 1, .75, .62][up('bara')];
+const baraMul = () => [1, .85, .72, .6][up('bara')];
 const tawaMul = () => [1, .7, .55, .45][up('tawa')];
 const apiMul = () => [1, .8, .65][up('api')];
 const nasiStock = () => 6 + up('periuk') * 3, nasiCook = () => 5 * [1, .75, .55][up('periuk')];
@@ -287,7 +287,7 @@ function startDay(d) {
     spawnT: 1.2, grabT: rand(15, 25), catT: rand(14, 22), uid: 0, ev: eventFor(d), datukDone: false, azan: false, mist: { burn: 0, wrong: 0, spill: 0, stolen: 0, teh: 0 }, combo: 0, bestCombo: 0, regToday: [], anne: { t: 0, busy: false }, sitiT: 0,
     roti: { s: 'idle', t: 0, prog: 0, k: 'roti', eggs: 0 },
     teh: { s: 'idle', lvl: 0, hold: false, dir: 1, prog: 0 }, chips: {},
-    maggi: Array.from({ length: LOC === 'satay' ? baraSlots() : feat(d, 'maggi') ? 1 + up('kuali') : 1 }, () => ({ s: 'idle', t: 0, k: LOC === 'satay' ? 'satay' : 'maggi' })), loc: LOC,
+    maggi: LOC === 'satay' ? ['satay', ...(feat(d, 'satayd') ? ['satayd'] : [])].map(k => ({ s: 'idle', t: 0, k, fixed: true })) : Array.from({ length: feat(d, 'maggi') ? 1 + up('kuali') : 1 }, () => ({ s: 'idle', t: 0, k: 'maggi' })), loc: LOC,
     nasi: { stock: LOC === 'satay' ? 8 : nasiStock(), s: 'idle', t: 0 }
   };
   $('#menu').classList.add('hidden'); $('#game').classList.remove('hidden');
@@ -549,8 +549,8 @@ const panOpts = () => LOC === 'satay' ? (feat(R.day, 'satayd') ? ['satay', 'sata
 const PAN = {
   maggi: { n: 'Maggi', cook: () => MAGGI_COOK * apiMul(), idle: 'st_kuali', ie: '🍳', raw: 'st_kuali_masak', re: '🥘', burn: 'st_hangus_maggi', be: '🍜', go: 'Tap masak', cookT: 'Goreng...', stirT: 'KACAU!' },
   mee: { n: 'Mee', stir: true, cook: () => MEE_COOK * apiMul(), idle: 'st_kuali', ie: '🍳', raw: 'st_kuali_masak', re: '🥘', burn: 'st_hangus_maggi', be: '🍜', go: 'Tap masak', cookT: 'Mee...', stirT: 'KACAU!', stirMsg: '🔥 Mee tak kacau, melekat hangus!' },
-  satay: { n: 'Ayam', stir: true, gar: true, cook: () => 4.5 * baraMul(), idle: 'st_bara', ie: '🔥', raw: 'st_satay_bakar', re: '🍢', burn: 'st_hangus_satay', be: '⚫', go: 'Tap letak satay', cookT: 'Bakar...', stirT: '🔄 PUSING!', stirMsg: '🔥 Satay tak pusing, hangus sebelah!' },
-  satayd: { n: 'Daging', stir: true, gar: true, cook: () => 6 * baraMul(), idle: 'st_bara', ie: '🔥', raw: 'st_satay_bakar', re: '🥩', burn: 'st_hangus_satay', be: '⚫', go: 'Tap letak satay', cookT: 'Bakar...', stirT: '🔄 PUSING!', stirMsg: '🔥 Satay tak pusing, hangus sebelah!' }
+  satay: { n: 'Ayam', stir: true, gar: true, cook: () => 4.5 * baraMul(), idle: 'st_bara', ie: '🔥', raw: 'st_satay_bakar', re: '🍢', burn: 'st_hangus_satay', be: '⚫', go: 'Tap bakar', cookT: 'Bakar...', stirT: '🔄 PUSING!', stirMsg: '🔥 Satay tak pusing, hangus sebelah!' },
+  satayd: { n: 'Daging', stir: true, gar: true, cook: () => 6 * baraMul(), idle: 'st_bara', ie: '🔥', raw: 'st_satay_bakar', re: '🥩', burn: 'st_hangus_satay', be: '⚫', go: 'Tap bakar', cookT: 'Bakar...', stirT: '🔄 PUSING!', stirMsg: '🔥 Satay tak pusing, hangus sebelah!' }
 };
 
 function renderStations() {
@@ -633,11 +633,12 @@ function drawStations() {
   // KUALI
   if ($('#stMaggi')) R.maggi.forEach((m, i) => {
     const el = document.querySelector(`#stMaggi .pan[data-i="${i}"]`); if (!el) return;
-    const po = panOpts(), b = el.querySelector('.bar b'), pk = PAN[m.k];
+    const po = m.fixed ? [m.k] : panOpts(), b = el.querySelector('.bar b'), pk = PAN[m.k];
     setChoose(el, m.s === 'idle' && po.length > 1 ? 'pick' : '', m.s === 'idle' && po.length > 1 ? po.map(k => `<button type="button" data-pan="${k}"><span class="av">${ico('item_' + k, ITEMS[k].e)}</span>${PAN[k].n}</button>`).join('') : '');
     const gar = m.s === 'ready' && feat(R.day, 'garing') && PAN[m.k].gar && m.t / READY_WIN < GARING_AT;
     el.classList.toggle('ready', m.s === 'ready' || m.s === 'stir'); el.classList.toggle('burn', m.s === 'burn'); el.classList.toggle('garing', gar);
-    const pb = el.querySelector('.big'), pv = m.s === 'idle' ? (po.length > 1 ? '' : ico(PAN[po[0]].idle, PAN[po[0]].ie)) : m.s === 'burn' ? ico(pk.burn, pk.be) : m.s === 'ready' ? ico('item_' + m.k, ITEMS[m.k].e) : ico(pk.raw, pk.re);
+    if (m.fixed) { let n = el.querySelector('.pcnt'); if (!n) { n = document.createElement('i'); n.className = 'pcnt'; el.appendChild(n); } const tx = m.s === 'ready' ? '×' + m.left : PAN[m.k].n; if (n.textContent !== tx) n.textContent = tx; }
+    const pb = el.querySelector('.big'), pv = m.s === 'idle' ? (po.length > 1 ? '' : m.fixed ? ico('item_' + m.k, ITEMS[m.k].e) : ico(PAN[po[0]].idle, PAN[po[0]].ie)) : m.s === 'burn' ? ico(pk.burn, pk.be) : m.s === 'ready' ? ico('item_' + m.k, ITEMS[m.k].e) : ico(pk.raw, pk.re);
     if (pb._v !== pv) { pb._v = pv; pb.innerHTML = pv; }
     const ph = el.querySelector('.hint'), hv = m.s === 'idle' ? (po.length > 1 ? '' : PAN[po[0]].go) : m.s === 'cook' ? pk.cookT : m.s === 'stir' ? pk.stirT : m.s === 'ready' ? (gar ? '🔥 GARING!' : '✨ Ambik!') : '🔥 Buang';
     if (ph._v !== hv) { ph._v = hv; ph.innerHTML = hv; }
@@ -742,11 +743,11 @@ function bindStations() {
   if (mEl) mEl.addEventListener('pointerdown', e => {
     const p = e.target.closest('.pan'); if (!p || !live()) return; const m = R.maggi[+p.dataset.i];
     if (m.s === 'idle') {
-      const b = e.target.closest('[data-pan]'), k = panOpts().length > 1 ? (b && b.dataset.pan) : panOpts()[0]; if (!k) return;
+      const b = e.target.closest('[data-pan]'), k = m.fixed ? m.k : panOpts().length > 1 ? (b && b.dataset.pan) : panOpts()[0]; if (!k) return; m.left = m.fixed ? 2 : 1;
       m.k = k; m.s = 'cook'; m.t = m.T = PAN[k].cook(); m.stir = false; tone(200, .3, 'sawtooth', .04, 260);
     }
     else if (m.s === 'stir') { m.stir = true; m.s = 'cook'; tone(700, .08, 'triangle', .1); emote(p, '🥄'); }
-    else if (m.s === 'ready') { const g = PAN[m.k].gar && feat(R.day, 'garing') && m.t / READY_WIN < GARING_AT; if (deliver({ k: m.k, m: g ? { garing: true } : {} }, p)) { m.s = 'idle'; if (g) { SFX.perfect(); notify('🔥 Satay garing, bau sampai jalan!', 'good'); } } }
+    else if (m.s === 'ready') { const g = PAN[m.k].gar && feat(R.day, 'garing') && m.t / READY_WIN < GARING_AT; if (deliver({ k: m.k, m: g ? { garing: true } : {} }, p)) { if (--m.left > 0) { drawStations(); return; } m.s = 'idle'; if (g) { SFX.perfect(); notify('🔥 Satay garing, bau sampai jalan!', 'good'); } } }
     else if (m.s === 'burn') m.s = 'idle';
     drawStations();
   });

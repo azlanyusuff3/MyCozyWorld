@@ -587,3 +587,12 @@ body.has-bg_kedai .shop-floor{background-size:100% auto!important;background-pos
 .order .it{position:relative}
 .ntag{position:absolute;left:50%;bottom:-3px;transform:translateX(-50%);font-size:8px;font-weight:900;letter-spacing:.5px;color:#fff;border-radius:6px;padding:0 4px;line-height:12px;white-space:nowrap;z-index:2}
 .ntag.maggi{background:#e8a400}.ntag.mee{background:#d9481c}.ntag.satay{background:#c98a2c}.ntag.satayd{background:#7a3b1c}
+.pan .pcnt{position:absolute;top:2px;left:50%;transform:translateX(-50%);font-style:normal;font-weight:900;font-size:11px;color:#fff;background:#7a3b1cdd;border-radius:8px;padding:0 6px;z-index:3}
+/* satay: Ayam atas, Daging bawah */
+#stMaggi.bara{flex-direction:column}
+#stMaggi.bara .pan{flex-direction:row;justify-content:space-around;padding:14px 4px 2px;height:auto;flex:1;gap:4px}
+#stMaggi.bara .pan .big{width:clamp(44px,7vh,72px)!important;height:clamp(44px,7vh,72px)!important}
+#stMaggi.bara .pan .bar{position:absolute;bottom:3px;left:8px;right:8px}
+#stMaggi.bara .pan{flex-direction:column;justify-content:center;gap:1px;padding-top:16px}
+#stMaggi.bara .pan .big{width:clamp(40px,6vh,62px)!important;height:clamp(40px,6vh,62px)!important}
+#stMaggi.bara .pan .hint{font-size:10px;max-width:96%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
