@@ -14,12 +14,33 @@ canvas{display:block;width:100vw;height:100vh}
 .pill{background:#145c57;color:#fff;border:3px solid #0d3f3b;border-radius:14px;padding:6px 12px;font:16px "Lilita One",sans-serif;box-shadow:0 3px 0 #0a2e2b}
 .pill.light{background:#fff8ec;color:#145c57;border-color:#e8d9bd}
 .tag{max-width:94vw;overflow:hidden;text-overflow:ellipsis;position:fixed;bottom:calc(10px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);background:#0009;color:#fff;font-size:11px;padding:5px 10px;border-radius:10px;pointer-events:none;white-space:nowrap}
+.cook{position:fixed;left:50%;bottom:calc(14px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(130%);width:min(94vw,420px);background:#fff8ec;border:4px solid #145c57;border-radius:22px;padding:12px;box-shadow:0 8px 0 #0d3f3b,0 18px 30px #0007;transition:transform .25s;z-index:5}
+.cook.on{transform:translateX(-50%) translateY(0)}
+.cook h3{margin:0 0 8px;font:normal 20px "Lilita One",sans-serif;color:#145c57;display:flex;justify-content:space-between;align-items:center}
+.cook h3 button{border:0;background:#e05a5a;color:#fff;border-radius:10px;font:14px "Lilita One";padding:4px 10px}
+.steps{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
+.steps span{flex:1;min-width:60px;text-align:center;font-size:11px;padding:6px 3px;border-radius:10px;background:#eadfcb;color:#8a7a62}
+.steps span.now{background:#ffd76a;color:#5a3d00;outline:3px solid #f0a030;animation:pulse .8s infinite alternate}
+.steps span.done{background:#5cb85c;color:#fff}
+@keyframes pulse{to{transform:scale(1.06)}}
+.opts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.opts button{border:0;background:#fff;border:3px solid #e8d9bd;border-radius:14px;padding:10px 4px;font:13px Nunito;font-weight:800;color:#5a4630;box-shadow:0 4px 0 #e8d9bd}
+.opts button:active{transform:translateY(3px);box-shadow:none}
+.opts button.bad{animation:shake .3s;border-color:#e05a5a}
+@keyframes shake{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+.tarik{display:none;margin-top:4px}.tarik.on{display:block}
+.bar{position:relative;height:26px;background:#eadfcb;border-radius:13px;overflow:hidden;margin-bottom:8px}
+.zone{position:absolute;top:0;bottom:0;background:#5cb85c88}
+.needle{position:absolute;top:-2px;bottom:-2px;width:6px;background:#145c57;border-radius:3px}
+.tarik button{width:100%;border:0;background:#c8102e;color:#fff;border-radius:14px;padding:12px;font:18px "Lilita One";box-shadow:0 4px 0 #7a0a1c}
+.timer{font:14px Nunito;font-weight:800;color:#8a7a62}
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
 <div class="hud"><div class="pill" id="money">RM 0.00</div><div class="pill light" id="clock">6:00 am</div><div class="pill light" id="rate">♥ 5.0</div></div>
-<div class="tag">Mamak Lab v0.1 · tap 💬 untuk hantar order</div>
+<div class="tag">Mamak Lab v0.2 · tap 💬 untuk masak</div>
+<div class="cook" id="cook"><h3><span id="ckTitle">Roti Canai</span><span class="timer" id="ckTime">0.0s</span><button id="ckX">✕</button></h3><div class="steps" id="ckSteps"></div><div class="opts" id="ckOpts"></div><div class="tarik" id="ckTarik"><div class="bar"><div class="zone" id="ckZone"></div><div class="needle" id="ckNeedle"></div></div><button id="ckTarikBtn">TARIK! 〰️</button></div></div>
 <script>
 // ===== Mamak Lab v0.1 — prototaip isometric (belum link ke Mamak Rush) =====
 const cv=document.getElementById('c'),cx=cv.getContext('2d');
@@ -37,7 +58,13 @@ function save(){try{localStorage.setItem('mamakLabMoney',money)}catch(e){}}
 // ---------- susun atur kedai ----------
 const TABLES=[{x:2,y:3},{x:7,y:3},{x:2,y:5.8},{x:7,y:5.8}];
 const SEATS=[];TABLES.forEach((t,i)=>{SEATS.push({x:t.x-1,y:t.y,t:i,who:null},{x:t.x+1,y:t.y,t:i,who:null})});
-const MENU=[{n:'Roti Canai',e:'🫓',p:2.5},{n:'Teh Tarik',e:'☕',p:2.2},{n:'Maggi Goreng',e:'🍜',p:6.5},{n:'Nasi Lemak',e:'🍛',p:5},{n:'Milo Ais',e:'🧋',p:3}];
+const MENU=[
+ {n:'Roti Canai',e:'🫓',p:2.5,r:['🫓 Tebar doh','🔥 Atas tawa','🔄 Terbalik','🍛 Kuah dhal']},
+ {n:'Teh Tarik',e:'☕',p:2.2,r:['🫖 Tuang teh','🥛 Susu pekat','〰️ TARIK']},
+ {n:'Maggi Goreng',e:'🍜',p:6.5,r:['🍜 Rebus maggi','🥚 Pecah telur','🌶️ Sos cili','🔥 Goreng']},
+ {n:'Nasi Lemak',e:'🍛',p:5,r:['🍚 Nasi','🥜 Kacang','🥒 Timun','🌶️ Sambal']},
+ {n:'Milo Ais',e:'🧋',p:3,r:['🍫 Milo','🥛 Susu','🧊 Ais','🥄 Kacau']}];
+const ALL_STEPS=[...new Set(MENU.flatMap(m=>m.r).filter(x=>x!=='〰️ TARIK'))];
 const SKIN=['#8a5a3c','#c68a5e','#e8b48a','#6b4128','#f1c9a0'],SHIRT=['#3b7dd8','#e05a5a','#5cb85c','#f0a030','#8a5cd8','#2aa198','#eee'];
 
 // ---------- watak ----------
@@ -59,16 +86,16 @@ function update(dt){
       const dx=w.x-p.x,dy=w.y-p.y,d=Math.hypot(dx,dy),sp=2.2*dt;
       if(d<sp){p.x=w.x;p.y=w.y;p.path.shift()}else{p.x+=dx/d*sp;p.y+=dy/d*sp}
       p.t+=dt;
-    }else if(p.st==='wait'){p.t+=dt;p.pat=Math.max(0,1-p.t/25);if(p.pat<=0){leave(p,false)}}
+    }else if(p.st==='wait'){if(p.serving)continue;p.t+=dt;p.pat=Math.max(0,1-p.t/25);if(p.pat<=0){leave(p,false)}}
     else if(p.st==='eat'){p.t+=dt;if(p.t>6){pay(p);leave(p,true)}}
   }
   for(const f of [...floaters]){f.t+=dt;if(f.t>1.4)floaters.splice(floaters.indexOf(f),1)}
 }
 let ratings=[5];
 function leave(p,happy){p.st='leave';p.seat.who=null;p.path=[{x:5,y:p.y},{x:5,y:8.6},{x:-4,y:8.6}];
-  ratings.push(happy?(p.pat>.5?5:4):1);if(ratings.length>20)ratings.shift();
+  ratings.push(happy?Math.min(5,(p.pat>.5?4:3)+(p.q>=1?1:0)):1);if(ratings.length>20)ratings.shift();
   if(!happy)floaters.push({x:p.x,y:p.y,txt:'😠',t:0})}
-function pay(p){const tip=p.pat>.6?1:0;const amt=p.order.p+tip;money+=amt;save();floaters.push({x:p.x,y:p.y,txt:'+RM'+amt.toFixed(2),t:0})}
+function pay(p){const tip=(p.pat>.6?1:0)+(p.q||0);const amt=p.order.p+tip;money+=amt;save();floaters.push({x:p.x,y:p.y,txt:'+RM'+amt.toFixed(2),t:0})}
 
 // ---------- jam & siang/malam ----------
 let gameMin=6*60;const MIN_PER_SEC=6; // 1 hari = 4 minit sebenar
@@ -96,10 +123,11 @@ function person(p,cook){
   if(cook){cx.fillStyle='#fff';cx.fillRect(s.x-8,y0-46,16,7);cx.beginPath();cx.arc(s.x,y0-48,7,0,7);cx.fill()}
   else if(p.cap){cx.fillStyle=p.shirt==='#eee'?'#e05a5a':p.shirt;cx.beginPath();cx.arc(s.x,y0-38,9,Math.PI,0);cx.fill();cx.fillRect(s.x,y0-39,12,3)}
   if(p.st==='wait'){ // bubble order
+    if(p.serving){cx.globalAlpha=.5}
     const bx=s.x,by=y0-66;cx.fillStyle='#fff';cx.strokeStyle='#145c57';cx.lineWidth=2;
     cx.beginPath();cx.roundRect(bx-17,by-15,34,28,10);cx.fill();cx.stroke();
     cx.font='18px system-ui';cx.textAlign='center';cx.textBaseline='middle';cx.fillText(p.order.e,bx,by-1);
-    cx.fillStyle=p.pat>.5?'#5cb85c':p.pat>.25?'#f0a030':'#e05a5a';cx.fillRect(bx-14,by+15,28*p.pat,4);
+    cx.fillStyle=p.pat>.5?'#5cb85c':p.pat>.25?'#f0a030':'#e05a5a';cx.fillRect(bx-14,by+15,28*p.pat,4);cx.globalAlpha=1;
   }
   if(p.st==='eat'){cx.font='14px system-ui';cx.textAlign='center';cx.fillText(p.order.e,s.x+(p.seat.x<TABLES[p.seat.t].x?16:-16),y0-14)}
 }
@@ -151,11 +179,40 @@ cv.addEventListener('pointermove',e=>{const o=ptr.get(e.pointerId);if(!o)return;
 function up(e){if(ptr.size===1&&moved<8)tap(e.clientX,e.clientY);ptr.delete(e.pointerId)}
 cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',e=>ptr.delete(e.pointerId));
 cv.addEventListener('wheel',e=>{e.preventDefault();cam.z=Math.min(2.5,Math.max(.5,cam.z*(e.deltaY<0?1.1:.9)))},{passive:false});
-function tap(sx,sy){
+function tap(sx,sy){if(ck)return;
   const wx=(sx-W/2)/cam.z-cam.x,wy=(sy-H/2+80*cam.z)/cam.z-cam.y;
   let best=null,bd=40;for(const p of people){if(p.st!=='wait')continue;const s=iso(p.x+.5,p.y+.5);const d=Math.hypot(s.x-wx,s.y-40-wy);if(d<bd){bd=d;best=p}}
-  if(best){best.st='eat';best.t=0}
+  if(best&&!ck)openCook(best)
 }
+
+
+// ---------- mini masak ----------
+let ck=null;const $=id=>document.getElementById(id);
+function openCook(p){p.serving=true;ck={p,i:0,t:0,miss:0,tarik:null};const m=p.order;$('ckTitle').textContent=m.e+' '+m.n;renderCook();$('cook').classList.add('on')}
+function renderCook(){const m=ck.p.order;
+  $('ckSteps').innerHTML=m.r.map((x,i)=>`<span class="${i<ck.i?'done':i===ck.i?'now':''}">${x}</span>`).join('');
+  const need=m.r[ck.i];
+  if(need==='〰️ TARIK'){$('ckOpts').innerHTML='';$('ckTarik').classList.add('on');ck.tarik={x:0,v:1,z:20+Math.random()*50,w:22};$('ckZone').style.left=ck.tarik.z+'%';$('ckZone').style.width=ck.tarik.w+'%';return}
+  $('ckTarik').classList.remove('on');
+  const decoy=ALL_STEPS.filter(x=>!m.r.includes(x)).sort(()=>Math.random()-.5).slice(0,6-m.r.length+ (m.r.includes('〰️ TARIK')?1:0));
+  const opts=[...m.r.filter(x=>x!=='〰️ TARIK'),...decoy].sort(()=>Math.random()-.5);
+  $('ckOpts').innerHTML=opts.map(x=>`<button>${x}</button>`).join('');
+  [...$('ckOpts').children].forEach(b=>b.onclick=()=>pick(b))}
+function pick(b){const need=ck.p.order.r[ck.i];
+  if(b.textContent===need){ck.i++;beep(660);next()}else{ck.miss++;ck.t+=1.5;b.classList.remove('bad');void b.offsetWidth;b.classList.add('bad');beep(180)}}
+function next(){if(ck.i>=ck.p.order.r.length)return done();renderCook()}
+$('ckTarikBtn').onclick=()=>{const t=ck.tarik;if(!t)return;
+  if(t.x>=t.z&&t.x<=t.z+t.w){ck.tarik=null;ck.i++;beep(880);next()}else{ck.miss++;ck.t+=1.5;beep(180)}};
+function done(){const p=ck.p;
+  const q=ck.t<4&&ck.miss===0?2:ck.t<7&&ck.miss<2?1:0; // bonus tip
+  p.q=q;p.serving=false;p.st='eat';p.t=0;
+  floaters.push({x:p.x,y:p.y,txt:['👍 OK','⭐ Sedap!','🌟 Power!'][q],t:0});
+  closeCook()}
+function closeCook(){if(ck&&ck.p.st==='wait')ck.p.serving=false;ck=null;$('cook').classList.remove('on')}
+$('ckX').onclick=closeCook;
+function cookTick(dt){if(!ck)return;ck.t+=dt;$('ckTime').textContent=ck.t.toFixed(1)+'s';
+  const t=ck.tarik;if(t){t.x+=t.v*dt*110;if(t.x>=100){t.x=100;t.v=-1}if(t.x<=0){t.x=0;t.v=1}$('ckNeedle').style.left='calc('+t.x+'% - 3px)'}}
+let AC=null;function beep(f){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();const o=AC.createOscillator(),g=AC.createGain();o.frequency.value=f;o.type='triangle';g.gain.setValueAtTime(.15,AC.currentTime);g.gain.exponentialRampToValueAtTime(.001,AC.currentTime+.15);o.connect(g).connect(AC.destination);o.start();o.stop(AC.currentTime+.15)}catch(e){}}
 
 // ---------- loop ----------
 let last=performance.now(),spawnT=1;
@@ -163,7 +220,7 @@ function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;
   gameMin=(gameMin+dt*MIN_PER_SEC)%(24*60);
   const h=gameMin/60;const busy=(h>=7&&h<10)||(h>=12&&h<14)||(h>=20||h<1)?.6:1.6;
   spawnT-=dt;if(spawnT<=0){spawn();spawnT=busy*(1.5+Math.random()*2)}
-  update(dt);draw();
+  update(dt);cookTick(dt);draw();
   document.getElementById('money').textContent='RM '+money.toFixed(2);
   const hh=Math.floor(h),mm=Math.floor(gameMin%60);document.getElementById('clock').textContent=`${(hh%12)||12}:${String(mm).padStart(2,'0')} ${hh<12?'am':'pm'}`;
   document.getElementById('rate').textContent='♥ '+(ratings.reduce((a,b)=>a+b,0)/ratings.length).toFixed(1);
