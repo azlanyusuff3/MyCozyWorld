@@ -178,3 +178,10 @@ Gaya sama: *cozy chibi mobile cooking game UI, Cooking Diary vibe, warm colours,
 | `ui_butang.webp` | Landscape 768×192, transparent | An empty glossy golden-yellow pill-shaped game button with a darker orange bottom edge |
 
 Lepas siap, naikkan `VERSION` dalam `sw.js` ikut format **1.1.x** (contoh `mycozyworld-1.1.1`), bukan v-nombor lagi.
+
+## Batch 14 — Bezakan Maggi & Mee goreng (overwrite fail lama)
+Dua-dua mesti nampak beza dari jauh: **bekas, warna dan bentuk mi lain**.
+| Fail | Prompt tambahan |
+|---|---|
+| `item_maggi.webp` | Maggi goreng served in a **deep bright YELLOW bowl**, very **thin curly wavy instant noodles**, light golden-brown colour, a sunny-side-up egg on top, a few green vegetables. No plate, no lime |
+| `item_mee.webp` | Mee goreng mamak on a **flat oval stainless steel plate**, **thick straight yellow noodles** in a deep **red-orange** sauce, tofu cubes, potato slices, bean sprouts, lime wedge on the side. **No egg on top** |

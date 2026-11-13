@@ -483,7 +483,8 @@ $('#tray').addEventListener('pointerdown', e => {
 /* ---------- Render meja ---------- */
 const heartsN = c => Math.max(0, Math.ceil(c.pat / c.max * 3));
 const heartsTxt = n => '❤️'.repeat(n) + '🤍'.repeat(3 - n);
-function orderHTML(c) { return `<div class="order${c.reg ? ' reg' : ''}"><span class="hearts" data-h="${heartsN(c)}">${heartsTxt(heartsN(c))}</span>${c.hidden || c.biasa ? '<i class="biasa">⭐ macam biasa</i>' : ''}${c.items.map(i => c.hidden && !i.done ? '<span class="it"><span class="av q">❓</span></span>' : `<span class="it ${i.done ? 'done' : ''}"><span class="av">${ico('item_' + i.k, ITEMS[i.k].e)}</span>${tagHTML(i.m)}</span>`).join('')}<div class="pat"><b class="${patCls(c)}" style="width:${c.pat / c.max * 100}%"></b></div></div>`; }
+const NAME_TAG = { maggi: 'MAGGI', mee: 'MEE', satay: 'AYAM', satayd: 'DAGING' };
+function orderHTML(c) { return `<div class="order${c.reg ? ' reg' : ''}"><span class="hearts" data-h="${heartsN(c)}">${heartsTxt(heartsN(c))}</span>${c.hidden || c.biasa ? '<i class="biasa">⭐ macam biasa</i>' : ''}${c.items.map(i => c.hidden && !i.done ? '<span class="it"><span class="av q">❓</span></span>' : `<span class="it ${i.done ? 'done' : ''}"><span class="av">${ico('item_' + i.k, ITEMS[i.k].e)}</span>${NAME_TAG[i.k] ? `<b class="ntag ${i.k}">${NAME_TAG[i.k]}</b>` : ''}${tagHTML(i.m)}</span>`).join('')}<div class="pat"><b class="${patCls(c)}" style="width:${c.pat / c.max * 100}%"></b></div></div>`; }
 function patCls(c) { const f = c.pat / c.max; return f > .5 ? '' : f > .25 ? 'mid' : 'low'; }
 function fitTables() {
   const box = $('#tables'); if (!box || !R) return;
