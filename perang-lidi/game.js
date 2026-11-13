@@ -26,6 +26,47 @@ const UNITS = {
   gergaji: { name: 'Gergaji', cost: 70, hp: 120, dmg: 5,  range: 26,  rate: 0.16, spd: 31, armor: 0.1, size: 1.2,  melee: true, cleave: 2 },
 };
 const UNIT_KEYS = Object.keys(UNITS);
+// unit khas dari skill (tak boleh beli)
+UNITS.tembok = { name: 'Tembok', cost: 0, hp: 380, dmg: 0, range: 0, rate: 99, spd: 0, armor: 0.3, size: 1, special: true };
+UNITS.pokok  = { name: 'Pokok',  cost: 0, hp: 140, dmg: 7, range: 160, rate: 0.9, spd: 0, armor: 0, size: 1.1, special: true };
+const PASSIVE = {
+  api: 'Bakar: pukulan membakar musuh beberapa saat',
+  bulan: 'Malam Panjang: askar makin laju bila perang makin lama',
+  besi: 'Tukang Besi: Perisai 30% lebih murah',
+  hutan: 'Akar Hidup: askar pulih darah perlahan-lahan',
+  pendekar: 'Bunga Silat: Pedang 25% peluang kritikal ×2',
+  bunian: 'Bayang: serangan musuh 15% tersasar',
+  ais: 'Sejuk: pukulan memperlahankan musuh',
+  racun: 'Mayat Toksik: askar mati meletup racun',
+};
+const SKILL = {
+  api: ['Bom Api', 'Letupan atas barisan depan musuh'],
+  bulan: ['Lompat Bulan', '3 askar depan lompat ke belakang musuh'],
+  besi: ['Tembok Besi', 'Bina tembok penahan di depan'],
+  hutan: ['Pokok Penjaga', 'Tanam pokok yang menembak musuh'],
+  pendekar: ['Laungan Silat', 'Askar serang 3× laju selama 4 saat'],
+  bunian: ['Klon Ghaib', '3 askar bayang muncul di barisan depan'],
+  ais: ['Lantai Licin', 'Musuh depan tergelincir ke belakang'],
+  racun: ['Panah Racun', 'Hujan anak panah beracun'],
+};
+const SKILL_CD = 16;
+const CARDS = [
+  { id: 'panah2', t: 'Panah Berkembar', d: 'Pemanah tembak 2 anak panah', ic: '🏹' },
+  { id: 'rampas', t: 'Rampasan Perang', d: 'Askar yang rampas senjata +60% HP', ic: '★' },
+  { id: 'kubuApi', t: 'Kubu Berapi', d: 'Kubu tembak 2× laju & lebih kuat', ic: '🏰' },
+  { id: 'emas', t: 'Lombong Emas', d: 'Emas ×2 selama 25 saat', ic: '🪙', once: 1 },
+  { id: 'murah', t: 'Rekrut Murah', d: 'Semua askar 20% lebih murah', ic: '🏷' },
+  { id: 'skillCd', t: 'Fokus', d: 'Cooldown skill -40%', ic: '⏱' },
+  { id: 'ultCas', t: 'Semangat', d: 'Ultimate cas 50% lebih cepat', ic: '✦' },
+  { id: 'vamp', t: 'Darah Pahlawan', d: 'Serangan dekat pulihkan 25% damage', ic: '❤' },
+  { id: 'pedang', t: 'Pedang Tajam', d: 'Askar Pedang +40% damage & HP', ic: '🗡' },
+  { id: 'duri', t: 'Perisai Berduri', d: 'Perisai pantulkan 35% damage', ic: '🛡' },
+  { id: 'gergaji', t: 'Enjin Turbo', d: 'Gergaji +35% laju & serangan', ic: '⚙' },
+  { id: 'baiki', t: 'Baiki Kubu', d: 'Kubu pulih 400 HP serta-merta', ic: '🔧', once: 1 },
+  { id: 'laju', t: 'Langkah Pantas', d: 'Semua askar +15% laju', ic: '💨' },
+  { id: 'pasukan', t: 'Bantuan Tiba', d: '4 askar Pedang percuma sekarang', ic: '⚔', once: 1 },
+];
+const CARD_EVERY = 55;
 const UPS = {
   senjata: { name: 'Senjata', icon: '🗡', base: 70, desc: '+15% dmg' },
   zirah:   { name: 'Zirah',   icon: '🛡', base: 70, desc: '+15% HP' },
@@ -115,7 +156,7 @@ function buildTribeGrid() {
   TRIBES.forEach(t => {
     const b = document.createElement('button');
     b.type = 'button'; b.className = 'tribe' + (t.id === myTribe ? ' on' : ''); b.style.setProperty('--c', t.c);
-    b.innerHTML = `<b style="color:${t.c}">${t.name.replace('Puak ', '')}</b><small>✦ ${t.ult}: ${t.desc}</small>`;
+    b.innerHTML = `<b style="color:${t.c}">${t.name.replace('Puak ', '')}</b><small>◆ ${PASSIVE[t.id]}</small><small>⚡ ${SKILL[t.id][0]}: ${SKILL[t.id][1]}</small><small>✦ ${t.ult}: ${t.desc}</small>`;
     if (img('chief_' + t.id)) b.insertAdjacentHTML('afterbegin', chiefImg(t.id, 'chief')); else b.prepend(miniStick(t.id, pick(UNIT_KEYS)));
     b.onclick = () => { myTribe = t.id; store.tribe = t.id; save(); [...g.children].forEach(x => x.classList.remove('on')); b.classList.add('on'); };
     g.appendChild(b);
@@ -201,18 +242,20 @@ addEventListener('resize', () => G && resize());
 
 function makeSide(tid, isAI, d) {
   return { t: TRIBES.find(x => x.id === tid), ai: isAI, gold: 60, ups: { senjata: 0, zirah: 0, ekonomi: 0 }, ult: 0, baseHp: BASE_HP,
-    buff: { shield: 0, rage: 0, ghost: 0, slow: 0, root: 0, poison: 0 }, d: d ?? 1, think: 0, plan: null, baseCd: 0, flash: 0, kills: 0 };
+    buff: { shield: 0, rage: 0, ghost: 0, slow: 0, root: 0, poison: 0, silat: 0, gold: 0 }, skill: 4, cards: new Set(), d: d ?? 1, think: 0, plan: null, baseCd: 0, flash: 0, kills: 0 };
 }
 function startBattle(pT, eT, d) {
-  G = { sides: [makeSide(pT, false), makeSide(eT, true, d)], units: [], corpses: [], drops: [], proj: [], fx: [], parts: [], t: 0, speed: 1, over: false, paused: false, shake: 0 };
+  G = { sides: [makeSide(pT, false), makeSide(eT, true, d)], units: [], corpses: [], drops: [], proj: [], fx: [], parts: [], t: 0, speed: 1, over: false, paused: false, shake: 0, nextCard: CARD_EVERY };
   show('battle'); resize(); camX = 0; userPan = 0;
   const P = G.sides[0], E = G.sides[1];
   $('pName').textContent = P.t.name + ' (Kau)'; $('pName').style.color = P.t.c; $('pHp').style.background = P.t.c; $('pHp').style.boxShadow = `0 0 8px ${P.t.c}`;
   $('eName').textContent = E.t.name + ' · AI ' + ['Mudah', 'Sedang', 'Susah'][d]; $('eName').style.color = E.t.c; $('eHp').style.background = E.t.c; $('eHp').style.boxShadow = `0 0 8px ${E.t.c}`;
   $('ultBtn').style.setProperty('--c', P.t.c); $('ultName').innerHTML = (img('icon_ult') ? `<img class="ic" src="${IMG.icon_ult.src}" alt=""> ` : '✦ ') + P.t.ult;
+  $('skillBtn').style.setProperty('--c', P.t.c); $('skillName').textContent = SKILL[P.t.id][0];
   $('speedBtn').textContent = '1x';
   buildPanel();
   toast('PERANG!', P.t.c);
+  setTimeout(() => G && toast('Pasif: ' + PASSIVE[P.t.id].split(':')[0], P.t.c, 1.6), 1300);
   // askar permulaan
   spawn(0, 'pedang', true); spawn(1, 'pedang', true);
 }
@@ -243,16 +286,22 @@ function upgrade(si, k) {
   if (si === 0) toast(UPS[k].name + ' Lv' + s.ups[k], '#9fe', 0.8);
   return true;
 }
+function costOf(si, k) {
+  const s = G.sides[si]; let c = UNITS[k].cost;
+  if (s.t.id === 'besi' && k === 'perisai') c *= 0.7;
+  if (s.cards.has('murah')) c *= 0.8;
+  return Math.round(c);
+}
 function buy(si, k) {
   const s = G.sides[si];
-  if (s.gold < UNITS[k].cost || G.over) return false;
+  if (s.gold < costOf(si, k) || G.over) return false;
   if (G.units.filter(u => u.side === si).length >= 34) { if (si === 0) toast('Askar penuh!', '#f88', 0.7); return false; }
-  s.gold -= UNITS[k].cost; spawn(si, k); return true;
+  s.gold -= costOf(si, k); spawn(si, k); return true;
 }
-const unitMaxHp = u => UNITS[u.type].hp * G.sides[u.side].t.mod.hp * (1 + 0.15 * G.sides[u.side].ups.zirah);
-function spawn(si, type, free) {
+const unitMaxHp = u => UNITS[u.type].hp * G.sides[u.side].t.mod.hp * (1 + 0.15 * G.sides[u.side].ups.zirah) * (u.type === 'pedang' && G.sides[u.side].cards.has('pedang') ? 1.4 : 1) * (u.stolen && G.sides[u.side].cards.has('rampas') ? 1.6 : 1);
+function spawn(si, type, free, at) {
   const s = G.sides[si];
-  const u = { id: Math.random(), side: si, dir: si ? -1 : 1, type, t: s.t, x: si ? W - BASE_X - 10 : BASE_X + 10, y: rnd(0, 46),
+  const u = { id: Math.random(), side: si, dir: si ? -1 : 1, type, t: s.t, x: at ?? (si ? W - BASE_X - 10 : BASE_X + 10), y: rnd(0, 46), burn: 0, chill: 0, tox: 0,
     hp: 0, maxHp: 0, cd: rnd(0, 0.4), atk: 0, walk: rnd(0, 6), size: UNITS[type].size, stolen: false, hitFlash: 0, target: null };
   u.maxHp = unitMaxHp(u); u.hp = u.maxHp;
   G.units.push(u);
@@ -265,8 +314,9 @@ function enemyOf(si) { return G.sides[1 - si]; }
 function update(dt) {
   G.t += dt;
   G.sides.forEach((s, si) => {
-    s.gold += (6 + 2 * s.ups.ekonomi) * (s.ai ? DIFF[s.d].gold : 1) * dt;
-    s.ult = Math.min(100, s.ult + dt * 1.1);
+    s.gold += (6 + 2 * s.ups.ekonomi) * (s.ai ? DIFF[s.d].gold : 1) * (s.buff.gold ? 2 : 1) * dt;
+    s.ult = Math.min(100, s.ult + dt * 1.1 * (s.cards.has('ultCas') ? 1.5 : 1));
+    s.skill = Math.max(0, s.skill - dt);
     for (const k in s.buff) s.buff[k] = Math.max(0, s.buff[k] - dt);
     s.flash = Math.max(0, s.flash - dt);
     // kubu menembak
@@ -274,7 +324,7 @@ function update(dt) {
     if (s.baseCd <= 0) {
       const bx = si ? W - BASE_X : BASE_X;
       const tgt = nearestEnemy({ side: si, x: bx, dir: si ? -1 : 1 }, 230, true);
-      if (tgt) { s.baseCd = 1.1; shoot({ side: si, x: bx, y: 20, size: 1.6, dir: si ? -1 : 1, t: s.t }, tgt, 9, 'arrow', -110); }
+      if (tgt) { const hot = s.cards.has('kubuApi'); s.baseCd = hot ? 0.55 : 1.1; shoot({ side: si, x: bx, y: 20, size: 1.6, dir: si ? -1 : 1, t: s.t }, tgt, hot ? 14 : 9, 'arrow', -110); }
       else s.baseCd = 0.2;
     }
   });
@@ -285,13 +335,19 @@ function update(dt) {
     u.hitFlash = Math.max(0, u.hitFlash - dt);
     if (me.buff.poison > 0) damage(u, 6 * dt, null, true);
     if (me.buff.slow > 0) damage(u, 3 * dt, null, true);
+    if (u.burn > 0) { u.burn -= dt; damage(u, 4 * dt, null, true); if (Math.random() < 0.15) G.parts.push({ x: u.x + rnd(-5, 5), y: GROUND + u.y - rnd(15, 45), vx: 0, vy: -50, life: 0.35, c: '#ff7a2e', r: 2 }); }
+    if (u.tox > 0) { u.tox -= dt; damage(u, 4 * dt, null, true); }
+    u.chill = Math.max(0, u.chill - dt);
+    if (me.t.id === 'hutan' && u.hp < u.maxHp) u.hp = Math.min(u.maxHp, u.hp + 1.4 * dt);
+    if (u.ttl !== undefined && (u.ttl -= dt) <= 0) { u.hp = 0; u.noReward = true; }
+    if (u.flipT > 0 && (u.flipT -= dt) <= 0) u.dir = u.side ? -1 : 1;
   }
   for (const u of G.units) {
     if (u.hp <= 0) continue;
     const U = UNITS[u.type], me = G.sides[u.side], foe = enemyOf(u.side);
-    let spd = U.spd * me.t.mod.spd * (me.buff.rage ? 1.5 : 1) * (me.buff.slow ? 0.35 : 1);
+    let spd = U.spd * me.t.mod.spd * (me.buff.rage ? 1.5 : 1) * (me.buff.slow ? 0.35 : 1) * (u.chill ? 0.65 : 1) * (me.t.id === 'bulan' ? 1 + Math.min(0.35, G.t / 360) : 1) * (me.cards.has('laju') ? 1.15 : 1) * (u.type === 'gergaji' && me.cards.has('gergaji') ? 1.35 : 1);
     if (me.buff.root) spd = 0;
-    u.cd -= dt * (me.buff.rage ? 1.5 : 1) * (me.buff.slow ? 0.5 : 1);
+    u.cd -= dt * (me.buff.rage ? 1.5 : 1) * (me.buff.slow ? 0.5 : 1) * (me.buff.silat && U.melee ? 3 : 1) * (u.type === 'gergaji' && me.cards.has('gergaji') ? 1.35 : 1);
     u.atk = Math.max(0, u.atk - dt * 3);
     const tgt = nearestEnemy(u, U.range + 4);
     const foeBaseX = u.side ? BASE_X + 26 : W - BASE_X - 26;
@@ -299,14 +355,16 @@ function update(dt) {
     if (tgt || atBase) {
       if (u.cd <= 0) {
         u.cd = U.rate; u.atk = 1;
-        const dmg = U.dmg * me.t.mod.dmg * (1 + 0.15 * me.ups.senjata) * (me.buff.rage ? 1.7 : 1);
+        let dmg = U.dmg * me.t.mod.dmg * (1 + 0.15 * me.ups.senjata) * (me.buff.rage ? 1.7 : 1) * (u.type === 'pedang' && me.cards.has('pedang') ? 1.4 : 1);
+        if (me.t.id === 'pendekar' && u.type === 'pedang' && Math.random() < 0.25) { dmg *= 2; if (G.fx.length < 120) G.fx.push({ k: 'text', x: u.x, y: GROUND + u.y - 70, s: 'KRITIKAL!', c: '#ffd36b', life: 0.6, sm: 1 }); }
         if (tgt) {
           if (U.melee) {
             damage(tgt, dmg, u);
+            if (me.cards.has('vamp')) u.hp = Math.min(u.maxHp, u.hp + dmg * 0.25);
             if (U.cleave) { const t2 = G.units.find(o => o !== tgt && o.side !== u.side && o.hp > 0 && Math.abs(o.x - u.x) < U.range + 8); if (t2) damage(t2, dmg, u); }
             if (u.type !== 'gergaji' || Math.random() < 0.25) hitSnd();
             if (u.type === 'gergaji') for (let i = 0; i < 2; i++) G.parts.push({ x: u.x + u.dir * 30 * u.size, y: GROUND + u.y - 32 * u.size, vx: u.dir * rnd(40, 160), vy: rnd(-160, -20), life: 0.35, c: '#ffd36b', r: 1.6 });
-          } else { shoot(u, tgt, dmg, 'arrow'); if (u.side === 0) snd('shoot'); }
+          } else { shoot(u, tgt, dmg, 'arrow'); if (u.type === 'panah' && me.cards.has('panah2')) { const t2 = G.units.find(o => o !== tgt && o.side !== u.side && o.hp > 0 && Math.abs(o.x - u.x) < U.range) || tgt; setTimeout(() => G && t2.hp > 0 && shoot(u, t2, dmg, 'arrow'), 120); } if (u.side === 0) snd('shoot'); }
         } else {
           foe.baseHp -= dmg * (U.melee ? 1 : 0.8); foe.flash = 0.15;
           for (let i = 0; i < 3; i++) G.parts.push({ x: foeBaseX, y: GROUND - rnd(10, 80), vx: rnd(-80, 80) , vy: rnd(-120, 0), life: 0.4, c: foe.t.c, r: 2 });
@@ -318,7 +376,7 @@ function update(dt) {
     }
     // rampas senjata yang jatuh
     for (const d of G.drops) {
-      if (d.taken || Math.abs(d.x - u.x) > 14 || Math.abs(d.y - u.y) > 26) continue;
+      if (d.taken || U.special || u.clone || Math.abs(d.x - u.x) > 14 || Math.abs(d.y - u.y) > 26) continue;
       if (UNITS[d.type].cost > UNITS[u.type].cost) {
         const r = u.hp / u.maxHp; u.type = d.type; u.size = UNITS[d.type].size; u.stolen = true; u.maxHp = unitMaxHp(u); u.hp = Math.max(r, 0.6) * u.maxHp;
         d.taken = true; snd('pick');
@@ -336,7 +394,9 @@ function update(dt) {
     p.t += dt / p.dur;
     if (p.t >= 1 && !p.done) {
       p.done = true;
-      if (p.tgt && p.tgt.hp > 0) damage(p.tgt, p.dmg, p.src);
+      if (p.aoe) { G.units.forEach(u => { if (u.side !== p.aoe.si && u.hp > 0 && Math.abs(u.x - p.aoe.x) < 30) { u.tox = 4; damage(u, 9, { dir: 1, side: p.aoe.si }); } });
+        for (let k = 0; k < 5; k++) G.parts.push({ x: p.tx, y: p.ty, vx: rnd(-60, 60), vy: rnd(-90, -20), life: 0.4, c: p.c, r: 2.5 }); }
+      else if (p.tgt && p.tgt.hp > 0) damage(p.tgt, p.dmg, p.src);
     }
   }
   G.proj = G.proj.filter(p => !p.done);
@@ -352,6 +412,7 @@ function update(dt) {
   G.shake = Math.max(0, G.shake - dt * 30);
   // AI
   aiThink(G.sides[1], 1, dt);
+  if (!G.over && G.t >= G.nextCard) { G.nextCard += CARD_EVERY; offerCards(); }
 }
 function nearestEnemy(u, range, ignoreGhost) {
   let best = null, bd = 1e9;
@@ -367,6 +428,12 @@ function nearestEnemy(u, range, ignoreGhost) {
 }
 function damage(u, dmg, src, silent) {
   const me = G.sides[u.side];
+  if (src && src.t && !silent) {
+    if (me.t.id === 'bunian' && Math.random() < 0.15) { if (G.fx.length < 120) G.fx.push({ k: 'text', x: u.x, y: GROUND + u.y - 66 * u.size, s: 'MISS', c: '#5ff5d8', life: 0.5, sm: 1 }); return; }
+    if (src.t.id === 'api') u.burn = 2.5;
+    if (src.t.id === 'ais') u.chill = 1.6;
+    if (u.type === 'perisai' && me.cards.has('duri') && src.hp > 0 && UNITS[src.type] && UNITS[src.type].melee) src.hp -= dmg * 0.35;
+  }
   let d = dmg * (1 - UNITS[u.type].armor);
   if (me.buff.shield) d *= 0.4;
   u.hp -= d;
@@ -378,10 +445,18 @@ function damage(u, dmg, src, silent) {
 }
 function kill(u) {
   u.dead = true;
-  const killer = 1 - u.side, ks = G.sides[killer];
-  ks.gold += UNITS[u.type].cost * 0.3;
-  ks.ult = Math.min(100, ks.ult + UNITS[u.type].cost * 0.22);
-  ks.kills++;
+  const killer = 1 - u.side, ks = G.sides[killer], U = UNITS[u.type];
+  if (u.t.id === 'racun' && !U.special) {
+    for (let i = 0; i < 14; i++) G.parts.push({ x: u.x, y: GROUND + u.y - 25, vx: rnd(-120, 120), vy: rnd(-140, -20), life: 0.6, c: '#b8ff2a', r: 3 });
+    G.units.forEach(o => { if (o.side !== u.side && o.hp > 0 && Math.abs(o.x - u.x) < 45) { o.tox = 3; damage(o, 8, null, true); } });
+  }
+  if (U.special) { u.dead = true; for (let i = 0; i < 20; i++) G.parts.push({ x: u.x + rnd(-15, 15), y: GROUND + u.y - rnd(0, 60), vx: rnd(-90, 90), vy: rnd(-160, -20), life: 0.6, c: u.t.c, r: 2.5 }); return; }
+  if (!u.noReward && !u.clone) {
+    ks.gold += U.cost * 0.3;
+    ks.ult = Math.min(100, ks.ult + U.cost * 0.22);
+    ks.kills++;
+  }
+  if (u.clone) { for (let i = 0; i < 10; i++) G.parts.push({ x: u.x, y: GROUND + u.y - rnd(0, 50), vx: rnd(-40, 40), vy: rnd(-80, -10), life: 0.5, c: u.t.c, r: 2 }); return; }
   if (Math.random() < 0.55) G.drops.push({ x: u.x, y: u.y, type: u.type, life: 9, c: u.t.c, rot: rnd(-0.4, 0.4) });
   const j = pose(u, 0, 0), dir = u.lastHitDir || -u.dir, pow = u.type === 'gergaji' ? 1.3 : 1;
   const pts = {};
@@ -443,6 +518,78 @@ function useUlt(si) {
   return true;
 }
 $('ultBtn').onclick = () => { if (G && !G.paused) useUlt(0); };
+$('skillBtn').onclick = () => { if (G && !G.paused) useSkill(0); };
+function front(si) { // x barisan depan sendiri & musuh
+  const mine = G.units.filter(u => u.side === si && u.hp > 0 && !UNITS[u.type].special), foes = G.units.filter(u => u.side !== si && u.hp > 0);
+  const d = si ? -1 : 1, home = si ? W - BASE_X : BASE_X;
+  const myF = mine.length ? (d > 0 ? Math.max(...mine.map(u => u.x)) : Math.min(...mine.map(u => u.x))) : home + d * 60;
+  const foeF = foes.length ? (d > 0 ? Math.min(...foes.map(u => u.x)) : Math.max(...foes.map(u => u.x))) : (si ? BASE_X + 80 : W - BASE_X - 80);
+  return { myF, foeF, foes, mine, d };
+}
+function densest(foes, fallback) {
+  if (!foes.length) return fallback;
+  let best = foes[0].x, bn = 0;
+  for (const a of foes) { const n = foes.filter(b => Math.abs(b.x - a.x) < 60).length; if (n > bn) { bn = n; best = a.x; } }
+  return best;
+}
+function useSkill(si) {
+  const s = G.sides[si], fi = 1 - si;
+  if (s.skill > 0 || G.over) return false;
+  s.skill = SKILL_CD * (s.cards.has('skillCd') ? 0.6 : 1);
+  const F = front(si), id = s.t.id;
+  snd('up'); toast((si ? 'MUSUH: ' : '') + SKILL[id][0] + '!', s.t.c, 0.9);
+  if (id === 'api') {
+    const x = densest(F.foes, F.foeF);
+    G.fx.push({ k: 'meteor', x, c: s.t.c, life: 0.55, max: 0.55, hit: false, step(f) { if (!f.hit && f.life < 0.12) { f.hit = true; G.shake = 6; snd('boom');
+      G.units.forEach(u => { if (u.side === fi && Math.abs(u.x - f.x) < 60) { damage(u, 45, { dir: u.x > f.x ? 1 : -1, side: si, t: s.t }); } });
+      for (let k = 0; k < 24; k++) G.parts.push({ x: f.x, y: GROUND, vx: rnd(-180, 180), vy: rnd(-260, -40), life: 0.7, c: pick([s.t.c, '#fff']), r: 3 }); } } });
+  } else if (id === 'bulan') {
+    const jumpers = F.mine.filter(u => UNITS[u.type].melee).sort((a, b) => (b.x - a.x) * F.d).slice(0, 3);
+    if (!jumpers.length) { s.skill = 1; return false; }
+    jumpers.forEach((u, i) => { const from = u.x; u.x = clamp(F.foeF + F.d * (50 + i * 18), BASE_X + 30, W - BASE_X - 30); u.dir = -F.d; u.flipT = 6;
+      for (let k = 0; k < 12; k++) G.parts.push({ x: from, y: GROUND + u.y - rnd(0, 50), vx: rnd(-40, 40), vy: rnd(-100, -20), life: 0.5, c: s.t.c, r: 2 }); });
+  } else if (id === 'besi') {
+    const w = spawn(si, 'tembok', true, clamp(F.myF + F.d * 30, BASE_X + 40, W - BASE_X - 40)); w.ttl = 10; w.y = 22;
+  } else if (id === 'hutan') {
+    const t = spawn(si, 'pokok', true, clamp(F.myF - F.d * 20, BASE_X + 40, W - BASE_X - 40)); t.ttl = 14;
+  } else if (id === 'pendekar') {
+    s.buff.silat = 4;
+  } else if (id === 'bunian') {
+    for (let i = 0; i < 3; i++) { const c = spawn(si, 'pedang', true, clamp(F.myF + F.d * rnd(-10, 15), BASE_X + 20, W - BASE_X - 20)); c.clone = true; c.ttl = 9; }
+  } else if (id === 'ais') {
+    G.units.forEach(u => { if (u.side === fi && Math.abs(u.x - F.foeF) < 180) { u.x = clamp(u.x + F.d * 70, BASE_X, W - BASE_X); u.chill = 3; damage(u, 10, null); } });
+    G.fx.push({ k: 'flash', c: '#d6f4ff', life: 0.3, max: 0.3 });
+  } else if (id === 'racun') {
+    const x = densest(F.foes, F.foeF);
+    for (let i = 0; i < 12; i++) setTimeout(() => { if (!G || G.over) return; const tx = x + rnd(-70, 70);
+      G.proj.push({ sx: tx - F.d * 40, sy: GROUND - 260, tgt: null, tx, ty: GROUND + rnd(0, 40), t: 0, dur: 0.35, dmg: 0, src: null, c: s.t.c, arc: 0, aoe: { x: tx, si } }); }, i * 60);
+  }
+  return true;
+}
+/* ================= KAD TAKTIK ================= */
+function cardPool(s) { return CARDS.filter(c => c.once || !s.cards.has(c.id)); }
+function applyCard(si, c) {
+  const s = G.sides[si];
+  if (c.id === 'emas') s.buff.gold = 25;
+  else if (c.id === 'baiki') s.baseHp = Math.min(BASE_HP, s.baseHp + 400);
+  else if (c.id === 'pasukan') for (let i = 0; i < 4; i++) spawn(si, 'pedang', true);
+  else s.cards.add(c.id);
+  if (c.id === 'pedang' || c.id === 'rampas') G.units.forEach(u => { if (u.side === si) { const r = u.hp / u.maxHp; u.maxHp = unitMaxHp(u); u.hp = r * u.maxHp; } });
+}
+function offerCards() {
+  const E = G.sides[1];
+  const ec = pick(cardPool(E)); applyCard(1, ec);
+  const opts = cardPool(G.sides[0]).sort(() => Math.random() - 0.5).slice(0, 3);
+  G.paused = true; snd('ult');
+  $('mTitle').textContent = 'KAD TAKTIK'; $('mTitle').style.color = '#ffd36b'; $('mTitle').style.textShadow = '0 0 14px #ffaa00';
+  $('mText').innerHTML = `Pilih satu kad.<br><small style="color:${E.t.c}">AI ambil: ${ec.ic} ${ec.t}</small>`;
+  const b = $('mBtns'); b.innerHTML = '';
+  opts.forEach(c => { const e = document.createElement('button'); e.type = 'button'; e.className = 'card-btn';
+    e.innerHTML = `<span class="ci">${c.ic}</span><span><b>${c.t}</b><small>${c.d}</small></span>`;
+    e.onclick = () => { $('modal').classList.add('hidden'); applyCard(0, c); snd('pick'); toast(c.t + '!', '#ffd36b', 1); G.paused = false; };
+    b.appendChild(e); });
+  $('modal').classList.remove('hidden');
+}
 
 /* ================= AI ================= */
 function aiThink(s, si, dt) {
@@ -457,6 +604,8 @@ function aiThink(s, si, dt) {
     const fight = theirs.length >= 5 || near >= 3 || s.baseHp < BASE_HP * 0.4;
     if (fight && Math.random() < 0.5 + D.smart * 0.5) { useUlt(si); return; }
   }
+  // skill kecil
+  if (s.skill <= 0 && theirs.length >= 2 && Math.random() < 0.4 + D.smart * 0.5) { if (useSkill(si)) return; }
   // upgrade sekali-sekala
   if (!s.plan && Math.random() < 0.08 + D.smart * 0.1) {
     const opts = Object.keys(UPS).filter(k => s.ups[k] < MAXUP);
@@ -556,6 +705,24 @@ function drawWeapon(c, type, hx, hy, ang, d, s, col, atk) {
     c.stroke();
   }
   c.restore();
+}
+function drawWall(c, u) {
+  const x = u.x, gy = GROUND + u.y, r = Math.max(0, u.hp / u.maxHp), col = u.hitFlash > 0 ? '#fff' : u.t.c;
+  blob(c, u.t.g, x, gy - 30, 34, 50, 0.35); c.globalAlpha = 1;
+  c.fillStyle = '#0d1424'; c.strokeStyle = col; c.lineWidth = 2.5; c.shadowBlur = 10; c.shadowColor = u.t.g;
+  c.fillRect(x - 10, gy - 64, 20, 64); c.strokeRect(x - 10, gy - 64, 20, 64);
+  c.beginPath(); for (let y = gy - 48; y < gy; y += 16) { c.moveTo(x - 10, y); c.lineTo(x + 10, y); } c.moveTo(x, gy - 64); c.lineTo(x, gy - 48); c.moveTo(x, gy - 32); c.lineTo(x, gy - 16); c.stroke();
+  c.shadowBlur = 0; c.fillStyle = '#ffffff22'; c.fillRect(x - 12, gy - 72, 24, 3); c.fillStyle = u.t.c; c.fillRect(x - 12, gy - 72, 24 * r, 3);
+}
+function drawTree(c, u) {
+  const x = u.x, gy = GROUND + u.y, col = u.hitFlash > 0 ? '#fff' : u.t.c, sw = Math.sin(G.t * 2 + u.id * 9) * 2;
+  blob(c, u.t.g, x, gy - 40, 34, 46, 0.35); c.globalAlpha = 1;
+  c.strokeStyle = col; c.lineCap = 'round'; c.shadowBlur = 10; c.shadowColor = u.t.g;
+  c.lineWidth = 5; c.beginPath(); c.moveTo(x, gy); c.lineTo(x + sw * 0.3, gy - 40); c.stroke();
+  c.lineWidth = 2.5; c.beginPath(); c.moveTo(x, gy - 22); c.lineTo(x - 12, gy - 36); c.moveTo(x, gy - 30); c.lineTo(x + 13, gy - 44); c.stroke();
+  c.fillStyle = col + '55'; c.beginPath(); c.arc(x + sw, gy - 52, 18, 0, 7); c.fill(); c.stroke();
+  c.fillStyle = '#fff'; c.beginPath(); c.arc(x + sw + 5 * u.dir, gy - 54, 2, 0, 7); c.fill();
+  c.shadowBlur = 0; const r = Math.max(0, u.hp / u.maxHp); c.fillStyle = '#ffffff22'; c.fillRect(x - 12, gy - 78, 24, 3); c.fillStyle = u.t.c; c.fillRect(x - 12, gy - 78, 24 * r, 3);
 }
 function slash(c, s, atk) {
   const ga = c.globalAlpha; c.globalCompositeOperation = 'lighter';
@@ -749,7 +916,13 @@ function draw() {
     const me = G.sides[u.side];
     c.shadowBlur = 0;
     if (me.buff.rage) { blob(c, '#ff3b1f', u.x, GROUND + u.y - 30 * u.size, 26 * u.size, 40 * u.size, 0.45); if (Math.random() < 0.2) G.parts.push({ x: u.x + rnd(-6, 6), y: GROUND + u.y - rnd(10, 50), vx: 0, vy: -60, life: 0.4, c: '#ff5a1f', r: 2 }); }
-    drawStick(c, u, 0, 0, me.buff.ghost ? 0.35 : 1);
+    if (u.type === 'tembok') { drawWall(c, u); continue; }
+    if (u.type === 'pokok') { drawTree(c, u); continue; }
+    if (me.buff.silat && UNITS[u.type].melee) blob(c, '#ffd36b', u.x, GROUND + u.y - 30 * u.size, 22 * u.size, 36 * u.size, 0.35);
+    if (u.burn > 0) blob(c, '#ff5a1f', u.x, GROUND + u.y - 30, 16, 26, 0.3);
+    if (u.chill > 0) blob(c, '#bfefff', u.x, GROUND + u.y - 30, 16, 26, 0.3);
+    if (u.tox > 0) blob(c, '#b8ff2a', u.x, GROUND + u.y - 30, 16, 26, 0.3);
+    drawStick(c, u, 0, 0, me.buff.ghost || u.clone ? 0.4 : 1);
     if (me.buff.shield) { c.strokeStyle = '#9fd8ff'; c.lineWidth = 1.5; c.globalAlpha = 0.5; c.beginPath(); c.ellipse(u.x, GROUND + u.y - 28 * u.size, 18 * u.size, 34 * u.size, 0, 0, 7); c.stroke(); c.globalAlpha = 1; }
     if (u.hp < u.maxHp) { c.shadowBlur = 0; c.fillStyle = '#ffffff22'; c.fillRect(u.x - 10, GROUND + u.y - 74 * u.size, 20, 2.5); c.fillStyle = u.t.c; c.fillRect(u.x - 10, GROUND + u.y - 74 * u.size, 20 * Math.max(0, u.hp / u.maxHp), 2.5); c.shadowBlur = 10; }
   }
@@ -816,11 +989,15 @@ function hud() {
   $('goldRate').textContent = `+${6 + 2 * P.ups.ekonomi}/s`;
   $('pHp').style.width = Math.max(0, P.baseHp / BASE_HP * 100) + '%';
   $('eHp').style.width = Math.max(0, E.baseHp / BASE_HP * 100) + '%';
-  [...$('units').children].forEach(b => { const k = b.dataset.k; b.classList.toggle('cant', P.gold < UNITS[k].cost); const n = G.units.filter(u => u.side === 0 && u.type === k).length; b.querySelector('.cnt').textContent = n || ''; });
+  [...$('units').children].forEach(b => { const k = b.dataset.k, cst = costOf(0, k); b.classList.toggle('cant', P.gold < cst); b.querySelector('small').textContent = '🪙' + cst; const n = G.units.filter(u => u.side === 0 && u.type === k).length; b.querySelector('.cnt').textContent = n || ''; });
   [...$('ups').children].forEach(b => { const k = b.dataset.k, lv = P.ups[k]; b.querySelector('.lv').textContent = 'Lv' + lv;
     b.querySelector('small').textContent = lv >= MAXUP ? 'MAX' : '🪙' + upCost(P, k); b.classList.toggle('cant', lv >= MAXUP || P.gold < upCost(P, k)); });
   $('ultFill').style.height = P.ult + '%';
   $('ultBtn').classList.toggle('ready', P.ult >= 100);
+  const sm = SKILL_CD * (P.cards.has('skillCd') ? 0.6 : 1);
+  $('skillFill').style.height = (100 - P.skill / sm * 100) + '%';
+  $('skillCd').textContent = P.skill > 0 ? Math.ceil(P.skill) : '';
+  $('skillBtn').classList.toggle('ready', P.skill <= 0);
 }
 let toastTO;
 function toast(s, c, dur = 1.1) { const t = $('toast'); t.textContent = s; t.style.color = c; t.classList.add('show'); clearTimeout(toastTO); toastTO = setTimeout(() => t.classList.remove('show'), dur * 1000); }
@@ -849,7 +1026,8 @@ function endBattle(win) {
 }
 $('pauseBtn').onclick = () => {
   if (!G || G.over) return; G.paused = true;
-  modal('PAUSE', 'Rehat kejap.', [['Sambung', () => { G.paused = false; }], [muted ? '🔇 Bunyi: OFF' : '🔊 Bunyi: ON', () => { muted = !muted; G.paused = false; }, 1],
+  const P = G.sides[0], cs = CARDS.filter(c => P.cards.has(c.id)).map(c => c.ic + ' ' + c.t).join('<br>');
+  modal('PAUSE', `<b style="color:${P.t.c}">Pasif:</b> ${PASSIVE[P.t.id]}<br><b style="color:${P.t.c}">Skill:</b> ${SKILL[P.t.id][0]}: ${SKILL[P.t.id][1]}${cs ? '<br><br><b>Kad aktif:</b><br>' + cs : ''}`, [['Sambung', () => { G.paused = false; }], [muted ? '🔇 Bunyi: OFF' : '🔊 Bunyi: ON', () => { muted = !muted; G.paused = false; }, 1],
     ['Menyerah', () => { G.paused = false; endBattle(false); }, 1]]);
 };
 $('speedBtn').onclick = () => { if (!G) return; G.speed = G.speed === 1 ? 2 : G.speed === 2 ? 3 : 1; $('speedBtn').textContent = G.speed + 'x'; };
@@ -866,7 +1044,7 @@ function loop(now) {
   const dt = Math.min(0.05, (now - last) / 1000); last = now;
   if (G && !G.paused && !document.hidden) {
     const steps = G.speed;
-    for (let i = 0; i < steps; i++) { if (!G.over) update(dt); else { // animasi akhir masih berjalan
+    for (let i = 0; i < steps; i++) { if (G.paused) break; if (!G.over) update(dt); else { // animasi akhir masih berjalan
         for (const c of G.corpses) stepRagdoll(c, dt);
         for (const p of G.parts) { p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 300 * dt; p.life -= dt; }
         G.parts = G.parts.filter(p => p.life > 0); G.t += dt; G.shake = Math.max(0, G.shake - dt * 30); } }
@@ -876,5 +1054,6 @@ function loop(now) {
   requestAnimationFrame(loop);
 }
 buildTribeGrid();
+window.__pl = () => G;
 requestAnimationFrame(loop);
 })();

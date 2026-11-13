@@ -68,12 +68,12 @@ body.playing #verBox{display:none!important}
 .units button .cnt{position:absolute;top:3px;right:5px;font-size:10px;color:#9fe}
 button.cant{opacity:.4}
 button:active{filter:brightness(1.4)}
-#ultBtn{position:relative;width:96px;border:1px solid var(--c,#fff);background:#ffffff08;border-radius:12px;color:#fff;padding:4px;overflow:hidden}
-#ultBtn .ult-name{position:relative;z-index:2;font:700 16px/1 Teko;letter-spacing:.5px;display:block}
-#ultBtn i{position:absolute;inset:0;z-index:1}
-#ultBtn em{position:absolute;left:0;bottom:0;width:100%;height:0;background:var(--c,#fff);opacity:.35}
-#ultBtn.ready{box-shadow:0 0 16px var(--c),inset 0 0 12px var(--c);animation:pulse 1s infinite alternate}
-#ultBtn.ready em{opacity:.6}
+#ultBtn,#skillBtn{position:relative;width:78px;border:1px solid var(--c,#fff);background:#ffffff08;border-radius:12px;color:#fff;padding:4px;overflow:hidden}
+#ultBtn .ult-name,#skillBtn .ult-name{position:relative;z-index:2;font:700 16px/1 Teko;letter-spacing:.5px;display:block}
+#ultBtn i,#skillBtn i{position:absolute;inset:0;z-index:1}
+#ultBtn em,#skillBtn em{position:absolute;left:0;bottom:0;width:100%;height:0;background:var(--c,#fff);opacity:.35}
+#ultBtn.ready,#skillBtn.ready{box-shadow:0 0 16px var(--c),inset 0 0 12px var(--c);animation:pulse 1s infinite alternate}
+#ultBtn.ready em,#skillBtn.ready em{opacity:.6}
 @keyframes pulse{to{filter:brightness(1.5)}}
 #toast{position:fixed;left:50%;top:26%;transform:translateX(-50%);font:700 34px/1 Teko,sans-serif;letter-spacing:2px;pointer-events:none;text-align:center;opacity:0;transition:opacity .3s;text-shadow:0 0 14px currentColor;white-space:nowrap}
 #toast.show{opacity:1}
@@ -101,3 +101,13 @@ button:active{filter:brightness(1.4)}
 .title img.trophy{width:120px;filter:drop-shadow(0 0 18px #ffd36b)}
 img.ic{width:16px;height:16px;object-fit:contain;vertical-align:-3px}
 .modal img.win{display:block;width:130px;height:130px;object-fit:contain;margin:-6px auto 6px;filter:drop-shadow(0 0 14px #a86bff)}
+
+#skillBtn{border-style:dashed}
+#skillBtn .ult-name{font-size:13px}
+#skillBtn .cdn{position:relative;z-index:2;display:block;font:700 18px/1 Teko;color:#fff}
+.ups button b{font-size:14px}
+.tribe small+small{margin-top:3px}
+.modal .btns button.card-btn{display:flex;align-items:center;gap:10px;text-align:left;background:linear-gradient(#2a2147,#1a1430);color:#fff;border:1px solid #ffd36b66;padding:12px;box-shadow:0 0 12px #ffd36b22}
+.card-btn .ci{font-size:28px;width:38px;text-align:center}
+.card-btn b{display:block;font:700 20px/1 Teko;letter-spacing:.5px;color:#ffd36b}
+.card-btn small{display:block;font:700 13px Nunito;color:#dde}
