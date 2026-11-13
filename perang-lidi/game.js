@@ -88,7 +88,7 @@ const UPS = {
 };
 const MAXUP = 5;
 const W = 1500, GROUND = 330, BASE_HP = 1600, BASE_X = 70;
-const DIFF = [ { gold: 0.8, think: 1.3, smart: 0.2 }, { gold: 1.0, think: 0.9, smart: 0.55 }, { gold: 1.22, think: 0.6, smart: 0.9 } ];
+const DIFF = [ { gold: 0.65, think: 1.6, smart: 0.15, skill: 0.35, elite: 0.1, start: 30 }, { gold: 0.85, think: 1.15, smart: 0.4, skill: 0.6, elite: 0.22, start: 45 }, { gold: 1.0, think: 0.85, smart: 0.75, skill: 0.85, elite: 0.38, start: 60 } ];
 
 /* ================= SOUND ================= */
 let AC = null, muted = false;
@@ -262,6 +262,7 @@ function startBattle(pT, eT, d) {
   G = { sides: [makeSide(pT, false), makeSide(eT, true, d)], units: [], corpses: [], drops: [], proj: [], fx: [], parts: [], t: 0, speed: 1, over: false, paused: false, shake: 0, nextCard: CARD_EVERY };
   show('battle'); resize(); camX = 0; userPan = 0;
   const P = G.sides[0], E = G.sides[1];
+  E.gold = DIFF[d].start;
   $('pName').textContent = P.t.name + ' (Kau)'; $('pName').style.color = P.t.c; $('pHp').style.background = P.t.c; $('pHp').style.boxShadow = `0 0 8px ${P.t.c}`;
   $('eName').textContent = E.t.name + ' · AI ' + ['Mudah', 'Sedang', 'Susah'][d]; $('eName').style.color = E.t.c; $('eHp').style.background = E.t.c; $('eHp').style.boxShadow = `0 0 8px ${E.t.c}`;
   $('ultBtn').style.setProperty('--c', P.t.c); $('ultName').innerHTML = (img('icon_ult') ? `<img class="ic" src="${IMG.icon_ult.src}" alt=""> ` : '✦ ') + P.t.ult;
@@ -329,8 +330,9 @@ function enemyOf(si) { return G.sides[1 - si]; }
 function update(dt) {
   G.t += dt;
   G.sides.forEach((s, si) => {
-    s.gold += (6 + 2 * s.ups.ekonomi) * (s.ai ? DIFF[s.d].gold : 1) * (s.buff.gold ? 2 : 1) * dt;
-    s.ult = Math.min(100, s.ult + dt * 1.1 * (s.cards.has('ultCas') ? 1.5 : 1));
+    const behind = !s.ai && G.units.filter(u => u.side === 0).length + 4 < G.units.filter(u => u.side === 1).length;
+    s.gold += (6 + 2 * s.ups.ekonomi) * (s.ai ? DIFF[s.d].gold : behind ? 1.25 : 1) * (s.buff.gold ? 2 : 1) * dt;
+    s.ult = Math.min(100, s.ult + dt * 1.1 * (s.cards.has('ultCas') ? 1.5 : 1) * (s.ai ? [0.6, 0.8, 1][s.d] : 1));
     s.skill = Math.max(0, s.skill - dt);
     for (const k in s.buff) s.buff[k] = Math.max(0, s.buff[k] - dt);
     s.flash = Math.max(0, s.flash - dt);
@@ -601,7 +603,7 @@ function densest(foes, fallback) {
 function useSkill(si) {
   const s = G.sides[si], fi = 1 - si;
   if (s.skill > 0 || G.over) return false;
-  s.skill = SKILL_CD * (s.cards.has('skillCd') ? 0.6 : 1);
+  s.skill = SKILL_CD * (s.cards.has('skillCd') ? 0.6 : 1) * (s.ai ? [1.6, 1.3, 1][s.d] : 1);
   const F = front(si), id = s.t.id;
   snd('up'); toast((si ? 'MUSUH: ' : '') + SKILL[id][0] + '!', s.t.c, 0.9);
   if (id === 'api') {
@@ -671,7 +673,7 @@ function aiThink(s, si, dt) {
     if (fight && Math.random() < 0.5 + D.smart * 0.5) { useUlt(si); return; }
   }
   // skill kecil
-  if (s.skill <= 0 && theirs.length >= 2 && Math.random() < 0.4 + D.smart * 0.5) { if (useSkill(si)) return; }
+  if (s.skill <= 0 && theirs.length >= 3 && Math.random() < D.skill) { if (useSkill(si)) return; }
   // upgrade sekali-sekala
   if (!s.plan && Math.random() < 0.08 + D.smart * 0.1) {
     const opts = Object.keys(UPS).filter(k => s.ups[k] < MAXUP);
@@ -694,7 +696,7 @@ function aiThink(s, si, dt) {
     else want = pick(UNIT_KEYS);
   } else want = pick(['pedang', 'pedang', 'panah', 'perisai', 'gergaji']);
   const ek = 'e_' + s.t.id;
-  if (s.gold >= costOf(si, ek) && G.units.filter(u => u.side === si && u.type === ek).length < ELITE_MAX && Math.random() < 0.3 + D.smart * 0.4) { buy(si, ek); return; }
+  if (s.gold >= costOf(si, ek) && G.units.filter(u => u.side === si && u.type === ek).length < ELITE_MAX && Math.random() < D.elite) { buy(si, ek); return; }
   if (s.gold >= UNITS[want].cost) buy(si, want);
   else if (s.gold >= UNITS.pedang.cost && (theirs.length > mine.length + 2 || Math.random() < 0.3)) buy(si, 'pedang');
 }
