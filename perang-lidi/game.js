@@ -61,10 +61,24 @@ let mode = store.mode || 'quick', diff = store.diff ?? 1, myTribe = store.tribe 
 let G = null;        // battle state
 /* ---- gambar pilihan (sprites/list.json). Kalau tiada, semua dilukis neon. ---- */
 const IMG = {};
-const img = k => { const i = IMG[k]; return i && i.complete && i.naturalWidth ? i : null; };
+const img = k => { const i = IMG[k]; return i && (i.getContext || (i.complete && i.naturalWidth)) ? i : null; };
+// potong ruang kosong (transparent) supaya saiz dalam game tepat
+function cropAlpha(im) {
+  try {
+    const c = document.createElement('canvas'); c.width = im.naturalWidth; c.height = im.naturalHeight;
+    const x = c.getContext('2d'); x.drawImage(im, 0, 0);
+    const d = x.getImageData(0, 0, c.width, c.height).data;
+    let x0 = c.width, y0 = c.height, x1 = 0, y1 = 0;
+    for (let y = 0; y < c.height; y += 2) for (let xx = 0; xx < c.width; xx += 2) if (d[(y * c.width + xx) * 4 + 3] > 24) { if (xx < x0) x0 = xx; if (xx > x1) x1 = xx; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+    if (x1 <= x0 || y1 <= y0) return im;
+    const o = document.createElement('canvas'); o.width = x1 - x0 + 2; o.height = y1 - y0 + 2;
+    o.getContext('2d').drawImage(c, x0, y0, o.width, o.height, 0, 0, o.width, o.height);
+    return o;
+  } catch (e) { return im; }
+}
 fetch('sprites/list.json', { cache: 'no-cache' }).then(r => r.ok ? r.json() : []).catch(() => []).then(l => {
   let n = l.length; if (!n) return;
-  l.forEach(k => { const i = new Image(); i.onload = i.onerror = () => { if (--n === 0) applyArt(); }; i.src = 'sprites/' + k + '.webp'; IMG[k] = i; });
+  l.forEach(k => { const i = new Image(); i.onload = i.onerror = () => { if (i.naturalWidth && /^(hat|weapon|fort)_/.test(k)) IMG[k] = cropAlpha(i); if (--n === 0) applyArt(); }; i.src = 'sprites/' + k + '.webp'; IMG[k] = i; });
 });
 function applyArt() {
   if (img('logo')) document.querySelector('#menu .logo').innerHTML = `<img src="${IMG.logo.src}" alt="Perang Lidi">`;
@@ -515,8 +529,11 @@ function drawWeapon(c, type, hx, hy, ang, d, s, col, atk) {
   c.strokeStyle = col; c.fillStyle = col; c.lineCap = 'round';
   const wi = img('weapon_' + type);
   if (wi) {
-    const r = { pedang: [-7, -6, 42, 13], panah: [-12, -19, 19, 38], perisai: [-2, -18, 20, 36], gergaji: [-9, -9, 50, 17] }[type];
-    c.drawImage(wi, r[0] * s, r[1] * s, r[2] * s, r[3] * s);
+    const ar = wi.width / wi.height;
+    if (type === 'pedang') { const w = 38 * s, h = w / ar; c.drawImage(wi, -7 * s, -h / 2, w, h); }
+    else if (type === 'gergaji') { const w = 48 * s, h = w / ar; c.drawImage(wi, -10 * s, -h / 2, w, h); }
+    else if (type === 'panah') { const h = 36 * s, w = h * ar; c.drawImage(wi, -w / 2, -h / 2, w, h); }
+    else { const h = 32 * s, w = h * ar; c.drawImage(wi, 0, -h / 2, w, h); }
     if (type === 'pedang' && atk > 0.25) slash(c, s, atk);
     c.restore(); return;
   }
@@ -572,7 +589,7 @@ function drawStick(c, u, ox, oy, alpha) {
   blob(c, col, j.head.x + 3 * d * s, j.head.y - 1, 4 * s, 4 * s, alpha * 0.9); c.globalAlpha = alpha;
   // tanda puak di kepala
   const hat = img('hat_' + u.t.id);
-  if (hat) { c.save(); c.translate(j.head.x, j.head.y - 4 * s); c.scale(d, 1); const hw = 24 * s; c.globalAlpha = alpha; c.drawImage(hat, -hw / 2, -hw * 0.85, hw, hw); c.restore(); c.globalAlpha = alpha; }
+  if (hat) { c.save(); c.translate(j.head.x, j.head.y + 1 * s); c.scale(d, 1); const hw = 21 * s, hh = Math.min(hw * hat.height / hat.width, 22 * s); c.globalAlpha = alpha; c.drawImage(hat, -hw / 2, -hh - 2 * s, hw, hh); c.restore(); c.globalAlpha = alpha; }
   else tribeMark(c, u.t.id, j.head.x, j.head.y, s, d, col);
   c.shadowBlur = 9; c.shadowColor = u.stolen ? '#ffffff' : u.t.g;
   drawWeapon(c, u.type, j.hf.x, j.hf.y, j.ang, d, s, u.stolen ? '#ffffff' : col, u.atk);
