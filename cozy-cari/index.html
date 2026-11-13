@@ -160,7 +160,7 @@ function wcfg(lv){
   const D=[[0,1],[1,0]];if(lv>2)D.push([1,1]);if(lv>5)D.push([-1,1]);
   if(lv>8)D.slice().forEach(d=>D.push([-d[0],-d[1]]));
   const A=WALL();
-  return{theme:A[(lv-1)%A.length],fog:lv<10?0:Math.min(.12+(lv-10)*.01,.35),n:Math.min(7+Math.floor(lv/2),14),words:Math.min(5+Math.floor((lv-1)/2),10),dirs:D,time:lv<=20?Math.min(120+lv*6,300):Math.max(240-(lv-20)*4,90)};
+  return{theme:A[(lv-1)%A.length],fog:0,n:Math.min(7+Math.floor(lv/2),14),words:Math.min(5+Math.floor((lv-1)/2),10),dirs:D,time:lv<=20?Math.min(120+lv*6,300):Math.max(240-(lv-20)*4,90)};
 }
 let fogSet=new Set(),hintUsed=0,grid=[],wtargets=[],selStart=null,selCells=[];
 const clean=s=>s.toUpperCase().replace(/[^A-Z]/g,'');
@@ -169,7 +169,7 @@ function startWord(lv){
   LV=lv;const C=wcfg(lv),t=C.theme,rng=mulberry(lv*131+Date.now()%1000);
   $('sub').textContent=`Level ${lv} · ${t.n}`;
   const N=C.n;grid=Array.from({length:N},()=>Array(N).fill(''));
-  const pPic=lv<5?0:Math.min((lv-4)*.08,.5),pTr=lv<13?0:Math.min(.2+(lv-13)*.02,.45);
+  const pPic=0,pTr=0; // perkataan sentiasa ditunjuk terus — cari je
   let cand=shuffle(t.items.map(x=>{const bm=LANG==='bm'||(LANG==='mix'&&rng()<.5),w=clean(bm?x[1]:x[2]),other=bm?x[2]:x[1],r=rng();
     let ty=r<pTr&&clean(other)!==w?'trans':r<pTr+pPic?'pic':'word';
     const show=ty==='word'?(bm?x[1]:x[2]).toUpperCase():ty==='trans'?`${other} → ${bm?'BM':'EN'}`:`${bm?'BM':'EN'} · ${w.length} huruf`;
