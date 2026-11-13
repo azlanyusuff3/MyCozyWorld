@@ -10,7 +10,7 @@
     document.body.appendChild(box);
     var txt = box.querySelector('#verTxt');
     var cur = null;
-    var cacheP = window.caches ? caches.keys().then(function (k) { return k.filter(function (x) { return /^mycozyworld-v/.test(x); }).sort().pop() || null; }) : Promise.resolve(null);
+    var cacheP = window.caches ? caches.keys().then(function (k) { return k.filter(function (x) { return /^mycozyworld-/.test(x); }).sort().pop() || null; }) : Promise.resolve(null);
     var srvP = fetch(base + 'sw.js?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.text(); }).then(function (t) { var m = t.match(/VERSION\s*=\s*'([^']+)'/); return m ? m[1] : null; }).catch(function () { return null; });
     Promise.all([cacheP, srvP]).then(function (v) {
       cur = v[0]; var srv = v[1], show = function (s) { return s ? s.replace('mycozyworld-', '') : '?'; };

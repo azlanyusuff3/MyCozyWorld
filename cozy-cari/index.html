@@ -335,5 +335,6 @@ function menu(){
 }
 fetch('sprites/list.json',{cache:'no-cache'}).then(r=>r.ok?r.json():[]).catch(()=>[]).then(l=>{SPR=new Set(l);menu()});
 </script>
+<script src="../assets/version.js" data-game="Cari Cari"></script>
 </body>
 </html>
