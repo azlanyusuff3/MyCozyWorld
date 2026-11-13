@@ -406,3 +406,45 @@ button.kuih:active{transform:scale(.95)}
 .bids img,.bids svg{width:30px;height:32px}.bids b{flex:1;text-align:left}.bids span{font-weight:900}
 .tr-tile:disabled{opacity:.45}
 .modal-card:has(.tac-roll) .btns{flex-direction:column}.modal-card:has(.tac-roll) .btns .btn{width:100%;padding:11px 12px;font-size:16px}
+
+/* ===== UI hidup ===== */
+.b3d{position:absolute;width:calc(100%/11*.55);height:calc(100%/11*.7);transform:translate(-50%,-100%);z-index:2;pointer-events:none;transform-style:preserve-3d;transition:width .4s,height .4s}
+.b3d[data-lv="1"]{width:calc(100%/11*.68);height:calc(100%/11*.98)}
+.b3d[data-lv="2"]{width:calc(100%/11*.8);height:calc(100%/11*1.3)}
+.b3d .stand{position:absolute;inset:0;transform-origin:50% 100%;transform:rotateX(calc(-1 * var(--tilt,20deg)));transition:transform .55s cubic-bezier(.3,1.25,.5,1)}
+.b3d img{width:100%;height:100%;object-fit:contain;object-position:50% 100%;filter:drop-shadow(0 0 1px #fff) drop-shadow(0 2px 1.5px #0006)}
+.b3d .flag{position:absolute;top:-6%;left:2%;width:26%;height:26%;border-radius:50% 50% 50% 0;background:var(--own);box-shadow:0 0 0 1.5px #fff,0 1px 2px #0004}
+.b3d .shadow{position:absolute;left:10%;right:10%;bottom:-8%;height:20%;border-radius:50%;background:radial-gradient(#0004,transparent 70%)}
+.b3d.grow .stand{animation:bGrow .8s cubic-bezier(.3,1.6,.5,1)}
+@keyframes bGrow{0%{transform:rotateX(calc(-1 * var(--tilt,20deg))) scale(.2,0)}55%{transform:rotateX(calc(-1 * var(--tilt,20deg))) scale(1.2,1.3)}100%{transform:rotateX(calc(-1 * var(--tilt,20deg))) scale(1)}}
+.board-wrap.ph2 .b3d img{filter:drop-shadow(0 0 4px #ffe08a) drop-shadow(0 0 3px #ffd36b)}
+.coinfly{position:absolute;width:calc(100%/11*.42);aspect-ratio:1;transform:translate(-50%,-50%);z-index:9;pointer-events:none;font-size:clamp(12px,3.5vw,18px);display:grid;place-items:center;transition:left .65s cubic-bezier(.4,0,.6,1),top .65s cubic-bezier(.3,-.9,.6,1);filter:drop-shadow(0 2px 2px #0005)}
+.coinfly img{width:100%;height:100%;object-fit:contain}
+.coinfly.go{animation:coinSpin .65s linear}
+@keyframes coinSpin{50%{transform:translate(-50%,-50%) scale(1.3) rotateY(180deg)}}
+.pchip span.up{color:#2f9f73!important;transform:scale(1.12)}.pchip span.down{color:#e64980!important;transform:scale(1.12)}
+.pchip span{display:inline-block;transition:transform .15s}
+.say-b{position:absolute;left:50%;bottom:118%;transform:translateX(-50%);background:#fff;color:#5a3d55;border-radius:12px;padding:4px 8px;font:800 10.5px/1.25 Nunito,sans-serif;width:max-content;max-width:150px;text-align:center;box-shadow:0 3px 0 #f0d3e1,0 4px 12px #0002;z-index:20;animation:sayIn .3s cubic-bezier(.3,1.5,.5,1)}
+.say-b::after{content:"";position:absolute;left:50%;top:100%;transform:translateX(-50%);border:6px solid transparent;border-top-color:#fff}
+@keyframes sayIn{from{transform:translateX(-50%) scale(.3);opacity:0}}
+.npc{position:absolute;width:calc(100%/11*.36);height:calc(100%/11*.42);transform:translate(-50%,-100%);z-index:1;pointer-events:none;transition:left 2.7s linear,top 2.7s linear;transform-style:preserve-3d}
+.npc .stand{position:absolute;inset:0;transform-origin:50% 100%;transform:rotateX(calc(-1 * var(--tilt,20deg)));display:grid;place-items:end center;font-size:clamp(10px,3vw,16px);animation:npcBob .45s ease-in-out infinite alternate}
+.npc img{width:100%;height:100%;object-fit:contain;object-position:50% 100%}
+.npc.flip .stand>*{transform:scaleX(-1)}
+@keyframes npcBob{to{translate:0 -10%}}
+.board-wrap.shake{animation:bShake .45s}
+@keyframes bShake{20%{transform:translate(-7px,2px)}40%{transform:translate(6px,-3px)}60%{transform:translate(-4px,2px)}80%{transform:translate(3px,0)}}
+.podium{display:flex;align-items:flex-end;justify-content:center;gap:6px;margin:26px 0 10px}
+.pod{flex:1;max-width:96px;text-align:center;animation:podUp .6s cubic-bezier(.3,1.5,.5,1) backwards}
+.pod.p3{animation-delay:.15s}.pod.p2{animation-delay:.35s}.pod.p1{animation-delay:.6s}
+@keyframes podUp{from{opacity:0;transform:translateY(40px)}}
+.pod .pav{position:relative;height:62px;display:grid;place-items:end center}
+.pod .pav img,.pod .pav svg{width:54px;height:60px;object-fit:contain}
+.pod.p1 .pav img,.pod.p1 .pav svg{width:66px;height:72px;animation:joy .5s ease 1s 4}
+.pod.p1 .pav{height:76px}.pod.p1 .pav::before{content:"👑";position:absolute;top:-16px;font-size:22px;animation:crown 1.2s ease-in-out infinite alternate}
+@keyframes crown{to{transform:translateY(-4px) rotate(8deg)}}
+.pod b{display:block;font-size:12px;line-height:1.1}.pod small{display:block;font-size:11px;font-weight:900;color:#2f9f73;margin-bottom:3px}
+.pod .blk{border-radius:12px 12px 4px 4px;font:900 24px Nunito,sans-serif;color:#fff;display:grid;place-items:center;text-shadow:0 2px 0 #0003;box-shadow:inset 0 3px 0 #fff6}
+.pod.p1 .blk{height:74px;background:linear-gradient(#ffe066,#f59f00)}
+.pod.p2 .blk{height:52px;background:linear-gradient(#e9ecef,#adb5bd)}
+.pod.p3 .blk{height:38px;background:linear-gradient(#f8c291,#d9822b)}

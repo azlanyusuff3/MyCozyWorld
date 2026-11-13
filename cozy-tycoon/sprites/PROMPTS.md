@@ -26,3 +26,22 @@ Fail: `dice_1.webp` hingga `dice_6.webp` (persegi 256×256, background transpare
 > Cute chunky 3D toy dice, glossy pastel pink-white plastic with soft rounded corners, viewed slightly from above at a 3/4 angle so the top and two sides are visible, the top-facing side shows exactly N dots (round hot-pink dots), soft drop shadow underneath, kawaii mobile game style, transparent background, no text.
 
 Tukar **N** ikut nombor fail (1–6). Pastikan sudut pandangan, warna dan saiz sama untuk semua 6.
+
+
+## UI hidup (Nov 2026) — pilihan, game jalan tanpa ni
+Guna **Gaya umum** atas, tapi tukar "character" kepada objek. Background transparent, simpan `.webp`, tambah nama dalam `list.json`, naikkan versi `sw.js`.
+
+### Bangunan 3D yang "terpacak" atas papan (TINGGI & KURUS, nisbah 1:2, contoh 256×512)
+Bangunan berdiri tegak, pandangan sedikit dari depan-atas, tapak rata kat bawah gambar, takde bayang besar, takde tanah/rumput.
+| Fail | Prompt tambahan |
+|---|---|
+| `b3d_0.webp` | Cute tiny Malaysian street stall (gerai) with a striped pink-white awning and a small signboard, single storey, tall narrow composition |
+| `b3d_1.webp` | Cute 2-storey Malaysian shophouse (kedai) with colourful shutters, potted plants and a little balcony, tall narrow composition |
+| `b3d_2.webp` | Cute tall pastel skyscraper tower with glowing windows and a tiny antenna on top, Kuala Lumpur style, tall narrow composition |
+
+### Orang lalu-lalang atas papan (persegi 256×256)
+| Fail | Prompt tambahan |
+|---|---|
+| `npc_kucing.webp` | Small chubby orange kampung cat walking sideways, side view |
+| `npc_motor.webp` | Cute delivery rider on a small yellow kapcai motorbike, side view |
+| `npc_aiskrim.webp` | Friendly pakcik pushing a small ice cream cart with a colourful umbrella, side view |
