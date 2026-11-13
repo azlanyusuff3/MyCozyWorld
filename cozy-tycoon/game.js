@@ -181,10 +181,17 @@ const MUSIBAH = [
 
 /* ---------- AI personalities ---------- */
 const AIS = [
-  { name: 'Pak Cik Kedekut', reserve: 420, upReserve: 600 },
-  { name: 'Abang Borong', reserve: 40, upReserve: 150 },
-  { name: 'Mak Cik Bijak', reserve: 180, upReserve: 300, smart: true },
+  { name: 'Kedekut', tag: '🪙 Kedekut', reserve: 420, upReserve: 600, bid: .45, cardRent: 30, swing: 20 },
+  { name: 'Borong', tag: '🛒 Borong', reserve: 40, upReserve: 150, bid: 1.05, cardRent: 120, swing: 70 },
+  { name: 'Bijak', tag: '🧠 Bijak', reserve: 180, upReserve: 300, smart: true, bid: .75, cardRent: 70, swing: 35 },
+  { name: 'Pendendam', tag: '😤 Pendendam', reserve: 200, upReserve: 350, revenge: true, bid: .7, cardRent: 80, swing: 40 },
 ];
+const AI_TALK = {
+  0: { disc: ['Jimat! Bayar separuh je, hehe 🪙', 'Duit aku bukan daun kering!'], card: ['Kena kira betul-betul ni...', 'Langkah berjimat!'], bid: ['Murah dapat, baru best 🪙'] },
+  1: { disc: ['Diskaun? Ok la, lagi banyak duit nak borong!'], card: ['Ikut suka hati aku la! 😎', 'Jom kita pergi shopping!'], bid: ['Semua aku nak! 🛒', 'Lelong? Aku borong!'] },
+  2: { disc: ['Bijak berbelanja, kan? 🧠'], card: ['Semua dah dalam perancangan aku 🧠', 'Langkah strategik!'], bid: ['Ngam dengan set aku 🧠'] },
+  3: { disc: ['Takkan aku bagi kau untung banyak!'], card: ['Ni untuk sewa mahal hari tu! 😤', 'Kau ingat aku lupa? 😤'], bid: ['Padan muka, kau tak dapat! 😤'] },
+};
 
 /* ---------- Sound ---------- */
 let soundOn = localStorage.getItem('cozyTycoonSound') !== '0', AC = null;
@@ -451,7 +458,7 @@ function newGame() {
   if (cfg.mode === 'ai') {
     const others = shuffle(CHARS.map((c, i) => i).filter(i => i !== cfg.char)).slice(0, 3);
     players.push({ name: getName(0, 'Kau'), ci: cfg.char, ai: null });
-    others.forEach((ci, k) => players.push({ name: CHARS[ci].name, ci, ai: k }));
+    const pers = shuffle([0, 1, 2, 3]); others.forEach((ci, k) => players.push({ name: CHARS[ci].name, ci, ai: pers[k] }));
   } else {
     const order = localOrder();
     order.forEach((ci, k) => players.push({ name: getName(k, CHARS[ci].name), ci, ai: null }));
@@ -462,6 +469,7 @@ function newGame() {
     own: TILES.map(() => null), lvl: TILES.map(() => 0),
     rz: shuffle([...REZEKI.keys()]), ms: shuffle([...MUSIBAH.keys()]),
     log: ['Selamat datang ke Cozy Tycoon! 🎉'], dice: [1, 1], over: false, math: cfg.math,
+    hand: players.map(() => [drawTac(), drawTac()]), promo: null,
   };
 }
 function save() { try { if (G && !G.over) localStorage.setItem(SAVE, JSON.stringify(G)); else localStorage.removeItem(SAVE); } catch (e) {} }
@@ -642,10 +650,11 @@ function renderAll() {
   applyWorld();
   $('players').style.gridTemplateColumns = `repeat(${G.players.length},1fr)`;
   $('players').innerHTML = G.players.map((p, k) =>
-    `<div class="pchip ${k === G.turn ? 'turn' : ''} ${p.out ? 'out' : ''}" style="border-color:${k === G.turn ? CHARS[p.ci].color : '#fff'}">${p.sleep ? '<i class="zz">💤</i>' : ''}${avatar(p.ci)}<b>${pname(p)}</b><span>${p.out ? 'Bankrap' : rm(p.money)}</span><i class="cnt">🏠 ${G.own.filter(o => o === k).length} tanah</i></div>`).join('');
+    `<div class="pchip ${k === G.turn ? 'turn' : ''} ${p.out ? 'out' : ''}" style="border-color:${k === G.turn ? CHARS[p.ci].color : '#fff'}">${p.sleep ? '<i class="zz">💤</i>' : ''}${avatar(p.ci)}<b>${pname(p)}</b><span>${p.out ? 'Bankrap' : rm(p.money)}</span><i class="cnt">🏠 ${G.own.filter(o => o === k).length} · 🃏 ${G.hand ? G.hand[k].length : 0}</i>${p.ai !== null && AIS[p.ai] ? `<i class="pers">${AIS[p.ai].tag}</i>` : ''}</div>`).join('');
   TILES.forEach((t, i) => {
     const el = $('tile' + i), o = G.own[i];
     el.classList.toggle('owned', o !== null);
+    el.classList.toggle('promo', !!(G.promo && G.promo.i === i));
     if (o !== null) { el.style.setProperty('--own', CHARS[G.players[o].ci].color); el.style.setProperty('--own-bg', CHARS[G.players[o].ci].color + '40'); }
     const ow = el.querySelector('.own'), key = o === null ? '' : 'o' + G.players[o].ci;
     if (ow.dataset.k !== key) { ow.dataset.k = key; ow.innerHTML = o === null ? '' : avatar(G.players[o].ci); }
@@ -694,7 +703,7 @@ function modal(html, buttons, autoMs) {
 // Musim Perayaan: from round 31, rent grows 10% per round (max x4) so long games finish
 const FEST_START = 30;
 function festMult() { return G && G.round > FEST_START ? Math.min(4, 1 + (G.round - FEST_START) * 0.1) : 1; }
-function rentOf(i, diceSum) { return Math.round(rawRent(i, diceSum) * festMult() * evMult(i) * nightMult(i)); }
+function rentOf(i, diceSum) { return Math.round(rawRent(i, diceSum) * festMult() * evMult(i) * nightMult(i) * (G.promo && G.promo.i === i ? 2 : 1)); }
 function rawRent(i, diceSum) {
   const t = TILES[i], o = G.own[i]; if (o === null) return 0;
   if (t.t === 'stn') return 25 * Math.pow(2, TILES.filter((x, j) => x.t === 'stn' && G.own[j] === o).length - 1);
@@ -790,6 +799,9 @@ function setRoll(on) {
   $('rollBtn').disabled = !on; $('rollBtn').style.visibility = on ? 'visible' : 'hidden';
   const hum = on && G && !G.over && isHumanTurn();
   $('tradeBtn').classList.toggle('hidden', !hum || !TILES.some((t, i) => G.own[i] !== null && G.own[i] !== G.turn));
+  const nh = hum && G.hand ? G.hand[G.turn].length : 0;
+  $('cardBtn').classList.toggle('hidden', !nh);
+  if (nh) $('cardBtn').textContent = `🃏 Kad Taktik (${nh})${G.usedTac ? ' ✓' : ''}`;
   const lb = G && G.lastBuy;
   $('undoBtn').classList.toggle('hidden', !(hum && lb && lb.k === G.turn && G.own[lb.i] === G.turn && G.lvl[lb.i] === 0));
   if (lb) $('undoBtn').textContent = `↩️ Batal beli ${TILES[lb.i].name}`;
@@ -802,6 +814,8 @@ async function nextTurn(first) {
     G.turn = n;
   }
   if ((G.maxRounds && G.round > G.maxRounds) || alive().length < 2) return endGame();
+  ensureState(); G.usedTac = false;
+  if (G.promo && G.promo.k === G.turn) { log(`📣 Promosi ${TILES[G.promo.i].name} dah tamat`); G.promo = null; }
   renderAll(); save();
   if (G.pendingEvent) await showEvent();
   const p = cur();
@@ -811,7 +825,7 @@ async function nextTurn(first) {
   }
   G.players.forEach((q, j) => { if (!q.out && q.money >= 5000) sticker('rich', j); });
   if (isHumanTurn()) { setRoll(true); busy = false; }
-  else { setRoll(false); busy = true; await wait(650); await doRoll(0); }
+  else { setRoll(false); busy = true; await wait(650); await aiPreRoll(G.turn); if (G.over) return; await doRoll(0); }
 }
 $('rollBtn').onclick = () => { if (busy || !isHumanTurn()) return; busy = true; setRoll(false); doRoll(0); };
 
@@ -819,15 +833,22 @@ async function doRoll(dbl) {
   const p = cur(), k = G.turn, dies = [...$('dice').children];
   if (G.lastBuy && G.lastBuy.k === k) G.lastBuy = null;
   setRoll(false);
-  const a = 1 + (Math.random() * 6 | 0), b = 1 + (Math.random() * 6 | 0);
-  await Promise.all(dies.map((d, i) => roll3d(d, [a, b][i], i)));
-  dies.forEach((d, i) => setDie(d, [a, b][i]));
-  dies.forEach(d => { d.classList.remove('spin'); d.classList.remove('land'); void d.offsetWidth; d.classList.add('land'); });
-  G.dice = [a, b]; renderAll();
-  log(`${pname(p)} dapat ${a} + ${b} = ${a + b}${a === b ? ' — DOUBLE! 🎉' : ''}`);
+  const roll = async () => {
+    const a = 1 + (Math.random() * 6 | 0), b = 1 + (Math.random() * 6 | 0);
+    await Promise.all(dies.map((d, i) => roll3d(d, [a, b][i], i)));
+    dies.forEach((d, i) => setDie(d, [a, b][i]));
+    dies.forEach(d => { d.classList.remove('spin'); d.classList.remove('land'); void d.offsetWidth; d.classList.add('land'); });
+    G.dice = [a, b]; renderAll();
+    log(`${pname(p)} dapat ${a} + ${b} = ${a + b}${a === b ? ' — DOUBLE! 🎉' : ''}`);
+    return [a, b];
+  };
+  let [a, b] = await roll(), steps = a + b;
+  const ch = await tacAfterRoll(k, steps);
+  if (ch === 'semula') { useTac(k, 'semula'); await wait(300); [a, b] = await roll(); steps = a + b; }
+  else if (ch === 'up' || ch === 'down') { useTac(k, 'ubah'); steps += ch === 'up' ? 1 : -1; log(`🎯 ${pname(p)} ubah dadu, jalan ${steps} langkah`); }
   await wait(300); cam(p.pos); await wait(450);
-  await moveSteps(k, a + b);
-  await landOn(k, a + b);
+  await moveSteps(k, steps);
+  await landOn(k, steps);
   if (G.over) return;
   if (!p.out && a === b && dbl < 2 && !p.sleep) {
     log(`${pname(p)} dapat baling lagi!`); renderAll(); save();
@@ -841,7 +862,7 @@ async function moveSteps(k, n) {
   const p = G.players[k], dir = n < 0 ? -1 : 1;
   for (let s = 0; s < Math.abs(n); s++) {
     p.pos = (p.pos + dir + 40) % 40;
-    if (p.pos === 0 && dir > 0) { gain(k, 200); log(`🏁 ${pname(p)} lalu MULA, dapat RM200!`); if (Math.random() < .5) say2('go', { k, p: pname(p) }); }
+    if (p.pos === 0 && dir > 0) { gain(k, 200); log(`🏁 ${pname(p)} lalu MULA, dapat RM200!`); giveTac(k); if (Math.random() < .5) say2('go', { k, p: pname(p) }); }
     const tok = $('tok' + k); tok.classList.remove('hop'); void tok.offsetWidth; tok.classList.add('hop');
     G.players.forEach((q, j) => placeToken(j, q.pos)); cam(p.pos); sfx.step();
     await wait(230);
@@ -876,7 +897,7 @@ async function landOn(k, sum) {
         log(`🛒 ${pname(p)} beli ${t.name}!`); renderAll(); tileFx(i, 'buy'); await wait(1000);
         say2(t.price >= 300 ? 'buyBig' : 'buy', { k, p: pname(p), t: t.name, m: rm(t.price) });
         if (ai) await modal(say(`${pname(p)}: "${fill(pick(AI_SAY.buy), { t: t.name })}"`) + propHtml(i), [{ label: 'OK' }], auto);
-      } else { log(`${pname(p)} tak beli ${t.name}`); if (ai) await modal(say(`${pname(p)}: "${fill(pick(AI_SAY.skip), { t: t.name })}"`) + propHtml(i), [{ label: 'OK' }], 10000); }
+      } else { log(`${pname(p)} tak beli ${t.name}`); if (ai) await modal(say(`${pname(p)}: "${fill(pick(AI_SAY.skip), { t: t.name })}"`) + propHtml(i), [{ label: 'OK' }], 10000); await auction(i); }
     } else if (o === k) {
       if (t.t === 'prop' && G.lvl[i] < 2) {
         const cost = UPC[t.set], can = p.money >= cost, nx = G.lvl[i] + 1;
@@ -892,15 +913,21 @@ async function landOn(k, sum) {
       if (r >= 100) say2('rentHigh', { k, p: pname(p), o: pname(owner), t: t.name, m: rm(r) }); else if (Math.random() < .6) say2('rentLow', { k, p: pname(p), o: pname(owner), t: t.name, m: rm(r) });
       if (!ai) {
         const big = r >= 20;
+        const disc = !G.usedTac && G.hand[k].includes('diskaun') ? [{ label: `🏷️ Guna Diskaun (${rm(Math.ceil(r / 2))})`, v: 'disc', cls: 'gold' }] : [];
         const v = await modal(propHtml(i) + `<p>Alamak! Ni tempat <b>${pname(owner)}</b>. Kena bayar sewa:</p><h2>${rm(r)}</h2>${big ? '<p class="mg-hint">🎮 Main <b>Tangkap Syiling</b>! Dapat 7 syiling, sewa jadi separuh.</p>' : ''}`,
-          big ? [{ label: '🎮 CUBA NASIB', v: 'mg', cls: 'mint' }, { label: '💸 Bayar je', v: 'pay', cls: 'pink' }] : [{ label: '💸 BAYAR', v: 'pay', cls: 'pink' }]);
+          [...disc, ...(big ? [{ label: '🎮 CUBA NASIB', v: 'mg', cls: 'mint' }, { label: '💸 Bayar je', v: 'pay', cls: 'pink' }] : [{ label: '💸 BAYAR', v: 'pay', cls: 'pink' }])]);
+        if (v === 'disc') { useTac(k, 'diskaun'); r = Math.ceil(r / 2); }
         if (v === 'mg') {
           const ok = await coinGame();
           if (ok) { r = Math.ceil(r / 2); sticker('minigame', k); log(`🪙 ${pname(p)} menang Tangkap Syiling! Sewa jadi ${rm(r)}`); say2('minigame', { k, p: pname(p) }); }
           else log(`🪙 ${pname(p)} tak sempat... bayar penuh ${rm(r)}`);
         }
       }
-      else await modal(say(`${pname(p)}: "${fill(pick(r >= 100 ? AI_SAY.payBig : AI_SAY.pay), { m: rm(r), o: pname(owner), t: t.name })}"`) + propHtml(i), [{ label: 'OK' }], 10000);
+      else {
+        if (!G.usedTac && G.hand[k].includes('diskaun') && r >= ai.cardRent) { useTac(k, 'diskaun'); r = Math.ceil(r / 2); aiTalk(k, 'disc'); }
+        await modal(say(`${pname(p)}: "${fill(pick(r >= 100 ? AI_SAY.payBig : AI_SAY.pay), { m: rm(r), o: pname(owner), t: t.name })}"`) + propHtml(i), [{ label: 'OK' }], 10000);
+      }
+      ensureState(); G.grudge[k][o] += r;
       st(k).rentPaid += r; st(o).rentEarn += r; G.tileEarn[i] += r;
       emote(k, r >= 100 ? 'shock' : 'sad'); emote(o, 'happy');
       await pay(k, r, o);
@@ -1068,6 +1095,9 @@ function ensureState() {
   if (!G.stats) G.stats = G.players.map(() => ({ rentPaid: 0, rentEarn: 0, sleeps: 0, kenduri: 0, bought: 0 }));
   if (!G.tileEarn) G.tileEarn = TILES.map(() => 0);
   if (G.math === undefined) G.math = false;
+  if (!G.hand) G.hand = G.players.map(() => [drawTac(), drawTac()]);
+  if (!G.grudge) G.grudge = G.players.map(() => G.players.map(() => 0));
+  if (G.promo === undefined) G.promo = null;
 }
 const st = k => { ensureState(); return G.stats[k]; };
 
@@ -1217,6 +1247,161 @@ async function openTrade(k) {
   say2('trade', { k, p: pname(p), o: pname(owner), t: t.name });
   if (t.set && TILES.every((x, j) => x.set !== t.set || G.own[j] === k)) sticker('set', k);
   await wait(1000);
+}
+
+/* ===================== KAD TAKTIK, LELONG, AI PERSONALITI ===================== */
+const TAC = {
+  ubah: { ic: '🎯', name: 'Ubah Dadu', desc: 'Lepas baling: tambah atau tolak 1 langkah.', w: 3 },
+  semula: { ic: '🔄', name: 'Baling Semula', desc: 'Lepas baling: tak suka nombor? Baling lagi.', w: 2 },
+  promosi: { ic: '📣', name: 'Promosi', desc: 'Sewa satu tanah kau ×2 sampai giliran kau seterusnya.', w: 2 },
+  diskaun: { ic: '🏷️', name: 'Kupon Diskaun', desc: 'Masa kena bayar sewa: bayar separuh je.', w: 3 },
+  ambil: { ic: '🤝', name: 'Ambil Alih', desc: 'Paksa beli tanah lawan, harga 1.5×.', w: 1 },
+};
+function drawTac() { const bag = []; for (const c in TAC) for (let n = 0; n < TAC[c].w; n++) bag.push(c); return pick(bag); }
+function giveTac(k) {
+  ensureState(); const h = G.hand[k]; if (h.length >= 3) return;
+  const c = drawTac(); h.push(c); floatText(k, '+🃏', '#7a5af8');
+  log(`🃏 ${pname(G.players[k])} dapat kad ${G.players[k].ai === null ? TAC[c].ic + ' ' + TAC[c].name : 'baru'}`);
+}
+function useTac(k, c) {
+  const h = G.hand[k], n = h.indexOf(c); if (n >= 0) h.splice(n, 1);
+  G.usedTac = true; sfx.buy(); floatText(k, TAC[c].ic, '#7a5af8');
+  log(`🃏 ${pname(G.players[k])} guna ${TAC[c].ic} ${TAC[c].name}!`); renderAll();
+}
+function aiTalk(k, kind) { const p = G.players[k], l = AI_TALK[p.ai] && AI_TALK[p.ai][kind]; if (l) notify('p' + k, pick(l), false); }
+const takeCost = i => Math.round(((TILES[i].price || 0) + G.lvl[i] * (UPC[TILES[i].set] || 0)) * 1.5 / 10) * 10;
+function grudgeTarget(k) { ensureState(); let b = null, v = 0; G.grudge[k].forEach((x, j) => { if (j !== k && x > v && !G.players[j].out) { v = x; b = j; } }); return b; }
+function setIdx(set) { return TILES.map((t, i) => i).filter(i => TILES[i].set === set); }
+
+// nilai kasar mendarat atas petak (untuk AI pilih langkah)
+function tileScore(k, i) {
+  const p = G.players[k], t = TILES[i], o = G.own[i];
+  if (t.t === 'prop' || t.t === 'stn' || t.t === 'util') {
+    if (o === null) return p.money >= t.price && aiWantsBuy(k, i) ? 30 + (t.set && setIdx(t.set).some(j => G.own[j] === k) ? 40 : 0) : 0;
+    return o === k ? 10 : -rentOf(i, 7);
+  }
+  return { tax: -(t.amt || 100), gojail: -60, kenduri: 40, rezeki: 20, musibah: -25 }[t.t] || 0;
+}
+function destTag(k, i) {
+  const t = TILES[i], o = G.own[i];
+  if (t.t === 'prop' || t.t === 'stn' || t.t === 'util') return o === null ? '🛒' : o === k ? '🏠' : '💸' + rentOf(i, 7);
+  return { tax: '💸', gojail: '😴', kenduri: '💐', rezeki: '🍀', musibah: '🌧️' }[t.t] || '';
+}
+async function tacAfterRoll(k, sum) {
+  ensureState(); const p = G.players[k], h = G.hand[k];
+  const hasU = h.includes('ubah'), hasS = h.includes('semula');
+  if (G.usedTac || (!hasU && !hasS)) return null;
+  const at = n => (p.pos + n + 40) % 40;
+  if (p.ai === null) {
+    const opt = n => `${n} → ${TILES[at(n)].name} ${destTag(k, at(n))}`;
+    const btns = [{ label: `▶ Jalan ${opt(sum)}`, v: null, cls: 'mint' }];
+    if (hasU) { if (sum > 2) btns.push({ label: `🎯 ${opt(sum - 1)}`, v: 'down', cls: 'gold' }); btns.push({ label: `🎯 ${opt(sum + 1)}`, v: 'up', cls: 'gold' }); }
+    if (hasS) btns.push({ label: '🔄 Baling semula', v: 'semula', cls: 'gold' });
+    return await modal(`<i class="tac-roll"></i><h2>🎲 Dapat ${sum}!</h2><p>Nak guna Kad Taktik? (satu kad je setiap giliran)</p>`, btns);
+  }
+  const ai = AIS[p.ai], base = tileScore(k, at(sum));
+  let best = null, bv = base;
+  if (hasU) for (const [d, v] of [[-1, 'down'], [1, 'up']]) { if (sum + d < 2) continue; const sc = tileScore(k, at(sum + d)); if (sc > bv) { bv = sc; best = v; } }
+  if (best && bv - base >= ai.swing) { aiTalk(k, 'card'); return best; }
+  if (hasS && base <= -ai.cardRent * 1.5) { aiTalk(k, 'card'); return 'semula'; }
+  return null;
+}
+function usePromo(k, i) { useTac(k, 'promosi'); G.promo = { i, k }; renderAll(); tileFx(i, 'up'); log(`📣 Sewa ${TILES[i].name} ×2 sampai giliran ${pname(G.players[k])} seterusnya!`); }
+async function doAmbil(k, i) {
+  const p = G.players[k], o = G.own[i], owner = G.players[o], cost = takeCost(i);
+  useTac(k, 'ambil'); p.money -= cost; owner.money += cost; G.own[i] = k;
+  if (G.promo && G.promo.i === i) G.promo = null;
+  ensureState(); G.grudge[o][k] += 150;
+  floatText(k, '-' + cost, '#e64980'); floatText(o, '+' + cost, '#2f9f73');
+  renderAll(); tileFx(i, 'big'); sticker('trade', k);
+  log(`🤝 ${pname(p)} AMBIL ALIH ${TILES[i].name} dari ${pname(owner)} (${rm(cost)})!`);
+  if (TILES[i].set && setIdx(TILES[i].set).every(j => G.own[j] === k)) sticker('set', k);
+  if (p.ai !== null) aiTalk(k, 'card');
+  await modal(`<div class="big-ic">🤝</div><h2>Ambil Alih!</h2><p><b>${pname(p)}</b> paksa beli <b>${TILES[i].name}</b> dari <b>${pname(owner)}</b> dengan <b>${rm(cost)}</b>.</p>`, [{ label: 'OK' }], p.ai !== null ? 4000 : 0);
+}
+async function pickTile(title, list, lbl) {
+  if (!list.length) { await modal(`<h2>${title}</h2><p>Takde tanah yang boleh dipilih sekarang.</p>`, [{ label: 'OK' }]); return null; }
+  const v = await modal(`<h2>${title}</h2><div class="tr-grid">${list.map(([i, dis]) => `<button class="tr-tile" data-pick="${i}" ${dis ? 'disabled' : ''} style="--own:${CHARS[G.players[G.own[i]].ci].color}"><span class="tr-ic">${tileIcon(i)}</span><b>${TILES[i].name}</b><small>${lbl(i)}</small></button>`).join('')}</div>`, [{ label: 'Batal', v: null, cls: 'grey' }]);
+  return v === null || v === undefined ? null : +v;
+}
+$('cardBtn').onclick = async () => {
+  if (busy || !isHumanTurn()) return; busy = true; setRoll(false);
+  try {
+    const k = G.turn, h = G.hand[k], now = ['promosi', 'ambil'];
+    const v = await modal(`<h2>🃏 Kad Taktik</h2><p>Satu kad je boleh guna setiap giliran.${G.usedTac ? ' <b>Kau dah guna kad giliran ni.</b>' : ''}</p><div class="tac-hand">${h.map((c, n) => { const ok = now.includes(c) && !G.usedTac; return `<button class="tac ${ok ? '' : 'off'}" data-pick="${n}" ${ok ? '' : 'disabled'}><span>${TAC[c].ic}</span><b>${TAC[c].name}</b><small>${TAC[c].desc}</small></button>`; }).join('')}</div><p class="hint">Dapat 1 kad baru setiap lalu MULA (max 3).</p>`, [{ label: 'Tutup', v: null, cls: 'grey' }]);
+    if (v === null || v === undefined) return;
+    const c = h[+v], p = G.players[k];
+    if (c === 'promosi') {
+      const i = await pickTile('📣 Promosi tanah mana?', TILES.map((t, i) => i).filter(i => G.own[i] === k).map(i => [i, false]), i => `Sewa ${rm(rentOf(i, 7))} → ${rm(rentOf(i, 7) * 2)}`);
+      if (i !== null) usePromo(k, i);
+    } else if (c === 'ambil') {
+      const i = await pickTile('🤝 Ambil alih tanah mana?', TILES.map((t, i) => i).filter(i => G.own[i] !== null && G.own[i] !== k && !G.players[G.own[i]].out).map(i => [i, takeCost(i) > p.money]), i => `${pname(G.players[G.own[i]])} · ${rm(takeCost(i))}`);
+      if (i !== null) await doAmbil(k, i);
+    }
+  } finally { busy = false; renderAll(); setRoll(true); save(); }
+};
+async function aiPreRoll(k) {
+  ensureState(); if (G.usedTac) return;
+  const p = G.players[k], ai = AIS[p.ai], h = G.hand[k];
+  if (h.includes('ambil')) {
+    const tg = ai.revenge ? grudgeTarget(k) : null;
+    let best = null, bv = 0;
+    TILES.forEach((t, i) => {
+      const o = G.own[i];
+      if (o === null || o === k || G.players[o].out || takeCost(i) > p.money - ai.reserve * .5) return;
+      let v = 0;
+      if (t.set) { const all = setIdx(t.set), mine = all.filter(j => G.own[j] === k).length; if (mine === all.length - 1) v += 100; else if (ai.smart) v += mine * 25; }
+      if (tg !== null && o === tg) v += 60 + G.lvl[i] * 25;
+      if (ai.reserve < 100) v += 25 + G.lvl[i] * 20;
+      if (v > bv) { bv = v; best = i; }
+    });
+    if (best !== null && bv >= 60) { await doAmbil(k, best); return; }
+  }
+  if (h.includes('promosi')) {
+    const mine = TILES.map((t, i) => i).filter(i => G.own[i] === k).sort((a, b) => rawRent(b, 7) - rawRent(a, 7));
+    if (mine.length && rawRent(mine[0], 7) >= (ai.reserve < 100 ? 15 : 40) && Math.random() < .65) { usePromo(k, mine[0]); aiTalk(k, 'card'); await wait(900); }
+  }
+}
+function aiBid(j, i) {
+  const p = G.players[j], ai = AIS[p.ai], t = TILES[i];
+  let f = ai.bid;
+  if (t.set) {
+    const all = setIdx(t.set), mine = all.filter(n => G.own[n] === j).length, oth = all.filter(n => G.own[n] !== null && G.own[n] !== j);
+    if (ai.smart) f += mine ? .55 : oth.length ? .25 : 0;
+    else if (mine) f += .15;
+    if (ai.revenge) { const tg = grudgeTarget(j); if (tg !== null && oth.some(n => G.own[n] === tg)) f += .5; }
+  }
+  f *= .88 + Math.random() * .24;
+  let v = Math.round(t.price * f / 10) * 10;
+  const cap = Math.floor((p.money - ai.reserve * .5) / 10) * 10;
+  if (v > cap) v = cap;
+  return v >= 10 ? v : 0;
+}
+async function auction(i) {
+  if (G.own[i] !== null) return;
+  const t = TILES[i], bidders = G.players.map((p, j) => j).filter(j => !G.players[j].out && G.players[j].money >= 10);
+  if (!bidders.length) return;
+  const humans = bidders.filter(j => G.players[j].ai === null), multi = humans.length > 1;
+  const steps = [...new Set([.3, .6, .9, 1.2].map(f => Math.max(10, Math.round(t.price * f / 10) * 10)))];
+  log(`🔨 ${t.name} dilelong!`);
+  const bids = {};
+  for (const j of bidders) {
+    const p = G.players[j];
+    if (p.ai !== null) { bids[j] = aiBid(j, i); continue; }
+    const v = await modal(`<div class="big-ic">🔨</div><h2>Lelong ${t.name}!</h2>${multi ? `<p class="hint">Bagi phone kat <b>${pname(p)}</b>. Yang lain jangan tengok 🙈</p>` : ''}<p>Takde siapa beli, jadi semua orang bida <b>secara rahsia</b>. Bida paling tinggi menang.</p><p>Harga asal ${rm(t.price)} · Duit ${pname(p)} <b>${rm(p.money)}</b></p>`,
+      [...steps.map(v => ({ label: rm(v), v, cls: 'mint', dis: v > p.money })), { label: 'Tak bida', v: 0, cls: 'grey' }]);
+    bids[j] = v || 0;
+  }
+  const order = bidders.slice().sort((a, b) => bids[b] - bids[a]), top = bids[order[0]];
+  const auto = humans.length ? 0 : 3000;
+  if (!top) { log(`🔨 Takde siapa bida ${t.name}`); await modal(`<div class="big-ic">🤷</div><h2>Takde siapa bida</h2><p>${t.name} kekal tak berpemilik.</p>`, [{ label: 'OK' }], auto); return; }
+  const w = pick(order.filter(j => bids[j] === top)), wp = G.players[w];
+  wp.money -= top; G.own[i] = w; st(w).bought++; sfx.buy(); emote(w, 'happy');
+  floatText(w, '-' + top, '#e64980'); renderAll(); tileFx(i, 'buy');
+  if (t.set && setIdx(t.set).every(j => G.own[j] === w)) sticker('set', w);
+  log(`🔨 ${pname(wp)} menang lelong ${t.name} dengan ${rm(top)}!`);
+  if (wp.ai !== null) aiTalk(w, 'bid');
+  await modal(`<div class="big-ic">🔨</div><h2>${pname(wp)} menang lelong!</h2><div class="bids">${order.map(j => `<div class="${j === w ? 'win' : ''}">${avatar(G.players[j].ci)}<b>${pname(G.players[j])}</b><span>${bids[j] ? rm(bids[j]) : 'Tak bida'}</span></div>`).join('')}</div>`, [{ label: 'OK' }], auto);
 }
 
 /* --- Ringkasan hujung game --- */

@@ -390,3 +390,19 @@ button.kuih:active{transform:scale(.95)}
 .board-wrap.ph2 .board{background:linear-gradient(180deg,#9a8fc6,#8a78b8)}
 .board-wrap.ph1 .tile{filter:sepia(.18) saturate(1.1)}
 .ev-banner{position:relative;z-index:4}
+
+/* Kad Taktik, Lelong, personaliti */
+.pchip i.pers{display:block;font-style:normal;font-size:9px;font-weight:900;color:#7a5af8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mini-btn.card{background:#efe9ff;color:#6a4bd8;box-shadow:0 3px 0 #cfc2fb}
+.tile.promo{box-shadow:0 0 0 3px #ffd43b,0 0 14px #ffb300;animation:promoGlow 1.2s infinite alternate}
+@keyframes promoGlow{to{box-shadow:0 0 0 3px #ff922b,0 0 20px #ffb300}}
+.tac-hand{display:grid;gap:8px;margin:10px 0}
+.tac{display:grid;grid-template-columns:42px 1fr;grid-template-rows:auto auto;column-gap:8px;text-align:left;border:0;border-radius:14px;padding:9px 10px;background:linear-gradient(135deg,#f3eeff,#e4dbff);box-shadow:0 3px 0 #cfc2fb;font-family:inherit;color:#4b3699}
+.tac span{grid-row:1/3;font-size:30px;align-self:center;text-align:center}.tac b{font-size:15px}.tac small{font-size:12px;opacity:.85}
+.tac.off{opacity:.5;filter:grayscale(.4)}
+.bids{display:grid;gap:6px;margin:10px 0}
+.bids>div{display:flex;align-items:center;gap:8px;background:#fff6fa;border-radius:12px;padding:4px 10px}
+.bids>div.win{background:#e6f7f0;box-shadow:0 0 0 2px #5cc9a7}
+.bids img,.bids svg{width:30px;height:32px}.bids b{flex:1;text-align:left}.bids span{font-weight:900}
+.tr-tile:disabled{opacity:.45}
+.modal-card:has(.tac-roll) .btns{flex-direction:column}.modal-card:has(.tac-roll) .btns .btn{width:100%;padding:11px 12px;font-size:16px}
