@@ -8,6 +8,12 @@
     var page = me.getAttribute('data-game') || '';
     box.innerHTML = '<span id="verTxt">' + page + ' · semak versi…</span><button id="verBtn" type="button" style="border:0;border-radius:8px;padding:4px 7px;background:#2346b0;color:#fff;font:inherit;font-weight:700">↻ Update</button>';
     document.body.appendChild(box);
+    /* data-menu="#menu": tunjuk kotak versi bila skrin menu je nampak (tak kacau masa main) */
+    var menuSel = me.getAttribute('data-menu');
+    if (menuSel) {
+      var sync = function () { var m = document.querySelector(menuSel); box.style.display = m && !m.classList.contains('hidden') && m.getClientRects().length > 0 ? 'flex' : 'none'; };
+      sync(); setInterval(sync, 400);
+    }
     var txt = box.querySelector('#verTxt');
     var cur = null;
     var cacheP = window.caches ? caches.keys().then(function (k) { return k.filter(function (x) { return /^mycozyworld-/.test(x); }).sort().pop() || null; }) : Promise.resolve(null);
