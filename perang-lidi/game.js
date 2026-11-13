@@ -26,6 +26,20 @@ const UNITS = {
   gergaji: { name: 'Gergaji', cost: 70, hp: 120, dmg: 5,  range: 26,  rate: 0.16, spd: 31, armor: 0.1, size: 1.2,  melee: true, cleave: 2 },
 };
 const UNIT_KEYS = Object.keys(UNITS);
+// askar istimewa setiap puak (unit ke-5)
+const ELITE = {
+  api:      { name: 'Penyembur Api',  cost: 110, hp: 230, dmg: 5,  range: 70,  rate: 0.25, spd: 30, armor: 0.1,  size: 1.45, mech: 'flame',   wpn: 'obor',    melee: true, desc: 'Sembur api kena semua musuh di depan' },
+  bulan:    { name: 'Pemanah Bulan',  cost: 120, hp: 150, dmg: 26, range: 280, rate: 2.2,  spd: 32, armor: 0,    size: 1.35, mech: 'beam',    wpn: 'panah',   desc: 'Sinar bulan tembus semua musuh sebaris' },
+  besi:     { name: 'Robot Gergasi',  cost: 130, hp: 650, dmg: 30, range: 28,  rate: 1.6,  spd: 22, armor: 0.4,  size: 1.85, mech: 'punch',   wpn: 'tinju',   melee: true, desc: 'Tumbukan berat, tolak musuh ke belakang' },
+  hutan:    { name: 'Gergasi Pokok',  cost: 120, hp: 520, dmg: 20, range: 28,  rate: 1.5,  spd: 24, armor: 0.15, size: 1.75, mech: 'slam',    wpn: 'tinju',   melee: true, desc: 'Hentak tanah: pengsankan musuh, pulihkan kawan' },
+  pendekar: { name: 'Pahlawan Keris', cost: 110, hp: 260, dmg: 26, range: 22,  rate: 0.6,  spd: 50, armor: 0.1,  size: 1.35, mech: 'leap',    wpn: 'keris',   melee: true, desc: 'Lompat terus ke musuh, tikaman maut' },
+  bunian:   { name: 'Penembak Ghaib', cost: 110, hp: 130, dmg: 30, range: 210, rate: 1.6,  spd: 36, armor: 0,    size: 1.3,  mech: 'stealth', wpn: 'panah',   desc: 'Halimunan, hanya nampak bila menembak' },
+  ais:      { name: 'Penyihir Salji', cost: 115, hp: 170, dmg: 14, range: 190, rate: 1.8,  spd: 30, armor: 0,    size: 1.35, mech: 'iceball', wpn: 'tongkat', desc: 'Bola ais membeku sekumpulan musuh' },
+  racun:    { name: 'Bomoh Racun',    cost: 115, hp: 180, dmg: 7,  range: 170, rate: 1.7,  spd: 30, armor: 0,    size: 1.35, mech: 'flask',   wpn: 'tongkat', desc: 'Baling botol racun ke kumpulan musuh' },
+};
+for (const k in ELITE) UNITS['e_' + k] = Object.assign({ elite: true, tribe: k }, ELITE[k]);
+const ELITE_MAX = 2;
+const wpnOf = type => (UNITS[type] && UNITS[type].wpn) || type;
 // unit khas dari skill (tak boleh beli)
 UNITS.tembok = { name: 'Tembok', cost: 0, hp: 380, dmg: 0, range: 0, rate: 99, spd: 0, armor: 0.3, size: 1, special: true };
 UNITS.pokok  = { name: 'Pokok',  cost: 0, hp: 140, dmg: 7, range: 160, rate: 0.9, spd: 0, armor: 0, size: 1.1, special: true };
@@ -147,7 +161,7 @@ function miniStick(tribe, type, w = 44, h = 50) {
   const c = document.createElement('canvas'), dpr = Math.min(2, devicePixelRatio || 1);
   c.width = w * dpr; c.height = h * dpr; c.style.width = w + 'px'; c.style.height = h + 'px';
   const x = c.getContext('2d'); x.scale(dpr, dpr);
-  const u = { side: 0, x: w / 2 - 3, y: 0, type, t: TRIBES.find(t => t.id === tribe), walk: 0.6, atk: 0, size: UNITS[type].size * h / 78, hp: 1, maxHp: 1, stolen: false };
+  const u = { side: 0, x: w / 2 - 3, y: 0, type, t: TRIBES.find(t => t.id === tribe), walk: 0.6, atk: 0, size: Math.min(UNITS[type].size, 1.15) * h / 78, hp: 1, maxHp: 1, stolen: false };
   drawStick(x, u, 0, h - 3 - GROUND, 1);
   return c;
 }
@@ -156,7 +170,7 @@ function buildTribeGrid() {
   TRIBES.forEach(t => {
     const b = document.createElement('button');
     b.type = 'button'; b.className = 'tribe' + (t.id === myTribe ? ' on' : ''); b.style.setProperty('--c', t.c);
-    b.innerHTML = `<b style="color:${t.c}">${t.name.replace('Puak ', '')}</b><small>◆ ${PASSIVE[t.id]}</small><small>⚡ ${SKILL[t.id][0]}: ${SKILL[t.id][1]}</small><small>✦ ${t.ult}: ${t.desc}</small>`;
+    b.innerHTML = `<b style="color:${t.c}">${t.name.replace('Puak ', '')}</b><small>◆ ${PASSIVE[t.id]}</small><small>⚡ ${SKILL[t.id][0]}: ${SKILL[t.id][1]}</small><small>♛ ${ELITE[t.id].name}: ${ELITE[t.id].desc}</small><small>✦ ${t.ult}: ${t.desc}</small>`;
     if (img('chief_' + t.id)) b.insertAdjacentHTML('afterbegin', chiefImg(t.id, 'chief')); else b.prepend(miniStick(t.id, pick(UNIT_KEYS)));
     b.onclick = () => { myTribe = t.id; store.tribe = t.id; save(); [...g.children].forEach(x => x.classList.remove('on')); b.classList.add('on'); };
     g.appendChild(b);
@@ -262,10 +276,10 @@ function startBattle(pT, eT, d) {
 function buildPanel() {
   const P = G.sides[0];
   const uw = $('units'); uw.innerHTML = '';
-  UNIT_KEYS.forEach(k => {
-    const b = document.createElement('button'); b.type = 'button'; b.dataset.k = k;
+  [...UNIT_KEYS, 'e_' + P.t.id].forEach(k => {
+    const b = document.createElement('button'); b.type = 'button'; b.dataset.k = k; if (UNITS[k].elite) b.className = 'elite';
     b.appendChild(miniStick(P.t.id, k, 34, 34));
-    b.insertAdjacentHTML('beforeend', `<b>${UNITS[k].name}</b><small>🪙${UNITS[k].cost}</small><span class="cnt"></span>`);
+    b.insertAdjacentHTML('beforeend', `<b>${UNITS[k].elite ? '♛ ' + UNITS[k].name.split(' ')[0] : UNITS[k].name}</b><small>🪙${UNITS[k].cost}</small><span class="cnt"></span>`);
     b.onclick = () => { if (buy(0, k)) snd('spawn'); };
     uw.appendChild(b);
   });
@@ -295,8 +309,9 @@ function costOf(si, k) {
 function buy(si, k) {
   const s = G.sides[si];
   if (s.gold < costOf(si, k) || G.over) return false;
+  if (UNITS[k].elite && G.units.filter(u => u.side === si && u.type === k).length >= ELITE_MAX) { if (si === 0) toast('Maksimum ' + ELITE_MAX + ' ' + UNITS[k].name, '#f88', 0.8); return false; }
   if (G.units.filter(u => u.side === si).length >= 34) { if (si === 0) toast('Askar penuh!', '#f88', 0.7); return false; }
-  s.gold -= costOf(si, k); spawn(si, k); return true;
+  s.gold -= costOf(si, k); const nu = spawn(si, k); if (UNITS[k].elite) { G.fx.push({ k: 'text', x: nu.x, y: GROUND - 90, s: UNITS[k].name.toUpperCase(), c: s.t.c, life: 1.2 }); if (si === 0) snd('up'); } return true;
 }
 const unitMaxHp = u => UNITS[u.type].hp * G.sides[u.side].t.mod.hp * (1 + 0.15 * G.sides[u.side].ups.zirah) * (u.type === 'pedang' && G.sides[u.side].cards.has('pedang') ? 1.4 : 1) * (u.stolen && G.sides[u.side].cards.has('rampas') ? 1.6 : 1);
 function spawn(si, type, free, at) {
@@ -341,10 +356,18 @@ function update(dt) {
     if (me.t.id === 'hutan' && u.hp < u.maxHp) u.hp = Math.min(u.maxHp, u.hp + 1.4 * dt);
     if (u.ttl !== undefined && (u.ttl -= dt) <= 0) { u.hp = 0; u.noReward = true; }
     if (u.flipT > 0 && (u.flipT -= dt) <= 0) u.dir = u.side ? -1 : 1;
+    if (u.stun > 0) u.stun -= dt;
+    if (UNITS[u.type].mech === 'stealth') { u.reveal = Math.max(0, (u.reveal || 0) - dt); u.hidden = u.reveal <= 0; }
+    if (u.leapCd > 0) u.leapCd -= dt;
   }
   for (const u of G.units) {
     if (u.hp <= 0) continue;
     const U = UNITS[u.type], me = G.sides[u.side], foe = enemyOf(u.side);
+    if (u.stun > 0) { u.atk = 0; continue; }
+    // Pahlawan Keris: lompat ke musuh
+    if (U.mech === 'leap' && !(u.leapCd > 0)) { const far = nearestEnemy(u, 170); if (far && Math.abs(far.x - u.x) > 40) { const from = u.x; u.x = far.x - u.dir * 16; u.leapCd = 5; u.cd = 0;
+      for (let k = 0; k < 14; k++) G.parts.push({ x: from + (u.x - from) * k / 14, y: GROUND + u.y - 40 - Math.sin(k / 14 * Math.PI) * 50, vx: 0, vy: -20, life: 0.5, c: u.t.c, r: 2.5 });
+      G.fx.push({ k: 'text', x: u.x, y: GROUND + u.y - 90, s: 'HIAAA!', c: '#ffd36b', life: 0.7, sm: 1 }); } }
     let spd = U.spd * me.t.mod.spd * (me.buff.rage ? 1.5 : 1) * (me.buff.slow ? 0.35 : 1) * (u.chill ? 0.65 : 1) * (me.t.id === 'bulan' ? 1 + Math.min(0.35, G.t / 360) : 1) * (me.cards.has('laju') ? 1.15 : 1) * (u.type === 'gergaji' && me.cards.has('gergaji') ? 1.35 : 1);
     if (me.buff.root) spd = 0;
     u.cd -= dt * (me.buff.rage ? 1.5 : 1) * (me.buff.slow ? 0.5 : 1) * (me.buff.silat && U.melee ? 3 : 1) * (u.type === 'gergaji' && me.cards.has('gergaji') ? 1.35 : 1);
@@ -357,7 +380,10 @@ function update(dt) {
         u.cd = U.rate; u.atk = 1;
         let dmg = U.dmg * me.t.mod.dmg * (1 + 0.15 * me.ups.senjata) * (me.buff.rage ? 1.7 : 1) * (u.type === 'pedang' && me.cards.has('pedang') ? 1.4 : 1);
         if (me.t.id === 'pendekar' && u.type === 'pedang' && Math.random() < 0.25) { dmg *= 2; if (G.fx.length < 120) G.fx.push({ k: 'text', x: u.x, y: GROUND + u.y - 70, s: 'KRITIKAL!', c: '#ffd36b', life: 0.6, sm: 1 }); }
-        if (tgt) {
+        if (U.mech) u.reveal = 1.5;
+        if (tgt && U.mech && mech(u, U, tgt, dmg, me)) {
+          // dah diurus oleh mech()
+        } else if (tgt) {
           if (U.melee) {
             damage(tgt, dmg, u);
             if (me.cards.has('vamp')) u.hp = Math.min(u.maxHp, u.hp + dmg * 0.25);
@@ -394,7 +420,11 @@ function update(dt) {
     p.t += dt / p.dur;
     if (p.t >= 1 && !p.done) {
       p.done = true;
-      if (p.aoe) { G.units.forEach(u => { if (u.side !== p.aoe.si && u.hp > 0 && Math.abs(u.x - p.aoe.x) < 30) { u.tox = 4; damage(u, 9, { dir: 1, side: p.aoe.si }); } });
+      if (p.aoe && p.aoe.kind) { const A = p.aoe;
+        G.units.forEach(u => { if (u.side !== A.si && u.hp > 0 && Math.abs(u.x - A.x) < A.r) { damage(u, A.dmg, { dir: 1, side: A.si }); if (A.kind === 'ice') { u.chill = 2.5; if (!UNITS[u.type].elite) u.stun = 0.6; } else u.tox = 5; } });
+        G.fx.push({ k: 'ring', x: A.x, y: p.ty, c: p.c, life: 0.35, max: 0.35 });
+        for (let k = 0; k < 14; k++) G.parts.push({ x: A.x + rnd(-10, 10), y: p.ty, vx: rnd(-110, 110), vy: rnd(-150, -20), life: 0.55, c: p.c, r: 3 }); }
+      else if (p.aoe) { G.units.forEach(u => { if (u.side !== p.aoe.si && u.hp > 0 && Math.abs(u.x - p.aoe.x) < 30) { u.tox = 4; damage(u, 9, { dir: 1, side: p.aoe.si }); } });
         for (let k = 0; k < 5; k++) G.parts.push({ x: p.tx, y: p.ty, vx: rnd(-60, 60), vy: rnd(-90, -20), life: 0.4, c: p.c, r: 2.5 }); }
       else if (p.tgt && p.tgt.hp > 0) damage(p.tgt, p.dmg, p.src);
     }
@@ -414,12 +444,48 @@ function update(dt) {
   aiThink(G.sides[1], 1, dt);
   if (!G.over && G.t >= G.nextCard) { G.nextCard += CARD_EVERY; offerCards(); }
 }
+function mech(u, U, tgt, dmg, me) {
+  const fi = 1 - u.side, foes = G.units.filter(o => o.side === fi && o.hp > 0 && !o.hidden);
+  const ahead = (o, r) => { const dx = (o.x - u.x) * u.dir; return dx > -12 && dx < r; };
+  const hx = u.x + u.dir * 20 * u.size, hy = GROUND + u.y - 38 * u.size;
+  switch (U.mech) {
+    case 'flame':
+      foes.forEach(o => { if (ahead(o, U.range + 4)) { damage(o, dmg, u, true); o.burn = 3; o.hitFlash = 0.08; } });
+      for (let i = 0; i < 6; i++) G.parts.push({ x: hx, y: hy, vx: u.dir * rnd(140, 260), vy: rnd(-50, 30), life: 0.35, c: pick(['#ff7a2e', '#ffd36b', '#ff4d00']), r: 3.5 });
+      return true;
+    case 'beam': {
+      const hit = foes.filter(o => ahead(o, U.range + 4));
+      hit.forEach(o => damage(o, dmg, u));
+      G.fx.push({ k: 'beam', x1: hx, y1: hy, x2: hx + u.dir * U.range, y2: hy + 6, c: u.t.c, life: 0.3, max: 0.3 });
+      if (u.side === 0) snd('shoot');
+      return true;
+    }
+    case 'punch':
+      damage(tgt, dmg, u); if (!UNITS[tgt.type].special && !UNITS[tgt.type].elite) { tgt.x = clamp(tgt.x + u.dir * 28, BASE_X, W - BASE_X); tgt.stun = 0.4; }
+      G.shake = Math.max(G.shake, 3); hitSnd();
+      return true;
+    case 'slam':
+      foes.forEach(o => { if (Math.abs(o.x - tgt.x) < 55) { damage(o, dmg, u); if (!UNITS[o.type].elite) o.stun = 0.9; } });
+      G.units.forEach(o => { if (o.side === u.side && o.hp > 0 && Math.abs(o.x - u.x) < 70) o.hp = Math.min(o.maxHp, o.hp + 10); });
+      G.fx.push({ k: 'ring', x: tgt.x, y: GROUND + tgt.y - 4, c: u.t.c, life: 0.35, max: 0.35 });
+      for (let i = 0; i < 10; i++) G.parts.push({ x: tgt.x + rnd(-40, 40), y: GROUND + tgt.y, vx: rnd(-40, 40), vy: rnd(-160, -60), life: 0.5, c: '#7dff6a', r: 2.5 });
+      G.shake = Math.max(G.shake, 4); hitSnd();
+      return true;
+    case 'iceball': case 'flask': {
+      const ice = U.mech === 'iceball';
+      G.proj.push({ sx: hx, sy: hy, tgt: null, tx: tgt.x, ty: GROUND + tgt.y - 10, t: 0, dur: 0.45, dmg: 0, src: u, c: ice ? '#d6f4ff' : '#b8ff2a', arc: 50, big: 1,
+        aoe: { x: tgt.x, si: u.side, r: ice ? 45 : 50, dmg, kind: ice ? 'ice' : 'tox' } });
+      return true;
+    }
+  }
+  return false; // leap & stealth guna serangan biasa
+}
 function nearestEnemy(u, range, ignoreGhost) {
   let best = null, bd = 1e9;
   const ghost = G.sides[1 - u.side].buff.ghost > 0;
   if (ghost && !ignoreGhost) return null;
   for (const o of G.units) {
-    if (o.side === u.side || o.hp <= 0) continue;
+    if (o.side === u.side || o.hp <= 0 || o.hidden) continue;
     const dx = (o.x - u.x) * u.dir;
     if (dx < -10 || dx > range) continue;
     if (dx < bd) { bd = dx; best = o; }
@@ -457,7 +523,7 @@ function kill(u) {
     ks.kills++;
   }
   if (u.clone) { for (let i = 0; i < 10; i++) G.parts.push({ x: u.x, y: GROUND + u.y - rnd(0, 50), vx: rnd(-40, 40), vy: rnd(-80, -10), life: 0.5, c: u.t.c, r: 2 }); return; }
-  if (Math.random() < 0.55) G.drops.push({ x: u.x, y: u.y, type: u.type, life: 9, c: u.t.c, rot: rnd(-0.4, 0.4) });
+  if (!U.elite && Math.random() < 0.55) G.drops.push({ x: u.x, y: u.y, type: u.type, life: 9, c: u.t.c, rot: rnd(-0.4, 0.4) });
   const j = pose(u, 0, 0), dir = u.lastHitDir || -u.dir, pow = u.type === 'gergaji' ? 1.3 : 1;
   const pts = {};
   for (const k in j) { const p = j[k]; pts[k] = { x: p.x, y: p.y, px: p.x - dir * rnd(1.5, 4.5) * pow, py: p.y + rnd(2, 5) * pow }; }
@@ -627,6 +693,8 @@ function aiThink(s, si, dt) {
     else if (myFront > myBack + 2) want = 'panah';
     else want = pick(UNIT_KEYS);
   } else want = pick(['pedang', 'pedang', 'panah', 'perisai', 'gergaji']);
+  const ek = 'e_' + s.t.id;
+  if (s.gold >= costOf(si, ek) && G.units.filter(u => u.side === si && u.type === ek).length < ELITE_MAX && Math.random() < 0.3 + D.smart * 0.4) { buy(si, ek); return; }
   if (s.gold >= UNITS[want].cost) buy(si, want);
   else if (s.gold >= UNITS.pedang.cost && (theirs.length > mine.length + 2 || Math.random() < 0.3)) buy(si, 'pedang');
 }
@@ -664,9 +732,11 @@ function pose(u, ox, oy) {
   const fb = { x: x - (sw * 10 + 3) * d * s, y: gy - (moving ? Math.max(0, Math.cos(p)) * 4 : 0) };
   // tangan depan pegang senjata
   const a = u.atk; let ang;
-  if (u.type === 'panah') ang = -0.15;
-  else if (u.type === 'perisai') ang = 0.1 - a * 0.6;
-  else if (u.type === 'gergaji') ang = 0.15 + Math.sin(G ? G.t * 40 : 0) * 0.04 * (a > 0 ? 1 : 0);
+  if (wpnOf(u.type) === 'panah') ang = -0.15;
+  else if (wpnOf(u.type) === 'perisai') ang = 0.1 - a * 0.6;
+  else if (wpnOf(u.type) === 'tongkat' || wpnOf(u.type) === 'obor') ang = -0.9 + a * 0.7;
+  else if (wpnOf(u.type) === 'tinju') ang = a > 0 ? -0.3 + (1 - a) * 0.3 : 0.5;
+  else if (wpnOf(u.type) === 'gergaji') ang = 0.15 + Math.sin(G ? G.t * 40 : 0) * 0.04 * (a > 0 ? 1 : 0);
   else ang = a > 0 ? (-2.0 + (1 - a) * 2.8) : -0.6 + sw * 0.15;
   const al = 17 * s;
   const hf = { x: neck.x + Math.cos(ang) * al * d, y: neck.y + 4 * s + Math.sin(ang) * al };
@@ -684,6 +754,29 @@ function drawWeapon(c, type, hx, hy, ang, d, s, col, atk) {
     else if (type === 'panah') { const h = 36 * s, w = h * ar; c.drawImage(wi, -w / 2, -h / 2, w, h); }
     else { const h = 32 * s, w = h * ar; c.drawImage(wi, 0, -h / 2, w, h); }
     if (type === 'pedang' && atk > 0.25) slash(c, s, atk);
+    c.restore(); return;
+  }
+  if (type === 'obor') {
+    c.lineWidth = 3 * s; c.beginPath(); c.moveTo(-4 * s, 0); c.lineTo(16 * s, 0); c.stroke();
+    c.lineWidth = 2 * s; c.strokeRect(14 * s, -4 * s, 8 * s, 8 * s);
+    c.restore(); return;
+  }
+  if (type === 'tongkat') {
+    c.lineWidth = 2.4 * s; c.beginPath(); c.moveTo(-6 * s, 0); c.lineTo(26 * s, 0); c.stroke();
+    c.beginPath(); c.arc(30 * s, 0, 4.5 * s, 0, 7); c.fill();
+    c.lineWidth = 1.2 * s; c.beginPath(); c.moveTo(24 * s, -5 * s); c.lineTo(26 * s, 0); c.lineTo(24 * s, 5 * s); c.stroke();
+    c.restore(); return;
+  }
+  if (type === 'keris') {
+    c.lineWidth = 2 * s; c.beginPath(); c.moveTo(-2 * s, 0);
+    for (let i = 0; i <= 12; i++) c.lineTo((2 + i * 1.9) * s, Math.sin(i * 1.3) * 2.2 * s * (1 - i / 14));
+    c.stroke(); c.lineWidth = 3.4 * s; c.beginPath(); c.moveTo(0, -4 * s); c.lineTo(1 * s, 4 * s); c.stroke();
+    if (atk > 0.25) slash(c, s, atk);
+    c.restore(); return;
+  }
+  if (type === 'tinju') {
+    c.lineWidth = 2.5 * s; c.beginPath(); c.arc(4 * s, 0, 7 * s, 0, 7); c.globalAlpha *= 1; c.stroke();
+    c.beginPath(); c.moveTo(0, -5 * s); c.lineTo(9 * s, -5 * s); c.moveTo(0, 0); c.lineTo(10 * s, 0); c.moveTo(0, 5 * s); c.lineTo(9 * s, 5 * s); c.stroke();
     c.restore(); return;
   }
   if (type === 'pedang') {
@@ -759,7 +852,12 @@ function drawStick(c, u, ox, oy, alpha) {
   if (hat) { c.save(); c.translate(j.head.x, j.head.y + 1 * s); c.scale(d, 1); const hw = 21 * s, hh = Math.min(hw * hat.height / hat.width, 22 * s); c.globalAlpha = alpha; c.drawImage(hat, -hw / 2, -hh - 2 * s, hw, hh); c.restore(); c.globalAlpha = alpha; }
   else tribeMark(c, u.t.id, j.head.x, j.head.y, s, d, col);
   c.shadowBlur = 9; c.shadowColor = u.stolen ? '#ffffff' : u.t.g;
-  drawWeapon(c, u.type, j.hf.x, j.hf.y, j.ang, d, s, u.stolen ? '#ffffff' : col, u.atk);
+  if (UNITS[u.type] && UNITS[u.type].elite) {
+    // mahkota kecil untuk askar istimewa
+    c.fillStyle = '#ffd36b'; c.globalAlpha = alpha; c.beginPath(); const cx = j.head.x, cy = j.head.y - 19 * s;
+    c.moveTo(cx - 5 * s, cy + 4 * s); c.lineTo(cx - 5 * s, cy - 2 * s); c.lineTo(cx - 2 * s, cy + 1 * s); c.lineTo(cx, cy - 4 * s); c.lineTo(cx + 2 * s, cy + 1 * s); c.lineTo(cx + 5 * s, cy - 2 * s); c.lineTo(cx + 5 * s, cy + 4 * s); c.fill();
+  }
+  drawWeapon(c, wpnOf(u.type), j.hf.x, j.hf.y, j.ang, d, s, u.stolen ? '#ffffff' : col, u.atk);
   c.shadowBlur = 0;
   if (u.stolen) { c.fillStyle = '#fff'; c.font = `${10 * s}px sans-serif`; c.fillText('★', j.head.x - 4, j.head.y - 11 * s); }
   c.globalAlpha = 1;
@@ -922,7 +1020,11 @@ function draw() {
     if (u.burn > 0) blob(c, '#ff5a1f', u.x, GROUND + u.y - 30, 16, 26, 0.3);
     if (u.chill > 0) blob(c, '#bfefff', u.x, GROUND + u.y - 30, 16, 26, 0.3);
     if (u.tox > 0) blob(c, '#b8ff2a', u.x, GROUND + u.y - 30, 16, 26, 0.3);
-    drawStick(c, u, 0, 0, me.buff.ghost || u.clone ? 0.4 : 1);
+    if (UNITS[u.type].elite) { blob(c, u.t.g, u.x, GROUND + u.y - 34 * u.size, 26 * u.size, 40 * u.size, 0.3 + 0.1 * Math.sin(G.t * 4)); c.globalAlpha = 1; }
+    if (wpnOf(u.type) === 'obor') blob(c, '#ff7a2e', u.x + u.dir * 26 * u.size, GROUND + u.y - 48 * u.size, 9 + Math.random() * 3, 12, 0.9);
+    if (wpnOf(u.type) === 'tongkat') blob(c, u.t.c, u.x + u.dir * 20 * u.size, GROUND + u.y - 60 * u.size, 10, 10, 0.7);
+    drawStick(c, u, 0, 0, u.hidden ? (u.side === 0 ? 0.3 : 0.12) : me.buff.ghost || u.clone ? 0.4 : 1);
+    if (u.stun > 0) { c.fillStyle = '#ffd36b'; for (let k = 0; k < 3; k++) { const an = G.t * 6 + k * 2.1; c.fillRect(u.x + Math.cos(an) * 9 - 1.5, GROUND + u.y - 76 * u.size + Math.sin(an) * 3, 3, 3); } }
     if (me.buff.shield) { c.strokeStyle = '#9fd8ff'; c.lineWidth = 1.5; c.globalAlpha = 0.5; c.beginPath(); c.ellipse(u.x, GROUND + u.y - 28 * u.size, 18 * u.size, 34 * u.size, 0, 0, 7); c.stroke(); c.globalAlpha = 1; }
     if (u.hp < u.maxHp) { c.shadowBlur = 0; c.fillStyle = '#ffffff22'; c.fillRect(u.x - 10, GROUND + u.y - 74 * u.size, 20, 2.5); c.fillStyle = u.t.c; c.fillRect(u.x - 10, GROUND + u.y - 74 * u.size, 20 * Math.max(0, u.hp / u.maxHp), 2.5); c.shadowBlur = 10; }
   }
@@ -935,7 +1037,7 @@ function draw() {
     c.shadowBlur = 0; c.strokeStyle = p.c; c.lineCap = 'round';
     c.globalAlpha = 0.25; c.lineWidth = 5; c.beginPath(); c.moveTo(x - Math.cos(a) * 26, y - Math.sin(a) * 26); c.lineTo(x, y); c.stroke();
     c.globalAlpha = 1; c.lineWidth = 1.8; c.beginPath(); c.moveTo(x - Math.cos(a) * 13, y - Math.sin(a) * 13); c.lineTo(x, y); c.stroke();
-    blob(c, p.c, x, y, 7, 7, 0.9); c.globalAlpha = 1;
+    blob(c, p.c, x, y, p.big ? 14 : 7, p.big ? 14 : 7, 0.9); if (p.big) { c.globalAlpha = 1; c.fillStyle = '#fff'; c.beginPath(); c.arc(x, y, 3.5, 0, 7); c.fill(); } c.globalAlpha = 1;
   }
   // efek
   for (const f of G.fx) {
@@ -948,6 +1050,10 @@ function draw() {
       c.shadowColor = f.c; c.shadowBlur = 30; c.strokeStyle = f.c; c.lineWidth = 7; c.globalAlpha = Math.min(1, f.life);
       c.beginPath(); c.arc(f.x - f.dir * 30, GROUND - 50, 60, -1.1, 1.1); if (f.dir < 0) { c.beginPath(); c.arc(f.x + 30, GROUND - 50, 60, Math.PI - 1.1, Math.PI + 1.1); } c.stroke();
       c.lineWidth = 2; c.strokeStyle = '#fff'; c.stroke(); c.globalAlpha = 1;
+    } else if (f.k === 'beam') {
+      const k = f.life / f.max; c.globalCompositeOperation = 'lighter'; c.lineCap = 'round'; c.strokeStyle = f.c;
+      c.globalAlpha = k * 0.35; c.lineWidth = 14; c.beginPath(); c.moveTo(f.x1, f.y1); c.lineTo(f.x2, f.y2); c.stroke();
+      c.globalAlpha = k; c.lineWidth = 3; c.strokeStyle = '#fff'; c.stroke(); c.globalCompositeOperation = 'source-over'; c.globalAlpha = 1;
     } else if (f.k === 'ring') {
       const k = 1 - f.life / f.max; c.shadowBlur = 0;
       blob(c, f.c, f.x, f.y, 10 + k * 8, 10 + k * 8, (1 - k) * 0.8);
@@ -1027,7 +1133,7 @@ function endBattle(win) {
 $('pauseBtn').onclick = () => {
   if (!G || G.over) return; G.paused = true;
   const P = G.sides[0], cs = CARDS.filter(c => P.cards.has(c.id)).map(c => c.ic + ' ' + c.t).join('<br>');
-  modal('PAUSE', `<b style="color:${P.t.c}">Pasif:</b> ${PASSIVE[P.t.id]}<br><b style="color:${P.t.c}">Skill:</b> ${SKILL[P.t.id][0]}: ${SKILL[P.t.id][1]}${cs ? '<br><br><b>Kad aktif:</b><br>' + cs : ''}`, [['Sambung', () => { G.paused = false; }], [muted ? '🔇 Bunyi: OFF' : '🔊 Bunyi: ON', () => { muted = !muted; G.paused = false; }, 1],
+  modal('PAUSE', `<b style="color:${P.t.c}">Pasif:</b> ${PASSIVE[P.t.id]}<br><b style="color:${P.t.c}">Skill:</b> ${SKILL[P.t.id][0]}: ${SKILL[P.t.id][1]}<br><b style="color:${P.t.c}">Istimewa:</b> ${ELITE[P.t.id].name}: ${ELITE[P.t.id].desc}${cs ? '<br><br><b>Kad aktif:</b><br>' + cs : ''}`, [['Sambung', () => { G.paused = false; }], [muted ? '🔇 Bunyi: OFF' : '🔊 Bunyi: ON', () => { muted = !muted; G.paused = false; }, 1],
     ['Menyerah', () => { G.paused = false; endBattle(false); }, 1]]);
 };
 $('speedBtn').onclick = () => { if (!G) return; G.speed = G.speed === 1 ? 2 : G.speed === 2 ? 3 : 1; $('speedBtn').textContent = G.speed + 'x'; };
