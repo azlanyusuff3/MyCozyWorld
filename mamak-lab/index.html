@@ -39,7 +39,7 @@ canvas{display:block;width:100vw;height:100vh}
 <body>
 <canvas id="c"></canvas>
 <div class="hud"><div class="pill" id="money">RM 0.00</div><div class="pill light" id="clock">6:00 am</div><div class="pill light" id="rate">♥ 5.0</div></div>
-<div class="tag">Mamak Lab v0.2 · tap 💬 untuk masak</div>
+<div class="tag">Mamak Lab v0.2.1 · tap 💬 untuk masak</div>
 <div class="cook" id="cook"><h3><span id="ckTitle">Roti Canai</span><span class="timer" id="ckTime">0.0s</span><button id="ckX">✕</button></h3><div class="steps" id="ckSteps"></div><div class="opts" id="ckOpts"></div><div class="tarik" id="ckTarik"><div class="bar"><div class="zone" id="ckZone"></div><div class="needle" id="ckNeedle"></div></div><button id="ckTarikBtn">TARIK! 〰️</button></div></div>
 <script>
 // ===== Mamak Lab v0.1 — prototaip isometric (belum link ke Mamak Rush) =====
@@ -86,7 +86,7 @@ function update(dt){
       const dx=w.x-p.x,dy=w.y-p.y,d=Math.hypot(dx,dy),sp=2.2*dt;
       if(d<sp){p.x=w.x;p.y=w.y;p.path.shift()}else{p.x+=dx/d*sp;p.y+=dy/d*sp}
       p.t+=dt;
-    }else if(p.st==='wait'){if(p.serving)continue;p.t+=dt;p.pat=Math.max(0,1-p.t/25);if(p.pat<=0){leave(p,false)}}
+    }else if(p.st==='wait'){if(p.serving)continue;p.t+=dt;p.pat=Math.max(0,1-p.t/45);if(p.pat<=0){leave(p,false)}}
     else if(p.st==='eat'){p.t+=dt;if(p.t>6){pay(p);leave(p,true)}}
   }
   for(const f of [...floaters]){f.t+=dt;if(f.t>1.4)floaters.splice(floaters.indexOf(f),1)}
@@ -181,7 +181,9 @@ cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',e=>ptr.d
 cv.addEventListener('wheel',e=>{e.preventDefault();cam.z=Math.min(2.5,Math.max(.5,cam.z*(e.deltaY<0?1.1:.9)))},{passive:false});
 function tap(sx,sy){if(ck)return;
   const wx=(sx-W/2)/cam.z-cam.x,wy=(sy-H/2+80*cam.z)/cam.z-cam.y;
-  let best=null,bd=40;for(const p of people){if(p.st!=='wait')continue;const s=iso(p.x+.5,p.y+.5);const d=Math.hypot(s.x-wx,s.y-40-wy);if(d<bd){bd=d;best=p}}
+  let best=null,bd=1e9;for(const p of people){if(p.st!=='wait')continue;const s=iso(p.x+.5,p.y+.5);
+    // kawasan tap besar: dari kaki sampai bubble
+    const dx=Math.abs(s.x-wx),top=s.y-90,bot=s.y+8;if(dx<28&&wy>top&&wy<bot){const d=dx+Math.abs(s.y-45-wy);if(d<bd){bd=d;best=p}}}
   if(best&&!ck)openCook(best)
 }
 
@@ -215,11 +217,11 @@ function cookTick(dt){if(!ck)return;ck.t+=dt;$('ckTime').textContent=ck.t.toFixe
 let AC=null;function beep(f){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();const o=AC.createOscillator(),g=AC.createGain();o.frequency.value=f;o.type='triangle';g.gain.setValueAtTime(.15,AC.currentTime);g.gain.exponentialRampToValueAtTime(.001,AC.currentTime+.15);o.connect(g).connect(AC.destination);o.start();o.stop(AC.currentTime+.15)}catch(e){}}
 
 // ---------- loop ----------
-let last=performance.now(),spawnT=1;
+let last=performance.now(),spawnT=1;const MAXQ=3; // maksimum customer menunggu serentak
 function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;
   gameMin=(gameMin+dt*MIN_PER_SEC)%(24*60);
   const h=gameMin/60;const busy=(h>=7&&h<10)||(h>=12&&h<14)||(h>=20||h<1)?.6:1.6;
-  spawnT-=dt;if(spawnT<=0){spawn();spawnT=busy*(1.5+Math.random()*2)}
+  spawnT-=dt;if(spawnT<=0){const waiting=people.filter(p=>p.st==='wait'||p.st==='walk').length;if(waiting<MAXQ)spawn();spawnT=busy*(5+Math.random()*4)}
   update(dt);cookTick(dt);draw();
   document.getElementById('money').textContent='RM '+money.toFixed(2);
   const hh=Math.floor(h),mm=Math.floor(gameMin%60);document.getElementById('clock').textContent=`${(hh%12)||12}:${String(mm).padStart(2,'0')} ${hh<12?'am':'pm'}`;
