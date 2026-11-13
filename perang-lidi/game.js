@@ -28,10 +28,10 @@ const UNITS = {
 const UNIT_KEYS = Object.keys(UNITS);
 // askar istimewa setiap puak (unit ke-5)
 const ELITE = {
-  api:      { name: 'Penyembur Api',  cost: 110, hp: 230, dmg: 5,  range: 70,  rate: 0.25, spd: 30, armor: 0.1,  size: 1.45, mech: 'flame',   wpn: 'obor',    melee: true, desc: 'Sembur api kena semua musuh di depan' },
+  api:      { name: 'Naga Api',       cost: 110, hp: 230, dmg: 5,  range: 75,  rate: 0.25, spd: 34, armor: 0.1,  size: 1.45, mech: 'flame',   shape: 'naga',  melee: true, desc: 'Naga terbang, sembur api kena semua musuh di depan' },
   bulan:    { name: 'Pemanah Bulan',  cost: 120, hp: 150, dmg: 26, range: 280, rate: 2.2,  spd: 32, armor: 0,    size: 1.35, mech: 'beam',    wpn: 'panah',   desc: 'Sinar bulan tembus semua musuh sebaris' },
-  besi:     { name: 'Robot Gergasi',  cost: 130, hp: 650, dmg: 30, range: 28,  rate: 1.6,  spd: 22, armor: 0.4,  size: 1.85, mech: 'punch',   wpn: 'tinju',   melee: true, desc: 'Tumbukan berat, tolak musuh ke belakang' },
-  hutan:    { name: 'Gergasi Pokok',  cost: 120, hp: 520, dmg: 20, range: 28,  rate: 1.5,  spd: 24, armor: 0.15, size: 1.75, mech: 'slam',    wpn: 'tinju',   melee: true, desc: 'Hentak tanah: pengsankan musuh, pulihkan kawan' },
+  besi:     { name: 'Robot Gergasi',  cost: 130, hp: 650, dmg: 30, range: 30,  rate: 1.6,  spd: 22, armor: 0.4,  size: 1.85, mech: 'punch',   shape: 'robot',   melee: true, desc: 'Tumbukan berat, tolak musuh ke belakang' },
+  hutan:    { name: 'Gergasi Pokok',  cost: 120, hp: 520, dmg: 20, range: 30,  rate: 1.5,  spd: 24, armor: 0.15, size: 1.75, mech: 'slam',    shape: 'pokok',   melee: true, desc: 'Hentak tanah: pengsankan musuh, pulihkan kawan' },
   pendekar: { name: 'Pahlawan Keris', cost: 110, hp: 260, dmg: 26, range: 22,  rate: 0.6,  spd: 50, armor: 0.1,  size: 1.35, mech: 'leap',    wpn: 'keris',   melee: true, desc: 'Lompat terus ke musuh, tikaman maut' },
   bunian:   { name: 'Penembak Ghaib', cost: 110, hp: 130, dmg: 30, range: 210, rate: 1.6,  spd: 36, armor: 0,    size: 1.3,  mech: 'stealth', wpn: 'panah',   desc: 'Halimunan, hanya nampak bila menembak' },
   ais:      { name: 'Penyihir Salji', cost: 115, hp: 170, dmg: 14, range: 190, rate: 1.8,  spd: 30, armor: 0,    size: 1.35, mech: 'iceball', wpn: 'tongkat', desc: 'Bola ais membeku sekumpulan musuh' },
@@ -161,7 +161,7 @@ function miniStick(tribe, type, w = 44, h = 50) {
   const c = document.createElement('canvas'), dpr = Math.min(2, devicePixelRatio || 1);
   c.width = w * dpr; c.height = h * dpr; c.style.width = w + 'px'; c.style.height = h + 'px';
   const x = c.getContext('2d'); x.scale(dpr, dpr);
-  const u = { side: 0, x: w / 2 - 3, y: 0, type, t: TRIBES.find(t => t.id === tribe), walk: 0.6, atk: 0, size: Math.min(UNITS[type].size, 1.15) * h / 78, hp: 1, maxHp: 1, stolen: false };
+  const u = { side: 0, x: w / 2 - 3, y: 0, type, t: TRIBES.find(t => t.id === tribe), walk: 0.6, atk: 0, size: (UNITS[type].shape ? (UNITS[type].shape === 'naga' ? 0.62 : 0.72) : Math.min(UNITS[type].size, 1.15)) * h / 78, hp: 1, maxHp: 1, stolen: false };
   drawStick(x, u, 0, h - 3 - GROUND, 1);
   return c;
 }
@@ -449,7 +449,8 @@ function update(dt) {
 function mech(u, U, tgt, dmg, me) {
   const fi = 1 - u.side, foes = G.units.filter(o => o.side === fi && o.hp > 0 && !o.hidden);
   const ahead = (o, r) => { const dx = (o.x - u.x) * u.dir; return dx > -12 && dx < r; };
-  const hx = u.x + u.dir * 20 * u.size, hy = GROUND + u.y - 38 * u.size;
+  const naga = U.shape === 'naga';
+  const hx = u.x + u.dir * (naga ? 30 : 20) * u.size, hy = GROUND + u.y - (naga ? 50 : 38) * u.size;
   switch (U.mech) {
     case 'flame':
       foes.forEach(o => { if (ahead(o, U.range + 4)) { damage(o, dmg, u, true); o.burn = 3; o.hitFlash = 0.08; } });
@@ -524,6 +525,8 @@ function kill(u) {
     ks.ult = Math.min(100, ks.ult + U.cost * 0.22);
     ks.kills++;
   }
+  if (U.shape) { G.shake = Math.max(G.shake, 6); snd('boom'); for (let i = 0; i < 40; i++) G.parts.push({ x: u.x + rnd(-20, 20) * u.size, y: GROUND + u.y - rnd(5, 55) * u.size, vx: rnd(-160, 160), vy: rnd(-220, -30), life: rnd(0.5, 1), c: pick([u.t.c, '#ffffff', u.t.g]), r: rnd(2, 4) });
+    G.fx.push({ k: 'ring', x: u.x, y: GROUND + u.y - 30 * u.size, c: u.t.c, life: 0.4, max: 0.4 }); return; }
   if (u.clone) { for (let i = 0; i < 10; i++) G.parts.push({ x: u.x, y: GROUND + u.y - rnd(0, 50), vx: rnd(-40, 40), vy: rnd(-80, -10), life: 0.5, c: u.t.c, r: 2 }); return; }
   if (!U.elite && Math.random() < 0.55) G.drops.push({ x: u.x, y: u.y, type: u.type, life: 9, c: u.t.c, rot: rnd(-0.4, 0.4) });
   const j = pose(u, 0, 0), dir = u.lastHitDir || -u.dir, pow = u.type === 'gergaji' ? 1.3 : 1;
@@ -824,7 +827,107 @@ function slash(c, s, atk) {
   for (let i = 0; i < 3; i++) { c.globalAlpha = ga * atk * (0.45 - i * 0.12); c.lineWidth = (9 - i * 3) * s; c.beginPath(); c.arc(0, 0, (24 - i * 3) * s, -1.6 + i * 0.2, 0.25); c.stroke(); }
   c.globalCompositeOperation = 'source-over'; c.globalAlpha = ga;
 }
+function neon(c, col, w, alpha) {
+  c.globalAlpha = alpha * 0.2; c.lineWidth = w * 3; c.stroke();
+  c.globalAlpha = alpha; c.lineWidth = w; c.stroke();
+  c.globalAlpha = alpha * 0.7; const sc = c.strokeStyle; c.strokeStyle = '#ffffff'; c.lineWidth = w * 0.35; c.stroke(); c.strokeStyle = sc; c.globalAlpha = alpha;
+}
+function drawShape(c, u, ox, oy, alpha) {
+  const sh = UNITS[u.type] && UNITS[u.type].shape; if (!sh) return false;
+  const k = u.size, d = u.dir ?? (u.side ? -1 : 1), x = u.x + (ox || 0), gy = GROUND + (u.y || 0) + (oy || 0);
+  const T = G ? G.t : performance.now() / 1000, col = u.hitFlash > 0 ? '#ffffff' : u.t.c, a = u.atk || 0;
+  const moving = a <= 0.01, w = u.walk || 0;
+  c.lineCap = 'round'; c.lineJoin = 'round'; c.strokeStyle = col; c.fillStyle = '#07060f';
+  if (sh === 'naga') {
+    const bob = Math.sin(T * 5 + (u.id || 0) * 9) * 3 * k, by = gy - 40 * k + bob, flap = Math.sin(T * 9 + (u.id || 0) * 5);
+    blob(c, u.t.g, x, gy, 18 * k, 4 * k, alpha * 0.4); c.globalAlpha = alpha; // bayang di tanah
+    // ekor
+    c.beginPath(); c.moveTo(x - d * 10 * k, by);
+    for (let i = 1; i <= 6; i++) c.lineTo(x - d * (10 + i * 4) * k, by + Math.sin(T * 6 - i * 0.9) * 3 * k + i * 1.2 * k);
+    neon(c, col, 2.6 * k, alpha);
+    c.beginPath(); const tx = x - d * 34 * k, ty = by + Math.sin(T * 6 - 5.4) * 3 * k + 7 * k; c.moveTo(tx, ty); c.lineTo(tx - d * 4 * k, ty - 4 * k); c.lineTo(tx - d * 2 * k, ty + 3 * k); c.closePath(); neon(c, col, 1.6 * k, alpha);
+    // sayap belakang
+    const wing = (side) => { const sx = x - d * 1 * k, sy = by - 5 * k, f = flap * side, tx = x - d * 9 * k, ty = sy - (15 + f * 9) * k;
+      const f1x = x - d * 19 * k, f1y = ty + (7 + f * 3) * k, f2x = x - d * 21 * k, f2y = sy - 1 * k;
+      c.beginPath(); c.moveTo(sx, sy); c.lineTo(tx, ty);
+      c.quadraticCurveTo(x - d * 15 * k, ty + 1 * k, f1x, f1y);
+      c.quadraticCurveTo(x - d * 16 * k, f1y + 3 * k, f2x, f2y);
+      c.quadraticCurveTo(x - d * 13 * k, sy + 1 * k, x - d * 7 * k, sy + 2 * k);
+      c.closePath();
+      c.moveTo(tx, ty); c.lineTo(f1x, f1y); c.moveTo(tx, ty); c.lineTo(f2x, f2y); };
+    wing(-1); c.globalAlpha = alpha * 0.15; c.fillStyle = col; c.fill(); neon(c, col, 1.4 * k, alpha * 0.6);
+    // badan
+    c.fillStyle = '#07060f'; c.beginPath(); c.ellipse(x, by, 13 * k, 7 * k, d * 0.15, 0, 7); c.fill(); neon(c, col, 2.4 * k, alpha);
+    // perut berjalur
+    c.beginPath(); for (let i = -2; i <= 2; i++) { c.moveTo(x + i * 4 * k, by + 2 * k); c.lineTo(x + i * 4 * k + d * 1 * k, by + 6 * k); } neon(c, col, 0.9 * k, alpha * 0.8);
+    // kaki kecil
+    c.beginPath(); c.moveTo(x - d * 5 * k, by + 6 * k); c.lineTo(x - d * 6 * k, by + 12 * k); c.moveTo(x + d * 6 * k, by + 6 * k); c.lineTo(x + d * 7 * k, by + 12 * k); neon(c, col, 1.6 * k, alpha);
+    // leher & kepala
+    const hx = x + d * 22 * k, hy = by - 8 * k - a * 2 * k;
+    c.beginPath(); c.moveTo(x + d * 9 * k, by - 3 * k); c.quadraticCurveTo(x + d * 16 * k, by - 12 * k, hx - d * 3 * k, hy); neon(c, col, 3 * k, alpha);
+    c.fillStyle = '#07060f'; c.beginPath(); c.moveTo(hx - d * 5 * k, hy - 4 * k); c.lineTo(hx + d * 7 * k, hy - 2 * k); c.lineTo(hx + d * 9 * k, hy + (1 + a * 3) * k); c.lineTo(hx + d * 2 * k, hy + 1 * k); c.lineTo(hx + d * 8 * k, hy + (3 + a * 4) * k); c.lineTo(hx - d * 4 * k, hy + 4 * k); c.closePath(); c.fill(); neon(c, col, 1.8 * k, alpha);
+    // tanduk
+    c.beginPath(); c.moveTo(hx - d * 3 * k, hy - 3 * k); c.lineTo(hx - d * 9 * k, hy - 9 * k); c.moveTo(hx, hy - 4 * k); c.lineTo(hx - d * 4 * k, hy - 10 * k); neon(c, col, 1.4 * k, alpha);
+    // mata
+    c.globalAlpha = alpha; c.fillStyle = '#fff'; c.beginPath(); c.arc(hx + d * 2 * k, hy - 1 * k, 1.3 * k, 0, 7); c.fill(); blob(c, col, hx + d * 2 * k, hy - 1 * k, 4 * k, 4 * k, alpha * 0.9);
+    if (a > 0) blob(c, '#ffb347', hx + d * 9 * k, hy + 2 * k, 8 * k, 6 * k, alpha * a);
+    // sayap depan
+    c.globalAlpha = alpha; wing(1); c.globalAlpha = alpha * 0.2; c.fillStyle = col; c.fill(); neon(c, col, 1.6 * k, alpha);
+  } else if (sh === 'robot') {
+    const sw = moving ? Math.sin(w) : 0, bob = moving ? Math.abs(Math.cos(w)) * 1.5 * k : 0;
+    const hipY = gy - 17 * k - bob;
+    // kaki tebal
+    c.beginPath(); c.moveTo(x - 4 * k, hipY); c.lineTo(x - 4 * k + sw * 6 * k * d, gy - 2 * k); c.moveTo(x + 4 * k, hipY); c.lineTo(x + 4 * k - sw * 6 * k * d, gy - 2 * k); neon(c, col, 4 * k, alpha);
+    c.beginPath(); c.moveTo(x - 9 * k + sw * 6 * k * d, gy); c.lineTo(x + 1 * k + sw * 6 * k * d, gy); c.moveTo(x - 1 * k - sw * 6 * k * d, gy); c.lineTo(x + 9 * k - sw * 6 * k * d, gy); neon(c, col, 2.2 * k, alpha);
+    // lengan belakang
+    c.beginPath(); c.moveTo(x - d * 9 * k, hipY - 18 * k); c.lineTo(x - d * (12 + sw * 3) * k, hipY - 6 * k); neon(c, col, 3.4 * k, alpha * 0.8);
+    // badan kotak
+    c.fillStyle = '#0a1020'; c.globalAlpha = alpha; c.beginPath(); c.rect(x - 11 * k, hipY - 24 * k, 22 * k, 24 * k); c.fill(); neon(c, col, 2.2 * k, alpha);
+    c.beginPath(); c.rect(x - 6 * k, hipY - 18 * k, 12 * k, 8 * k); neon(c, col, 1 * k, alpha * 0.8);
+    blob(c, col, x, hipY - 14 * k, 6 * k, 6 * k, alpha * (0.6 + 0.4 * Math.sin(T * 4))); c.globalAlpha = alpha;
+    c.beginPath(); for (let i = -1; i <= 1; i++) { c.moveTo(x + i * 6 * k, hipY - 6 * k); c.lineTo(x + i * 6 * k, hipY - 3 * k); } neon(c, col, 1 * k, alpha);
+    // kepala & visor
+    const hy = hipY - 34 * k;
+    c.fillStyle = '#0a1020'; c.beginPath(); c.rect(x - 7 * k, hy, 14 * k, 10 * k); c.fill(); neon(c, col, 2 * k, alpha);
+    c.beginPath(); c.moveTo(x, hy); c.lineTo(x, hy - 5 * k); neon(c, col, 1.2 * k, alpha); blob(c, '#ff4d4d', x, hy - 6 * k, 3 * k, 3 * k, alpha * (Math.sin(T * 6) > 0 ? 1 : 0.3)); c.globalAlpha = alpha;
+    c.fillStyle = '#fff'; c.fillRect(x + d * 0.5 * k - (d < 0 ? 6 * k : 0), hy + 3.5 * k, 6 * k, 2.2 * k); blob(c, col, x + d * 3.5 * k, hy + 4.5 * k, 7 * k, 4 * k, alpha);
+    // lengan depan & penumbuk
+    const sx = x + d * 10 * k, sy = hipY - 20 * k, reach = a > 0 ? (a > 0.5 ? (1 - a) * 2 : a * 2) : 0;
+    const fx = sx + d * (8 + reach * 18) * k, fy = sy + (10 - reach * 6) * k;
+    c.beginPath(); c.moveTo(sx, sy); c.lineTo(fx, fy); neon(c, col, 3.6 * k, alpha);
+    c.fillStyle = '#0a1020'; c.globalAlpha = alpha; c.beginPath(); c.rect(fx - 4 * k, fy - 4 * k, 8 * k, 8 * k); c.fill(); neon(c, col, 2 * k, alpha);
+    if (reach > 0.6) blob(c, '#ffffff', fx + d * 4 * k, fy, 10 * k, 10 * k, alpha * 0.6);
+  } else if (sh === 'pokok') {
+    const sw = moving ? Math.sin(w) : 0, sway = Math.sin(T * 1.6 + (u.id || 0) * 7) * 1.5 * k;
+    const baseY = gy - 6 * k, topY = gy - 46 * k;
+    // akar-kaki
+    c.beginPath(); c.moveTo(x - 3 * k, baseY); c.quadraticCurveTo(x - 7 * k + sw * 4 * k * d, gy - 2 * k, x - 10 * k + sw * 6 * k * d, gy); c.moveTo(x + 3 * k, baseY); c.quadraticCurveTo(x + 7 * k - sw * 4 * k * d, gy - 2 * k, x + 10 * k - sw * 6 * k * d, gy);
+    c.moveTo(x, baseY); c.lineTo(x + d * 2 * k, gy); neon(c, col, 2.6 * k, alpha);
+    // batang
+    c.fillStyle = '#081208'; c.globalAlpha = alpha; c.beginPath(); c.moveTo(x - 7 * k, baseY); c.lineTo(x - 5 * k + sway, topY + 6 * k); c.lineTo(x + 5 * k + sway, topY + 6 * k); c.lineTo(x + 7 * k, baseY); c.closePath(); c.fill(); neon(c, col, 2.4 * k, alpha);
+    c.beginPath(); c.moveTo(x - 2 * k, baseY - 4 * k); c.lineTo(x - 1 * k + sway * 0.5, topY + 16 * k); c.moveTo(x + 3 * k, baseY - 10 * k); c.lineTo(x + 2 * k + sway * 0.5, topY + 22 * k); neon(c, col, 0.8 * k, alpha * 0.6);
+    // muka di batang
+    const fy = topY + 25 * k; c.fillStyle = '#fff'; c.globalAlpha = alpha;
+    c.beginPath(); c.arc(x + d * 1 * k + sway * 0.6, fy, 1.4 * k, 0, 7); c.arc(x + d * 4.5 * k + sway * 0.6, fy, 1.4 * k, 0, 7); c.fill();
+    blob(c, col, x + d * 3 * k + sway * 0.6, fy, 6 * k, 4 * k, alpha); c.globalAlpha = alpha;
+    c.beginPath(); c.moveTo(x + d * 0.5 * k + sway * 0.6, fy + 5 * k); c.quadraticCurveTo(x + d * 3 * k + sway * 0.6, fy + 7 * k, x + d * 5.5 * k + sway * 0.6, fy + 5 * k); neon(c, col, 0.9 * k, alpha);
+    // dahan-tangan (depan hentak bila serang)
+    const sY = topY + 31 * k, slam = a > 0 ? a : 0;
+    c.beginPath(); c.moveTo(x - d * 5 * k, sY); c.lineTo(x - d * 14 * k, sY - 8 * k + sw * 2 * k); c.lineTo(x - d * 18 * k, sY - 14 * k); c.moveTo(x - d * 14 * k, sY - 8 * k); c.lineTo(x - d * 19 * k, sY - 6 * k); neon(c, col, 2.2 * k, alpha * 0.85);
+    const ex = x + d * 16 * k, ey = sY - 16 * k + slam * 26 * k;
+    c.beginPath(); c.moveTo(x + d * 5 * k, sY); c.quadraticCurveTo(x + d * 12 * k, sY - 6 * k, ex, ey); c.moveTo(ex, ey); c.lineTo(ex + d * 4 * k, ey - 3 * k); c.moveTo(ex, ey); c.lineTo(ex + d * 3 * k, ey + 3 * k); neon(c, col, 2.6 * k, alpha);
+    // daun / kanopi
+    const cy = topY + 2 * k;
+    [[-9, 2, 9], [8, 3, 9], [0, -5, 11], [-3, 6, 7], [5, 7, 7]].forEach(([dx, dy, r], i) => {
+      c.fillStyle = '#081208'; c.globalAlpha = alpha; c.beginPath(); c.arc(x + dx * k + sway * 1.3, cy + dy * k + Math.sin(T * 2 + i) * 0.6 * k, r * k, 0, 7); c.fill(); neon(c, col, 1.6 * k, alpha * 0.85); });
+    blob(c, u.t.c, x + sway, cy, 22 * k, 16 * k, alpha * 0.25);
+    c.globalAlpha = alpha; c.fillStyle = '#ffd36b'; [[-6, -2], [7, 4], [1, -9]].forEach(([dx, dy], i) => { if (Math.sin(T * 2 + i * 2) > 0.2) { c.beginPath(); c.arc(x + dx * k + sway * 1.3, cy + dy * k, 1.2 * k, 0, 7); c.fill(); } });
+  }
+  c.globalAlpha = 1;
+  return true;
+}
 function drawStick(c, u, ox, oy, alpha) {
+  if (drawShape(c, u, ox, oy, alpha)) return;
   const j = pose(u, ox, oy), s = u.size, d = u.dir ?? (u.side ? -1 : 1);
   const col = u.hitFlash > 0 ? '#ffffff' : u.t.c;
   c.lineCap = 'round'; c.lineJoin = 'round'; c.strokeStyle = col;
@@ -1162,6 +1265,6 @@ function loop(now) {
   requestAnimationFrame(loop);
 }
 buildTribeGrid();
-window.__pl = () => G;
+window.__pl = () => G; window.__mini = miniStick;
 requestAnimationFrame(loop);
 })();
