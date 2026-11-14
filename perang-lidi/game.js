@@ -997,7 +997,7 @@ const WALK_RIG = {
   robot: { pre: 'robot', bodyH: 36, legH: 22, armH: 30, hip: [0.52, 0.9], hipGap: 0.18, shoulder: [0.84, 0.5], backShoulder: [0.14, 0.5],
            legPivot: [0.5, 0.05], armPivot: [0.5, 0.06], legSwing: 0.45, armSwing: 0.3, attack: 'punch' },
   pokok: { pre: 'pokok', bodyH: 48, legH: 17, armH: 32, hip: [0.49, 0.96], hipGap: 0.12, shoulder: [0.72, 0.52], backShoulder: [0.27, 0.52],
-           legPivot: [0.5, 0.05], armPivot: [0.5, 0.05], legSwing: 0.35, armSwing: 0.22, attack: 'slam' },
+           legPivot: [0.5, 0.05], armPivot: [0.5, 0.05], legSwing: 0.35, armSwing: 0.22, attack: 'slam', flipArm: true },
 };
 function drawWalkRig(c, u, ox, oy, alpha, R) {
   const body = (u.atk > 0.05 && img(R.pre + '_badan_serang')) || img(R.pre + '_badan'), arm = img(R.pre + (R.pre === 'pokok' ? '_dahan' : '_lengan')), leg = img(R.pre + (R.pre === 'pokok' ? '_akar' : '_kaki'));
@@ -1010,25 +1010,25 @@ function drawWalkRig(c, u, ox, oy, alpha, R) {
   let armA;
   if (a > 0) {
     if (R.attack === 'punch') { const r = a > 0.5 ? (1 - a) * 2 : a * 2; armA = -0.2 - r * 1.35; }
-    else { armA = a > 0.55 ? -2.7 * ((1 - a) / 0.45) : -2.7 + (0.55 - a) / 0.55 * 3.2; }   // angkat tinggi, hentak ke bawah
-  } else armA = step * R.armSwing;
+    else { armA = a > 0.55 ? -0.3 - 2.4 * ((1 - a) / 0.45) : -2.7 + (0.55 - a) / 0.55 * 2.2; }   // angkat tinggi, hentak ke depan-bawah
+  } else armA = -0.25 - step * R.armSwing;   // berayun bertentangan dengan kaki, sedikit ke depan
   const lean = a > 0 ? Math.sin(a * Math.PI) * 0.07 : 0;
   blob(c, u.t.g, x, gy, BW * 0.5, 5 * k, alpha * 0.55);
   c.save(); c.globalAlpha = alpha; c.translate(x, gy - LH * 0.94 + bob); c.scale(d, 1); c.rotate(lean);
   c.shadowBlur = 14; c.shadowColor = u.hitFlash > 0 ? '#ffffff' : u.t.g;
   const flash = u.hitFlash > 0 ? 'brightness(2.2) ' : '';
   const bx = -R.hip[0] * BW, by = -R.hip[1] * BH;                     // (0,0) = pinggul
-  const limb = (im, W2, H2, piv, px, py, ang, dark) => {
-    c.save(); c.translate(px, py); c.rotate(ang);
+  const limb = (im, W2, H2, piv, px, py, ang, dark, flip) => {
+    c.save(); c.translate(px, py); c.rotate(ang); if (flip) c.scale(-1, 1);
     c.filter = flash + (dark ? 'brightness(0.55)' : '') || 'none';
     c.drawImage(im, -piv[0] * W2, -piv[1] * H2, W2, H2); c.restore(); c.filter = flash || 'none';
   };
   const gap = R.hipGap * BW;
-  limb(arm, AW, AH, R.armPivot, bx + R.backShoulder[0] * BW, by + R.backShoulder[1] * BH, -step * R.armSwing, true);   // lengan belakang
+  limb(arm, AW, AH, R.armPivot, bx + R.backShoulder[0] * BW, by + R.backShoulder[1] * BH, -0.1 + step * R.armSwing, true, R.flipArm);   // lengan belakang
   limb(leg, LW, LH, R.legPivot, -gap, 0, -step * R.legSwing, true);                                                  // kaki belakang
   c.filter = flash || 'none'; c.drawImage(body, bx, by, BW, BH);
   limb(leg, LW, LH, R.legPivot, gap, 0, step * R.legSwing, false);                                                   // kaki depan
-  limb(arm, AW, AH, R.armPivot, bx + R.shoulder[0] * BW, by + R.shoulder[1] * BH, armA, false);                      // lengan depan
+  limb(arm, AW, AH, R.armPivot, bx + R.shoulder[0] * BW, by + R.shoulder[1] * BH, armA, false, R.flipArm);                      // lengan depan
   c.restore(); c.filter = 'none'; c.shadowBlur = 0; c.globalAlpha = 1;
   // efek: percikan tumbukan / gegaran hentakan
   if (G && a > 0.4 && a < 0.6 && Math.random() < 0.5) {
