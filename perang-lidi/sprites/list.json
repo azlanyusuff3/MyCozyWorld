@@ -73,5 +73,9 @@
   "elite_hutan",
   "naga_badan",
   "naga_badan_serang",
-  "naga_sayap"
+  "naga_sayap",
+  "robot_badan",
+  "robot_badan_serang",
+  "robot_lengan",
+  "robot_kaki"
 ]
