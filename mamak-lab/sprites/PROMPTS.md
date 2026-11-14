@@ -50,3 +50,20 @@ Tambahan gaya: *cute chibi Malaysian person, full body standing, big round head,
 | `iso_pokok.webp` | 256×384 | A leafy money plant in a terracotta pot, isometric |
 
 Belum ada dalam game (kaunter, dinding, papan tanda masih dilukis guna code). Kita tambah selepas Batch 1–3 nampak ngam.
+
+## Batch 4 — Dinding, kaunter, papan tanda & stesen
+Dua jenis gambar dalam batch ni:
+- **RATA (pandang depan, BUKAN isometric)**: game akan condongkan sendiri ikut dinding. Lukis lurus macam scan/foto depan.
+- **ISO**: sudut isometric sama macam Batch 1.
+
+| Fail | Jenis | Saiz | Background | Prompt tambahan |
+|---|---|---|---|---|
+| `wall_jubin.webp` | RATA | 256×256 | **penuh** | Seamless repeating texture of small mint-green square ceramic wall tiles with thin white grout, flat front view, tileable on all edges, no shading gradient |
+| `kaunter_depan.webp` | RATA | 512×128 | **penuh** | Seamless repeating front panel of a mamak shop counter: brushed stainless steel with a strip of teal tiles at the bottom, flat front view, tileable left-right |
+| `papan_tanda.webp` | RATA | 1024×256 | transparent | A blank wide dark-teal shop signboard with a cream border and small warm light bulbs along the edge, flat front view, **completely empty, no text** (game letak tulisan sendiri) |
+| `menu_board.webp` | RATA | 384×256 | transparent | A wooden-framed blackboard menu with small chalk doodles of roti canai, teh tarik cup and nasi lemak, flat front view, no words |
+| `deko_jam.webp` | RATA | 256×256 | transparent | A round vintage wall clock with a cream face and red rim, flat front view, no numbers text needed (simple tick marks) |
+| `deko_bingkai.webp` | RATA | 256×320 | transparent | A small framed painting of a Malaysian kampung house with coconut trees, wooden frame, flat front view |
+| `deko_bingkai2.webp` | RATA | 256×320 | transparent | A small framed retro photo of a smiling mamak tea maker pulling teh tarik (cartoon style), wooden frame, flat front view |
+| `iso_tawa.webp` | ISO | 256×256 | transparent | A flat iron griddle (tawa) station on a small stand with one golden roti canai cooking on it, isometric |
+| `iso_dandang.webp` | ISO | 256×384 | transparent | A tall shiny stainless steel tea urn with a tap at the bottom and two steel pitchers beside it, isometric |

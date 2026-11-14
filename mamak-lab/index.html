@@ -155,6 +155,10 @@ function darkness(){const h=gameMin/60%24;if(h>=7&&h<18)return 0;if(h>=20||h<5)r
 const SPR={};fetch('sprites/list.json').then(r=>r.ok?r.json():[]).catch(()=>[]).then(l=>l.forEach(n=>{const i=new Image();i.onload=()=>SPR[n]=i;i.src='sprites/'+n+'.webp'}));
 function spr(k){return SPR[k]}
 function drawSpr(k,x,y,w){const i=SPR[k];const h=w*i.height/i.width;cx.drawImage(i,x-w/2,y-h,w,h)}
+// gambar rata (pandang depan) dicondongkan ikut dinding. dir=+1 dinding belakang-kanan (paksi gx), -1 dinding kiri (paksi gy)
+function onWall(dir,ax,ay,fn){cx.save();cx.translate(ax,ay);cx.transform(1,dir*.5,0,1,0,0);fn();cx.restore()}
+function wallTiles(k,dir,ax,ay,len,h,ts){onWall(dir,ax,ay,()=>{cx.beginPath();cx.rect(0,-h,len,h);cx.clip();const i=SPR[k];for(let u=0;u<len;u+=ts)for(let v=0;v<h;v+=ts)cx.drawImage(i,u,-v-ts,ts,ts)})}
+function wallImg(k,dir,ax,ay,u,hb,w){const i=SPR[k];const h=w*i.height/i.width;onWall(dir,ax,ay,()=>cx.drawImage(i,u-w/2,-hb-h,w,h))}
 function personSprite(p,cook,k){const sit=p.st==='wait'||p.st==='eat';const s=iso(p.x+.5,p.y+.5);const bob=(!sit&&!cook)?Math.abs(Math.sin(p.t*9))*2:0;
   cx.fillStyle='#0003';cx.beginPath();cx.ellipse(s.x,s.y,10,4,0,0,7);cx.fill();drawSpr(k,s.x,s.y-bob-(sit?9:0),sit?44:46);bubbles(p,s,s.y-(sit?10:0)-bob)}
 
@@ -208,17 +212,23 @@ function draw(){
   // lantai jubin
   for(let gx=0;gx<GX;gx++)for(let gy=0;gy<GY;gy++){if(spr('iso_lantai')){tile(gx,gy,'#fbeedb');const c=iso(gx+.5,gy+1);cx.globalAlpha=.45;drawSpr('iso_lantai',c.x,c.y,TW);cx.globalAlpha=1}else tile(gx,gy,(gx+gy)%2?'#f6e3c9':'#fbeedb','#e9cfae')}
   // dinding belakang
+  if(spr('wall_jubin')){const A=iso(0,0),Bq=iso(GX,0),C=iso(0,GY);
+    poly([A,Bq,{x:Bq.x,y:Bq.y-70},{x:A.x,y:A.y-70}],'#fbe7d6');poly([C,A,{x:A.x,y:A.y-70},{x:C.x,y:C.y-70}],'#f6dccb');
+    wallTiles('wall_jubin',1,A.x,A.y,GX*TW/2,34,17);wallTiles('wall_jubin',-1,C.x,C.y,GY*TW/2,34,17);
+    poly([C,A,{x:A.x,y:A.y-34},{x:C.x,y:C.y-34}],'#0000001a');
+    [[1,A,1.6*TW/2,44,22,'deko_jam'],[1,A,8.6*TW/2,26,46,'menu_board'],[-1,C,(GY-2.2)*TW/2,32,30,'deko_bingkai'],[-1,C,(GY-6.3)*TW/2,30,30,'deko_bingkai2']].forEach(([d,P,u,hb,w,k])=>{if(spr(k))wallImg(k,d,P.x,P.y,u,hb,w)})}
+  else{
   for(let gx=0;gx<GX;gx++){const a=iso(gx,0),b=iso(gx+1,0);poly([a,b,{x:b.x,y:b.y-70},{x:a.x,y:a.y-70}],gx%2?'#f2c4b8':'#f5cdc2');poly([a,b,{x:b.x,y:b.y-22},{x:a.x,y:a.y-22}],'#e8a99a')}
-  for(let gy=0;gy<GY;gy++){const a=iso(0,gy),b=iso(0,gy+1);poly([a,b,{x:b.x,y:b.y-70},{x:a.x,y:a.y-70}],'#f8d9cf');poly([a,b,{x:b.x,y:b.y-22},{x:a.x,y:a.y-22}],'#efb8aa')}
+  for(let gy=0;gy<GY;gy++){const a=iso(0,gy),b=iso(0,gy+1);poly([a,b,{x:b.x,y:b.y-70},{x:a.x,y:a.y-70}],'#f8d9cf');poly([a,b,{x:b.x,y:b.y-22},{x:a.x,y:a.y-22}],'#efb8aa')}}
   // papan tanda
-  const s1=iso(3,0,74),s2=iso(8,0,74);poly([s1,s2,{x:s2.x,y:s2.y-24},{x:s1.x,y:s1.y-24}],'#145c57','#0d3f3b');
-  cx.save();cx.translate((s1.x+s2.x)/2,(s1.y+s2.y)/2-12);cx.transform(1,.5,0,1,0,0);cx.fillStyle='#ffe9a8';cx.font='15px "Lilita One"';cx.textAlign='center';cx.textBaseline='middle';cx.fillText('MAMAK LAB 24 JAM',0,0);cx.restore();
+  const s1=iso(3,0,74),s2=iso(8,0,74);if(spr('papan_tanda')){const A=iso(0,0);wallImg('papan_tanda',1,A.x,A.y,5.5*TW/2,70,5.6*TW/2)}else poly([s1,s2,{x:s2.x,y:s2.y-24},{x:s1.x,y:s1.y-24}],'#145c57','#0d3f3b');
+  cx.save();cx.translate((s1.x+s2.x)/2,(s1.y+s2.y)/2-12);cx.transform(1,.5,0,1,0,0);cx.fillStyle='#ffe9a8';cx.font='15px "Lilita One"';cx.textAlign='center';cx.textBaseline='middle';if(spr('papan_tanda')){cx.lineWidth=3;cx.strokeStyle='#0d3f3b';cx.strokeText('MAMAK LAB 24 JAM',0,-2)}cx.fillText('MAMAK LAB 24 JAM',0,spr('papan_tanda')?-2:0);cx.restore();
 
   // entiti ikut kedalaman
   const ents=[];
-  ents.push({d:6.2,f:()=>box(.5,1,GX-1,.6,14,'#2a8a7e')}); // kaunter
-  ents.push({d:6.3,f:()=>{const z=UP.tawa?.8:.5;box(1.3,1.05,z,.5,6,UP.tawa?'#555':'#888',14);const t=iso(1.3+z/2,1.3,22);cx.fillStyle='#ffd27a';cx.beginPath();cx.ellipse(t.x,t.y,10,5,0,0,7);cx.fill();if(UP.tawa){cx.beginPath();cx.ellipse(t.x+9,t.y+4,8,4,0,0,7);cx.fill()}}}); // tawa roti
-  ents.push({d:9.5,f:()=>{box(7.8,1.1,.4,.4,UP.teko?14:10,UP.teko?'#e6e6e6':'#c0c0c0',14)}}); // dandang teh
+  ents.push({d:6.2,f:()=>{box(.5,1,GX-1,.6,14,'#2a8a7e');if(spr('kaunter_depan')){const a=iso(.5,1.6);onWall(1,a.x,a.y,()=>{const i=SPR.kaunter_depan,L=(GX-1)*TW/2,ts=14*i.width/i.height;for(let u=0;u<L;u+=ts)cx.drawImage(i,u,-14,Math.min(ts,L-u),14)});const t=[iso(.5,1),iso(GX-.5,1),iso(GX-.5,1.6),iso(.5,1.6)].map(p=>({x:p.x,y:p.y-14}));poly(t,'#dfe5e8')}}}); // kaunter
+  ents.push({d:6.3,f:()=>{const z=UP.tawa?.8:.5;if(spr('iso_tawa')){const c=iso(1.3+z/2,1.55,14);drawSpr('iso_tawa',c.x,c.y,UP.tawa?40:30);return}box(1.3,1.05,z,.5,6,UP.tawa?'#555':'#888',14);const t=iso(1.3+z/2,1.3,22);cx.fillStyle='#ffd27a';cx.beginPath();cx.ellipse(t.x,t.y,10,5,0,0,7);cx.fill();if(UP.tawa){cx.beginPath();cx.ellipse(t.x+9,t.y+4,8,4,0,0,7);cx.fill()}}}); // tawa roti
+  ents.push({d:9.5,f:()=>{if(spr('iso_dandang')){const c=iso(8,1.5,14);drawSpr('iso_dandang',c.x,c.y,UP.teko?26:22)}else box(7.8,1.1,.4,.4,UP.teko?14:10,UP.teko?'#e6e6e6':'#c0c0c0',14)}}); // dandang teh
   TABLES.forEach(t=>{ents.push({d:t.x+t.y+1,f:()=>{if(spr('iso_meja')){const c=iso(t.x+.5,t.y+.95);drawSpr('iso_meja',c.x,c.y,62)}else box(t.x+.1,t.y+.1,.8,.8,13,'#fdfdfd')}})});
   SEATS.forEach(s=>ents.push({d:s.x+s.y+.9,f:()=>{if(spr('iso_kerusi')){const c=iso(s.x+.5,s.y+.8);drawSpr('iso_kerusi',c.x,c.y,30)}else box(s.x+.25,s.y+.25,.5,.5,7,'#e66a6a')}}));
   // upgrade dalam kedai
