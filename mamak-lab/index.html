@@ -38,7 +38,7 @@ canvas{display:block;width:100vw;height:100vh}
 .sheet .row button:disabled{background:#bbb;box-shadow:0 4px 0 #888}
 .toast{position:fixed;top:calc(104px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);background:#145c57;color:#fff;padding:8px 14px;border-radius:12px;font:15px "Lilita One";z-index:9;transition:opacity .4s}
 .evpill{background:#f0a030;color:#fff;border:3px solid #a86a10;border-radius:12px;padding:4px 10px;font:13px 'Lilita One';display:none;box-shadow:0 3px 0 #7a4c08}
-.tag{display:none;max-width:94vw;overflow:hidden;text-overflow:ellipsis;position:fixed;bottom:calc(10px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);background:#0009;color:#fff;font-size:11px;padding:5px 10px;border-radius:10px;pointer-events:none;white-space:nowrap}
+.tag{left:auto!important;right:8px;transform:none!important;top:calc(62px + env(safe-area-inset-top));bottom:auto!important;font-size:10px!important;padding:2px 7px!important;background:#0006!important;max-width:94vw;overflow:hidden;text-overflow:ellipsis;position:fixed;bottom:calc(10px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);background:#0009;color:#fff;font-size:11px;padding:5px 10px;border-radius:10px;pointer-events:none;white-space:nowrap}
 .cook{position:fixed;left:50%;bottom:calc(14px + env(safe-area-inset-bottom));z-index:6;transform:translateX(-50%) translateY(130%);width:min(94vw,420px);background:#fff8ec;border:4px solid #145c57;border-radius:22px;padding:12px;box-shadow:0 8px 0 #0d3f3b,0 18px 30px #0007;transition:transform .25s;z-index:5}
 .cook.on{transform:translateX(-50%) translateY(0)}
 .cook h3{margin:0 0 8px;font:normal 20px "Lilita One",sans-serif;color:#145c57;display:flex;justify-content:space-between;align-items:center}
@@ -72,7 +72,7 @@ canvas{display:block;width:100vw;height:100vh}
 <p style="font-size:11px;color:#8a7a62;margin:8px 0 0">Kau masak sendiri = dapat tip ⭐. Pelayan = kurang pressure.</p></div>
 <div class="sheet" id="regs"><h3>👥 Pelanggan Tetap <button id="rgX">✕</button></h3><div id="regList" style="display:flex;flex-direction:column;gap:6px;max-height:60vh;overflow:auto"></div></div>
 <div class="sheet" id="upg"><h3>🛠️ Upgrade <button id="upX">✕</button></h3><div id="upList" style="display:flex;flex-direction:column;gap:8px"></div></div>
-<div class="tag">Mamak Lab v0.5 · tap 💬 untuk masak</div>
+<div class="tag">v0.6.2</div>
 <div class="cook" id="cook"><h3><span id="ckTitle">Roti Canai</span><span class="timer" id="ckTime">0.0s</span><button id="ckX">✕</button></h3><div class="steps" id="ckSteps"></div><canvas id="rc" width="720" height="380" style="display:none;width:100%;height:190px;border-radius:14px;background:#3a2a22;touch-action:none"></canvas><div id="rcHint" style="display:none;text-align:center;font-size:12px;color:#8a7a62;margin-top:6px"></div><div class="opts" id="ckOpts"></div><div class="tarik" id="ckTarik"><div class="bar"><div class="zone" id="ckZone"></div><div class="needle" id="ckNeedle"></div></div><button id="ckTarikBtn">TARIK! 〰️</button></div></div>
 <script>
 // ===== Mamak Lab v0.1 — prototaip isometric (belum link ke Mamak Rush) =====
@@ -98,7 +98,7 @@ function addTable(){const t=SLOTS[TABLES.length];const i=TABLES.length;TABLES.pu
 for(let i=0;i<ownTables;i++)addTable();
 // staff
 const WAITER_COST=[25,50,90];const waiters=[];
-function addWaiter(){const i=waiters.length;waiters.push({id:'pelayan'+(i+1),x:4+i,y:2,home:{x:4+i,y:2},st:'idle',path:[],t:0,shirt:'#145c57',skin:SKIN[(i+2)%SKIN.length],cap:false,target:null})}
+function addWaiter(){const i=waiters.length;waiters.push({id:'pelayan'+(i+1),x:4+i,y:1.75,home:{x:4+i,y:1.75},st:'idle',path:[],t:0,shirt:'#145c57',skin:SKIN[(i+2)%SKIN.length],cap:false,target:null})}
 const MENU=[
  {n:'Roti Canai',e:'🫓',p:2.5,r:['🌀 Tebar','👉 Ke tawa','🔄 Terbalik','🍽️ Hidang'],visual:'roti'},
  {n:'Teh Tarik',e:'☕',p:2.2,r:['✋ Tahan','⬆️ Tarik tinggi','🎯 Lepas kat garisan'],visual:'teh'},
@@ -189,19 +189,19 @@ function box(x,y,w,d,h,c,z=0){ // kotak isometric
   poly([B,C,T(x+w,y),T(x+w,y+d)],shade(c,.65));
   poly([T(x,y),T(x+w,y),T(x+w,y+d),T(x,y+d)],c);
 }
-const SIT_Y=13;const KH=26; // tinggi kaunter // tinggi tempat duduk bangku (px)
+const SIT_IN=.16;const KH=26; // tinggi kaunter // tinggi tempat duduk bangku (px)
 function sheetKey(p,cook){return 'sh_'+(cook?p.id:p.isWaiter?p.id:p.reg?p.reg.id:'cust_'+'abcde'[p.v||0])}
 // sprite sheet 4x2: baris1 DEPAN [diam,jalan1,jalan2,duduk] · baris2 BELAKANG [diam,jalan1,jalan2,duduk/aksi]
 function cell(i,col,row,x,y,w,flip){const cw=i.width/4,ch=i.height/2,h=w*ch/cw;cx.save();cx.translate(x,y);if(flip)cx.scale(-1,1);cx.drawImage(i,col*cw,row*ch,cw,ch,-w/2,-h,w,h);cx.restore()}
 function personSheet(p,cook,i){const s=iso(p.x+.5,p.y+.5);const now=performance.now()/1000;
   const sit=p.st==='wait'||p.st==='eat',walk=p.st==='walk'||p.st==='leave';
-  cx.fillStyle='#0003';cx.beginPath();cx.ellipse(s.x,s.y,10,4,0,0,7);cx.fill();
+  if(!sit){cx.fillStyle='#0003';cx.beginPath();cx.ellipse(s.x,s.y,10,4,0,0,7);cx.fill()}
   let col=0,row=0,flip=false,y=s.y,w=48;
-  if(sit){const t=TABLES[p.seat.t];const left=p.seat.x<t.x;row=left?0:1;col=3;flip=left;y-=SIT_Y}
-  else if(walk){const fx=p.fx||0,fy=p.fy||0,sx=fx-fy,sy=fx+fy;row=sy>=0?0:1;flip=sx>0;const fr=Math.floor(p.t*7)%4;col=[1,0,2,0][fr]}
+  if(sit){const t=TABLES[p.seat.t];const left=p.seat.x<t.x;row=left?0:1;col=3;flip=left;const k=left?1:-1;s.x+=k*SIT_IN*TW/2;y+=k*SIT_IN*TH/2}
+  else if(walk){const fx=p.fx||0,fy=p.fy||0,sx=fx-fy,sy=fx+fy;row=sy>=0?0:1;flip=sx>0;p._f=flip;p._r=row;const fr=Math.floor(p.t*7)%4;col=[1,0,2,0][fr]}
   else if(cook){const busy=Math.sin(now*1.3+(p.ph||0))>.2;row=busy?1:0;col=busy?3:0;y+=busy?0:Math.sin(now*2+(p.ph||0))*.6}
   else if(p.isWaiter){row=0;col=0}
-  if(p.isWaiter&&p.carry&&!sit){row=1;col=3;const fx=p.fx||0,fy=p.fy||0;flip=(fx-fy)>0}
+  if(p.isWaiter&&p.carry&&!sit){if(walk&&row===0){}else{row=1;col=3;flip=walk?flip:true}}
   cell(i,col,row,s.x,y,w,flip);bubbles(p,s,y-4)}
 function person(p,cook){
   const shk=sheetKey(p,cook);if(spr(shk))return personSheet(p,cook,SPR[shk]);
@@ -263,7 +263,7 @@ function draw(){
   ents.push({d:3.35,f:()=>{const z=UP.tawa?.8:.5;if(spr('iso_tawa')){const c=iso(1.3+z/2,1.55,KH);drawSpr('iso_tawa',c.x,c.y,UP.tawa?40:30);return}box(1.3,1.05,z,.5,6,UP.tawa?'#555':'#888',14);const t=iso(1.3+z/2,1.3,22);cx.fillStyle='#ffd27a';cx.beginPath();cx.ellipse(t.x,t.y,10,5,0,0,7);cx.fill();if(UP.tawa){cx.beginPath();cx.ellipse(t.x+9,t.y+4,8,4,0,0,7);cx.fill()}}}); // tawa roti
   ents.push({d:9.35,f:()=>{if(spr('iso_dandang')){const c=iso(8,1.5,KH);drawSpr('iso_dandang',c.x,c.y,UP.teko?26:22)}else box(7.8,1.1,.4,.4,UP.teko?14:10,UP.teko?'#e6e6e6':'#c0c0c0',14)}}); // dandang teh
   TABLES.forEach(t=>{ents.push({d:t.x+t.y+1,f:()=>{if(spr('iso_meja')){const c=iso(t.x+.5,t.y+.5);drawSpr('iso_meja',c.x,c.y+8,62)}else box(t.x+.1,t.y+.1,.8,.8,13,'#fdfdfd')}})});
-  SEATS.forEach(s=>ents.push({d:s.x+s.y+.9,f:()=>{if(spr('iso_kerusi')){const c=iso(s.x+.5,s.y+.5);drawSpr('iso_kerusi',c.x,c.y+4,30)}else box(s.x+.25,s.y+.25,.5,.5,7,'#e66a6a')}}));
+  SEATS.forEach(s=>ents.push({d:s.x+s.y+(s.x>TABLES[s.t].x&&s.who&&(s.who.st==='wait'||s.who.st==='eat')?1.1:.9),f:()=>{if(spr('iso_kerusi')){const back=s.x>TABLES[s.t].x,c=iso(s.x+.5+(back?-.02:-.1),s.y+.5);drawSpr("iso_kerusi",c.x+(back?-7:0),c.y+(back?0:7),24)}else box(s.x+.25,s.y+.25,.5,.5,7,'#e66a6a')}}));
   // upgrade dalam kedai
   if(UP.kipas){[[2.5,0],[7.5,0]].forEach(([x,y])=>ents.push({d:-1,f:()=>{const c=iso(x,y,64);if(spr('iso_kipas'))drawSpr('iso_kipas',c.x,c.y+20,34);else{cx.fillStyle='#ddd';cx.beginPath();cx.arc(c.x,c.y,4,0,7);cx.fill();cx.strokeStyle='#bbb';cx.lineWidth=4;const a=performance.now()/80;for(let k=0;k<3;k++){cx.beginPath();cx.moveTo(c.x,c.y);cx.lineTo(c.x+Math.cos(a+k*2.1)*16,c.y+Math.sin(a+k*2.1)*7);cx.stroke()}}}}))}
   if(UP.tv)ents.push({d:-1,f:()=>{const c=iso(0,4,58);if(spr('iso_tv')){drawSpr('iso_tv',c.x,c.y+30,46);return}
@@ -272,7 +272,7 @@ function draw(){
   if(UP.pokok)[[0,7],[9,7]].forEach(([x,y])=>ents.push({d:x+y+1,f:()=>{const c=iso(x+.5,y+.7);if(spr('iso_pokok')){drawSpr('iso_pokok',c.x,c.y,40);return}box(x+.3,y+.4,.4,.4,10,'#b5651d');cx.fillStyle='#3c9a4a';[[0,-30,12],[-8,-22,9],[8,-22,9]].forEach(([dx,dy,r])=>{cx.beginPath();cx.arc(c.x+dx,c.y+dy,r,0,7);cx.fill()})}}));
   cooks.forEach(c=>ents.push({d:-.5,f:()=>person({id:c.id,ph:c.ph,x:c.x,y:c.y,st:'cook',t:0},true)}));
   people.forEach(p=>ents.push({d:p.x+p.y+1.05,f:()=>person(p,false)}));
-  waiters.forEach(w=>ents.push({d:w.x+w.y+1.05,f:()=>{person({...w,isWaiter:1,carry:w.st==='prep',st:w.st==='go'||w.st==='back'?'walk':'idle'},false);
+  waiters.forEach(w=>ents.push({d:w.x+w.y+1.05,f:()=>{person({...w,isWaiter:1,carry:w.st==='prep'||w.st==='go',st:w.st==='go'||w.st==='back'?'walk':'idle'},false);
     if(w.st==='prep'||w.st==='go'){const s=iso(w.x+.5,w.y+.5);cx.font='14px system-ui';cx.textAlign='center';cx.fillText(w.st==='prep'?'⏳':w.target.order.e,s.x+12,s.y-26)}}}));
   if(buildMode&&TABLES.length<SLOTS.length){const t=SLOTS[TABLES.length];ents.push({d:99,f:()=>{
     cx.globalAlpha=.55+.25*Math.sin(performance.now()/200);
