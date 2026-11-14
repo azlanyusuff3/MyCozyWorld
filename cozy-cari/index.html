@@ -51,6 +51,16 @@ header a{text-decoration:none;color:#3b2a1e;background:#fff;border-radius:12px;p
 .toggle button{font:16px "Lilita One";padding:8px 12px;margin:0;background:#e8d5bd;color:#3b2a1e;box-shadow:0 4px 0 #c9ad8a}
 .toggle button.on{background:#c8553d;color:#fff;box-shadow:0 4px 0 #8e3626}
 .item.word b{font-size:20px}.item.word span{font:15px "Lilita One";letter-spacing:1px}
+/* Landskap telefon: grid di kiri, senarai kata di kanan */
+@media (orientation:landscape) and (max-height:600px){
+#app{display:grid;grid-template-columns:1fr minmax(180px,34%);grid-template-rows:auto minmax(0,1fr);max-width:none}
+header{grid-column:1/3;padding:6px 10px}
+#sceneWrap{grid-row:2;grid-column:1;padding:0 8px 8px}
+#list{grid-row:2;grid-column:2;flex-direction:column;flex-wrap:nowrap;justify-content:flex-start;align-items:stretch;overflow-y:auto;padding:2px 12px 12px 0;gap:5px}
+#list .item{min-width:0}
+#scene.word{max-width:min(100%,calc(100vh - 74px));max-height:calc(100vh - 74px)}
+#scene:not(.word){max-height:calc(100vh - 74px);width:auto;height:100%}
+}
 </style>
 </head>
 <body>
