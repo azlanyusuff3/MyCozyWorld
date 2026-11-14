@@ -96,3 +96,55 @@ Ganti `[PUAK]` dengan contoh: *fire tribe (lava cracks)*, *moon tribe (crescent 
 **Senarai penuh** (36 fail): `logo, bg_menu, bg_far, hat_×8, weapon_×4, fort_×8, chief_×8, frame_modal, trophy, icon_senjata, icon_zirah, icon_ekonomi, icon_ult`
 
 Mula dengan **logo, bg_menu, bg_far, weapon_×4 dan hat_×8**. Tu yang paling bagi kesan "wow".
+
+---
+
+## 9. Senjata ikut puak (32 gambar) — BARU
+Setiap puak ada senjata sendiri untuk 4 peranan askar. Nama fail: `w_[kod]_[peranan].webp`, dengan peranan = `pedang` (askar dekat), `panah` (askar jarak jauh), `perisai`, `gergaji` (askar berat).
+
+**Peraturan arah (sama macam bahagian 4):**
+- Senjata panjang (pedang, sabit, lembing, keris, belati, parang, kapak, tukul, tongkat, sumpit, busur silang): **mendatar**, hujung/mata ke **KANAN**, pemegang di **KIRI**. Saiz ~600×200
+- Busur biasa: **tegak**, lengkung membonjol ke **KANAN**, tali di kiri. Saiz ~200×400
+- Perisai: **tegak**, nampak dari sisi depan. Saiz ~220×400
+- Bola tenaga / tinju (Bola Api, Cakera Bulan, Serpihan Ais, Botol Racun, Tinju Api): **objek kecil di tengah**, persegi 256×256
+- Background **transparent**. Tiada tangan atau orang, hanya senjata. Warna mesti ikut warna puak dengan cahaya neon
+
+Template:
+> A single [SENJATA] only, [ARAH], [WARNA] glowing neon rim light, magical [ELEMEN] energy, transparent background.
+
+| Fail | [SENJATA] | [ELEMEN] |
+|---|---|---|
+| `w_api_pedang` | gauntlet fist wreathed in roaring flames (square, centred) | fire |
+| `w_api_panah` | blazing fireball with swirling flame tail (square, centred) | fire |
+| `w_api_perisai` | round shield of cracked black obsidian with glowing lava veins | lava |
+| `w_api_gergaji` | heavy war hammer made of molten lava rock | lava |
+| `w_bulan_pedang` | elegant crescent-moon sickle blade on a short silver handle | moonlight |
+| `w_bulan_panah` | spinning silver crescent moon throwing disc (square, centred) | moonlight |
+| `w_bulan_perisai` | eclipse shield, dark disc with glowing violet corona ring | eclipse |
+| `w_bulan_gergaji` | huge reaper scythe with a crescent moon blade | moonlight |
+| `w_besi_pedang` | sturdy steel broadsword | steel sparks |
+| `w_besi_panah` | mechanical steel crossbow | steel |
+| `w_besi_perisai` | tall riveted steel tower shield | steel |
+| `w_besi_gergaji` | fantasy chainsaw sword with toothed steel chain | steel sparks |
+| `w_hutan_pedang` | wooden spear with a sharpened stone tip and leaves tied to it | nature |
+| `w_hutan_panah` | longbow made from a living branch with small leaves sprouting | nature |
+| `w_hutan_perisai` | round shield made of tree bark with moss and a leaf emblem | nature |
+| `w_hutan_gergaji` | big stone axe on a wooden handle wrapped with vines | nature |
+| `w_pendekar_pedang` | Malay keris with a wavy blade and ornate gold hilt | golden |
+| `w_pendekar_panah` | traditional Malay sumpit blowpipe made of bamboo | golden |
+| `w_pendekar_perisai` | woven rattan shield with Malay songket pattern rim | golden |
+| `w_pendekar_gergaji` | long Malay parang machete with carved wooden handle | golden |
+| `w_bunian_pedang` | slim translucent crystal sword | ethereal mist |
+| `w_bunian_panah` | elegant elven bow with glowing mint string | ethereal spirit |
+| `w_bunian_perisai` | misty half-transparent spirit shield with a leaf emblem | ethereal mist |
+| `w_bunian_gergaji` | spirit staff topped with a floating glowing crystal | spirit |
+| `w_ais_pedang` | sword carved from clear blue ice | frost |
+| `w_ais_panah` | sharp floating ice shard crystal (square, centred) | frost |
+| `w_ais_perisai` | shield made of thick packed snow and ice crystals | frost |
+| `w_ais_gergaji` | massive frozen war hammer covered with icicles | frost |
+| `w_racun_pedang` | curved poison dagger dripping green venom | toxic |
+| `w_racun_panah` | round glass potion flask with bubbling green poison (square, centred) | toxic |
+| `w_racun_perisai` | spiked shield with a skull emblem and green slime | toxic |
+| `w_racun_gergaji` | large scythe with a toxic green glowing blade | toxic |
+
+Nota: kalau gambar belum ada, game lukis senjata ikut puak guna garisan neon. Gambar lama `weapon_*` kini hanya dipakai oleh Puak Besi.

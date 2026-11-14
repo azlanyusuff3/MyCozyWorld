@@ -39,6 +39,30 @@ const ELITE = {
 };
 for (const k in ELITE) UNITS['e_' + k] = Object.assign({ elite: true, tribe: k }, ELITE[k]);
 const ELITE_MAX = 2;
+// senjata setiap puak untuk 4 peranan: [nama, bentuk senjata]. proj = gaya peluru, el = efek elemen bila kena
+const THEME = {
+  api:      { pedang: ['Tinju Api', 'tinju_api'],     panah: ['Bola Api', 'orb'],          perisai: ['Perisai Lava', 'perisai'],    gergaji: ['Tukul Lava', 'tukul'],       proj: 'fire',   el: ['#ff7a2e', '#ffd36b', '#ff4d00'] },
+  bulan:    { pedang: ['Sabit Bulan', 'sabit'],       panah: ['Cakera Bulan', 'orb'],      perisai: ['Perisai Gerhana', 'perisai'], gergaji: ['Sabit Gergasi', 'sabit_besar'], proj: 'moon', el: ['#b98cff', '#ffffff', '#e2d4ff'] },
+  besi:     { pedang: ['Pedang Besi', 'pedang'],      panah: ['Busur Silang', 'busur_silang'], perisai: ['Perisai Menara', 'perisai'], gergaji: ['Gergaji Besi', 'gergaji'],  proj: 'bolt',   el: ['#ffe28a', '#ffffff', '#9fd8ff'] },
+  hutan:    { pedang: ['Lembing Kayu', 'lembing'],    panah: ['Busur Ranting', 'panah'],   perisai: ['Perisai Kayu', 'perisai'],    gergaji: ['Kapak Batu', 'kapak'],       proj: 'leaf',   el: ['#7dff6a', '#21c22a', '#c8ff9a'] },
+  pendekar: { pedang: ['Keris', 'keris'],             panah: ['Sumpit', 'sumpit'],         perisai: ['Perisai Rotan', 'perisai'],   gergaji: ['Parang Panjang', 'parang'],  proj: 'dart',   el: ['#ffd36b', '#ffffff', '#ffaa00'] },
+  bunian:   { pedang: ['Pedang Kristal', 'pedang'],   panah: ['Busur Bunian', 'panah'],    perisai: ['Perisai Kabus', 'perisai'],   gergaji: ['Tongkat Roh', 'tongkat_roh'], proj: 'spirit', el: ['#5ff5d8', '#ffffff', '#00c9a7'] },
+  ais:      { pedang: ['Pedang Ais', 'pedang'],       panah: ['Serpihan Ais', 'orb'],      perisai: ['Perisai Salji', 'perisai'],   gergaji: ['Tukul Beku', 'tukul'],       proj: 'ice',    el: ['#d6f4ff', '#ffffff', '#7fd3ff'] },
+  racun:    { pedang: ['Belati Racun', 'belati'],     panah: ['Botol Racun', 'orb'],       perisai: ['Perisai Tengkorak', 'perisai'], gergaji: ['Sabit Racun', 'sabit_besar'], proj: 'poison', el: ['#d4ff3a', '#8fd400', '#f2ffb0'] },
+};
+const ROLES = ['pedang', 'panah', 'perisai', 'gergaji'];
+const unitName = (tid, k) => THEME[tid] && THEME[tid][k] ? THEME[tid][k][0] : UNITS[k].name;
+// bentuk lukisan: kategori untuk saiz gambar & pose
+const SHAPE_CAT = { pedang: 'long', sabit: 'long', lembing: 'long', keris: 'long', belati: 'long', parang: 'long', kapak: 'long', tukul: 'long', sabit_besar: 'long', gergaji: 'long', tongkat_roh: 'long', sumpit: 'long', busur_silang: 'long',
+  panah: 'bow', perisai: 'shield', orb: 'orb', tinju_api: 'orb' };
+const SHAPE_LEN = { pedang: 38, sabit: 36, lembing: 52, keris: 30, belati: 22, parang: 44, kapak: 36, tukul: 38, sabit_besar: 48, gergaji: 48, tongkat_roh: 44, sumpit: 42, busur_silang: 34 };
+// senjata yang dipegang: { shape, key gambar, tribe }
+function weaponOf(u) {
+  const U = UNITS[u.type];
+  if (U && (U.elite || U.special)) return { shape: wpnOf(u.type), img: 'weapon_' + wpnOf(u.type), tid: u.t.id };
+  const tid = u.wt || u.t.id, th = THEME[tid];
+  return { shape: th[u.type][1], img: 'w_' + tid + '_' + u.type, alt: tid === 'besi' ? 'weapon_' + th[u.type][1] : null, tid };
+}
 const wpnOf = type => (UNITS[type] && UNITS[type].wpn) || type;
 // unit khas dari skill (tak boleh beli)
 UNITS.tembok = { name: 'Tembok', cost: 0, hp: 380, dmg: 0, range: 0, rate: 99, spd: 0, armor: 0.3, size: 1, special: true };
@@ -88,7 +112,7 @@ const UPS = {
 };
 const MAXUP = 5;
 const W = 1500, GROUND = 330, BASE_HP = 1600, BASE_X = 70;
-const DIFF = [ { gold: 0.65, think: 1.6, smart: 0.15, skill: 0.35, elite: 0.1, start: 30 }, { gold: 0.85, think: 1.15, smart: 0.4, skill: 0.6, elite: 0.22, start: 45 }, { gold: 1.0, think: 0.85, smart: 0.75, skill: 0.85, elite: 0.38, start: 60 } ];
+const DIFF = [ { gold: 0.65, think: 1.6, smart: 0.15, skill: 0.35, elite: 0.1, start: 30 }, { gold: 0.85, think: 1.15, smart: 0.4, skill: 0.6, elite: 0.22, start: 45 }, { gold: 1.12, think: 0.7, smart: 0.9, skill: 0.95, elite: 0.5, start: 80 } ];
 
 /* ================= SOUND ================= */
 let AC = null, muted = false;
@@ -133,7 +157,7 @@ function cropAlpha(im) {
 }
 fetch('sprites/list.json', { cache: 'no-cache' }).then(r => r.ok ? r.json() : []).catch(() => []).then(l => {
   let n = l.length; if (!n) return;
-  l.forEach(k => { const i = new Image(); i.onload = i.onerror = () => { if (i.naturalWidth && /^(hat|weapon|fort)_/.test(k)) IMG[k] = cropAlpha(i); if (--n === 0) applyArt(); }; i.src = 'sprites/' + k + '.webp'; IMG[k] = i; });
+  l.forEach(k => { const i = new Image(); i.onload = i.onerror = () => { if (i.naturalWidth && /^(hat|weapon|fort|w)_/.test(k)) IMG[k] = cropAlpha(i); if (--n === 0) applyArt(); }; i.src = 'sprites/' + k + '.webp'; IMG[k] = i; });
 });
 function applyArt() {
   if (img('logo')) document.querySelector('#menu .logo').innerHTML = `<img src="${IMG.logo.src}" alt="Perang Lidi">`;
@@ -280,7 +304,7 @@ function buildPanel() {
   [...UNIT_KEYS, 'e_' + P.t.id].forEach(k => {
     const b = document.createElement('button'); b.type = 'button'; b.dataset.k = k; if (UNITS[k].elite) b.className = 'elite';
     b.appendChild(miniStick(P.t.id, k, 34, 34));
-    b.insertAdjacentHTML('beforeend', `<b>${UNITS[k].elite ? '♛ ' + UNITS[k].name.split(' ')[0] : UNITS[k].name}</b><small>🪙${UNITS[k].cost}</small><span class="cnt"></span>`);
+    b.insertAdjacentHTML('beforeend', `<b>${UNITS[k].elite ? '♛ ' + UNITS[k].name.split(' ')[0] : unitName(P.t.id, k)}</b><small>🪙${UNITS[k].cost}</small><span class="cnt"></span>`);
     b.onclick = () => { if (buy(0, k)) snd('spawn'); };
     uw.appendChild(b);
   });
@@ -330,9 +354,9 @@ function enemyOf(si) { return G.sides[1 - si]; }
 function update(dt) {
   G.t += dt;
   G.sides.forEach((s, si) => {
-    const behind = !s.ai && G.units.filter(u => u.side === 0).length + 4 < G.units.filter(u => u.side === 1).length;
+    const behind = !s.ai && G.sides[1].d < 2 && G.units.filter(u => u.side === 0).length + 4 < G.units.filter(u => u.side === 1).length;
     s.gold += (6 + 2 * s.ups.ekonomi) * (s.ai ? DIFF[s.d].gold : behind ? 1.25 : 1) * (s.buff.gold ? 2 : 1) * dt;
-    s.ult = Math.min(100, s.ult + dt * 1.1 * (s.cards.has('ultCas') ? 1.5 : 1) * (s.ai ? [0.6, 0.8, 1][s.d] : 1));
+    s.ult = Math.min(100, s.ult + dt * 1.1 * (s.cards.has('ultCas') ? 1.5 : 1) * (s.ai ? [0.6, 0.8, 1.1][s.d] : 1));
     s.skill = Math.max(0, s.skill - dt);
     for (const k in s.buff) s.buff[k] = Math.max(0, s.buff[k] - dt);
     s.flash = Math.max(0, s.flash - dt);
@@ -407,7 +431,7 @@ function update(dt) {
     for (const d of G.drops) {
       if (d.taken || U.special || u.clone || Math.abs(d.x - u.x) > 14 || Math.abs(d.y - u.y) > 26) continue;
       if (UNITS[d.type].cost > UNITS[u.type].cost) {
-        const r = u.hp / u.maxHp; u.type = d.type; u.size = UNITS[d.type].size; u.stolen = true; u.maxHp = unitMaxHp(u); u.hp = Math.max(r, 0.6) * u.maxHp;
+        const r = u.hp / u.maxHp; u.type = d.type; u.wt = d.wt; u.size = UNITS[d.type].size; u.stolen = d.wt !== u.t.id; u.maxHp = unitMaxHp(u); u.hp = Math.max(r, 0.6) * u.maxHp;
         d.taken = true; snd('pick');
         G.fx.push({ k: 'text', x: u.x, y: GROUND + u.y - 70, s: 'RAMPAS!', c: me.t.c, life: 1 });
       }
@@ -509,6 +533,8 @@ function damage(u, dmg, src, silent) {
   u.hp -= d;
   if (!silent) { u.hitFlash = 0.12; u.lastHitDir = src ? src.dir : -u.dir;
     if (G.fx.length < 120) G.fx.push({ k: 'ring', x: u.x, y: GROUND + u.y - 32 * u.size, c: src && src.t ? src.t.c : '#fff', life: 0.22, max: 0.22 });
+    const elx = src && THEME[src.wt || (src.t && src.t.id)];
+    if (elx && G.parts.length < 360) for (let i = 0; i < 4; i++) G.parts.push({ x: u.x + rnd(-6, 6), y: GROUND + u.y - 32 * u.size + rnd(-8, 8), vx: rnd(-60, 60) + (src.dir || 0) * 40, vy: rnd(-120, -20), life: rnd(0.25, 0.5), c: pick(elx.el), r: rnd(1.6, 3) });
     if (d >= 18 && G.fx.length < 120) G.fx.push({ k: 'text', x: u.x + rnd(-6, 6), y: GROUND + u.y - 62 * u.size, s: Math.round(d), c: '#fff', life: 0.7, sm: 1 });
     for (let i = 0; i < 3; i++) G.parts.push({ x: u.x, y: GROUND + u.y - 34 * u.size, vx: rnd(-70, 70) + (src ? src.dir * 60 : 0), vy: rnd(-110, -20), life: 0.35, c: '#fff', r: 1.6 }); }
   if (u.hp <= 0 && src && !u.killedBy) u.killedBy = src.side;
@@ -529,7 +555,7 @@ function kill(u) {
   if (U.shape) { G.shake = Math.max(G.shake, 6); snd('boom'); for (let i = 0; i < 40; i++) G.parts.push({ x: u.x + rnd(-20, 20) * u.size, y: GROUND + u.y - rnd(5, 55) * u.size, vx: rnd(-160, 160), vy: rnd(-220, -30), life: rnd(0.5, 1), c: pick([u.t.c, '#ffffff', u.t.g]), r: rnd(2, 4) });
     G.fx.push({ k: 'ring', x: u.x, y: GROUND + u.y - 30 * u.size, c: u.t.c, life: 0.4, max: 0.4 }); return; }
   if (u.clone) { for (let i = 0; i < 10; i++) G.parts.push({ x: u.x, y: GROUND + u.y - rnd(0, 50), vx: rnd(-40, 40), vy: rnd(-80, -10), life: 0.5, c: u.t.c, r: 2 }); return; }
-  if (!U.elite && Math.random() < 0.55) G.drops.push({ x: u.x, y: u.y, type: u.type, life: 9, c: u.t.c, rot: rnd(-0.4, 0.4) });
+  if (!U.elite && Math.random() < 0.55) G.drops.push({ x: u.x, y: u.y, type: u.type, wt: u.wt || u.t.id, life: 9, c: TRIBES.find(t => t.id === (u.wt || u.t.id)).c, rot: rnd(-0.4, 0.4) });
   const j = pose(u, 0, 0), dir = u.lastHitDir || -u.dir, pow = u.type === 'gergaji' ? 1.3 : 1;
   const pts = {};
   for (const k in j) { const p = j[k]; pts[k] = { x: p.x, y: p.y, px: p.x - dir * rnd(1.5, 4.5) * pow, py: p.y + rnd(2, 5) * pow }; }
@@ -554,7 +580,9 @@ function stepRagdoll(c, dt) {
 function shoot(src, tgt, dmg, kind, lift) {
   const sx = src.x + src.dir * 10, sy = GROUND + (src.y || 0) - 40 * (src.size || 1) + (lift || 0);
   const dist = Math.abs(tgt.x - sx);
-  G.proj.push({ sx, sy, tgt, tx: tgt.x, ty: GROUND + tgt.y - 30, t: 0, dur: 0.25 + dist / 520, dmg, src, c: src.t.c, arc: 18 + dist * 0.18 });
+  const st = THEME[(src.wt) || (src.t && src.t.id)] ? THEME[src.wt || src.t.id].proj : 'arrow';
+  const fast = st === 'dart' || st === 'bolt', lob = st === 'poison' || st === 'fire';
+  G.proj.push({ sx, sy, tgt, tx: tgt.x, ty: GROUND + tgt.y - 30, t: 0, dur: (fast ? 0.15 : 0.25) + dist / (fast ? 800 : 520), dmg, src, c: src.t.c, arc: fast ? 6 + dist * 0.05 : (lob ? 30 : 18) + dist * (lob ? 0.25 : 0.18), st });
 }
 
 /* ================= ULTIMATE ================= */
@@ -607,7 +635,7 @@ function densest(foes, fallback) {
 function useSkill(si) {
   const s = G.sides[si], fi = 1 - si;
   if (s.skill > 0 || G.over) return false;
-  s.skill = SKILL_CD * (s.cards.has('skillCd') ? 0.6 : 1) * (s.ai ? [1.6, 1.3, 1][s.d] : 1);
+  s.skill = SKILL_CD * (s.cards.has('skillCd') ? 0.6 : 1) * (s.ai ? [1.6, 1.3, 0.9][s.d] : 1);
   const F = front(si), id = s.t.id;
   snd('up'); toast((si ? 'MUSUH: ' : '') + SKILL[id][0] + '!', s.t.c, 0.9);
   if (id === 'api') {
@@ -738,21 +766,93 @@ function pose(u, ox, oy) {
   const fb = { x: x - (sw * 10 + 3) * d * s, y: gy - (moving ? Math.max(0, Math.cos(p)) * 4 : 0) };
   // tangan depan pegang senjata
   const a = u.atk; let ang;
-  if (wpnOf(u.type) === 'panah') ang = -0.15;
+  const sh = UNITS[u.type] && !UNITS[u.type].elite && THEME[u.wt || (u.t && u.t.id)] ? weaponOf(u).shape : wpnOf(u.type);
+  const cat = SHAPE_CAT[sh];
+  if (sh === 'tinju_api') ang = a > 0 ? -0.15 + (1 - a) * 0.15 : 0.35;
+  else if (sh === 'orb') ang = a > 0 ? -1.3 + (1 - a) * 1.6 : -0.5;
+  else if (sh === 'busur_silang' || sh === 'sumpit') ang = -0.08;
+  else if (sh === 'lembing') ang = a > 0 ? -0.1 + (1 - a) * 0.1 : -0.35;
+  else if (cat === 'bow') ang = -0.15;
+  else if (cat === 'shield') ang = 0.1 - a * 0.6;
+  else if (sh === 'tongkat_roh') ang = -0.9 + a * 0.7;
+  else if (wpnOf(u.type) === 'panah') ang = -0.15;
   else if (wpnOf(u.type) === 'perisai') ang = 0.1 - a * 0.6;
   else if (wpnOf(u.type) === 'tongkat' || wpnOf(u.type) === 'obor') ang = -0.9 + a * 0.7;
   else if (wpnOf(u.type) === 'tinju') ang = a > 0 ? -0.3 + (1 - a) * 0.3 : 0.5;
-  else if (wpnOf(u.type) === 'gergaji') ang = 0.15 + Math.sin(G ? G.t * 40 : 0) * 0.04 * (a > 0 ? 1 : 0);
+  else if (sh === 'gergaji') ang = 0.15 + Math.sin(G ? G.t * 40 : 0) * 0.04 * (a > 0 ? 1 : 0);
   else ang = a > 0 ? (-2.0 + (1 - a) * 2.8) : -0.6 + sw * 0.15;
   const al = 17 * s;
   const hf = { x: neck.x + Math.cos(ang) * al * d, y: neck.y + 4 * s + Math.sin(ang) * al };
   const hb = { x: neck.x - (sw * 8 + 4) * d * s, y: neck.y + 15 * s };
   return { head, neck, hip, hf, hb, ff, fb, ang };
 }
-function drawWeapon(c, type, hx, hy, ang, d, s, col, atk) {
+function drawWeapon(c, type, hx, hy, ang, d, s, col, atk, W) {
   c.save(); c.translate(hx, hy); c.scale(d, 1); c.rotate(ang);
   c.strokeStyle = col; c.fillStyle = col; c.lineCap = 'round';
-  const wi = img('weapon_' + type);
+  const ti = W && (img(W.img) || (W.alt && img(W.alt)));
+  if (ti) {
+    const ar = ti.width / ti.height, cat = SHAPE_CAT[type] || 'long';
+    if (cat === 'long') { const w = (SHAPE_LEN[type] || 38) * s, h = w / ar; c.drawImage(ti, -7 * s, -h / 2, w, h); }
+    else if (cat === 'bow') { const h = 36 * s, w = h * ar; c.drawImage(ti, -w / 2, -h / 2, w, h); }
+    else if (cat === 'shield') { const h = 32 * s, w = h * ar; c.drawImage(ti, 0, -h / 2, w, h); }
+    else { const z = (type === 'tinju_api' ? 15 : 13) * s; c.drawImage(ti, -z / 2 + 3 * s, -z / 2, z, z * ti.height / ti.width); }
+    if (cat === 'long' && atk > 0.25 && type !== 'busur_silang' && type !== 'sumpit') slash(c, s, atk);
+    c.restore(); return;
+  }
+  if (type === 'tinju_api' || type === 'orb') {
+    // tangan berkuasa elemen: bola tenaga di tapak tangan
+    const g = c.globalAlpha, r = (type === 'tinju_api' ? 6 : 4.5) * s * (1 + atk * 0.4), t = G ? G.t : 0;
+    c.globalCompositeOperation = 'lighter';
+    blob(c, col, 3 * s, 0, r * 2.4, r * 2.4, g * 0.9);
+    for (let i = 0; i < 3; i++) blob(c, col, 3 * s + Math.cos(t * 9 + i * 2.1) * r * 0.6, -Math.abs(Math.sin(t * 7 + i)) * r * 1.4, r, r, g * 0.6);
+    c.globalCompositeOperation = 'source-over'; c.globalAlpha = g;
+    c.fillStyle = '#fff'; c.beginPath(); c.arc(3 * s, 0, r * 0.45, 0, 7); c.fill();
+    c.restore(); return;
+  }
+  if (type === 'sabit' || type === 'sabit_besar') {
+    const L = (SHAPE_LEN[type]) * s;
+    c.lineWidth = 2.2 * s; c.beginPath(); c.moveTo(-4 * s, 0); c.lineTo(L * 0.75, 0); c.stroke();
+    c.lineWidth = 2.6 * s; c.beginPath(); c.arc(L * 0.75, -L * 0.28, L * 0.3, Math.PI * 0.5, Math.PI * 1.55, true); c.stroke();
+    if (atk > 0.25) slash(c, s, atk);
+    c.restore(); return;
+  }
+  if (type === 'lembing' || type === 'sumpit') {
+    const L = SHAPE_LEN[type] * s;
+    c.lineWidth = (type === 'sumpit' ? 2.4 : 2) * s; c.beginPath(); c.moveTo(-10 * s, 0); c.lineTo(L - 10 * s, 0); c.stroke();
+    if (type === 'lembing') { c.beginPath(); c.moveTo(L - 10 * s, -3.5 * s); c.lineTo(L - 1 * s, 0); c.lineTo(L - 10 * s, 3.5 * s); c.closePath(); c.fill(); }
+    else { c.lineWidth = 1 * s; c.beginPath(); c.moveTo(4 * s, -2 * s); c.lineTo(4 * s, 2 * s); c.moveTo(16 * s, -2 * s); c.lineTo(16 * s, 2 * s); c.stroke(); }
+    c.restore(); return;
+  }
+  if (type === 'busur_silang') {
+    c.lineWidth = 2.6 * s; c.beginPath(); c.moveTo(-6 * s, 0); c.lineTo(20 * s, 0); c.stroke();
+    c.lineWidth = 2 * s; c.beginPath(); c.arc(12 * s, 0, 11 * s, -1.2, 1.2); c.stroke();
+    c.lineWidth = 0.8; c.beginPath(); c.moveTo(16 * s, -10 * s); c.lineTo(6 * s - atk * 4, 0); c.lineTo(16 * s, 10 * s); c.stroke();
+    c.restore(); return;
+  }
+  if (type === 'belati' || type === 'parang') {
+    const L = SHAPE_LEN[type] * s;
+    c.lineWidth = 3 * s; c.beginPath(); c.moveTo(-3 * s, 0); c.lineTo(4 * s, 0); c.stroke();
+    c.lineWidth = 1.8 * s; c.beginPath(); c.moveTo(4 * s, -2.5 * s); c.lineTo(L, type === 'parang' ? -4 * s : 0); c.lineTo(L - 3 * s, 2 * s); c.lineTo(4 * s, 2.5 * s); c.closePath(); c.globalAlpha *= 0.35; c.fill(); c.globalAlpha /= 0.35; c.stroke();
+    if (atk > 0.25) slash(c, s, atk);
+    c.restore(); return;
+  }
+  if (type === 'kapak' || type === 'tukul') {
+    const L = SHAPE_LEN[type] * s;
+    c.lineWidth = 2.6 * s; c.beginPath(); c.moveTo(-6 * s, 0); c.lineTo(L, 0); c.stroke();
+    c.lineWidth = 2.2 * s; c.beginPath();
+    if (type === 'kapak') { c.moveTo(L - 6 * s, -2 * s); c.quadraticCurveTo(L + 6 * s, -12 * s, L + 2 * s, 9 * s); c.lineTo(L - 6 * s, 2 * s); c.closePath(); }
+    else c.rect(L - 6 * s, -8 * s, 12 * s, 16 * s);
+    c.globalAlpha *= 0.3; c.fill(); c.globalAlpha /= 0.3; c.stroke();
+    if (atk > 0.25) slash(c, s, atk);
+    c.restore(); return;
+  }
+  if (type === 'tongkat_roh') {
+    c.lineWidth = 2.2 * s; c.beginPath(); c.moveTo(-6 * s, 0); c.lineTo(32 * s, 0); c.stroke();
+    blob(c, col, 36 * s, 0, 9 * s, 9 * s, c.globalAlpha); c.globalAlpha = 1;
+    c.fillStyle = '#fff'; c.beginPath(); c.moveTo(36 * s, -5 * s); c.lineTo(40 * s, 0); c.lineTo(36 * s, 5 * s); c.lineTo(32 * s, 0); c.closePath(); c.fill();
+    c.restore(); return;
+  }
+  const wi = (!W || !W.tid || W.tid === 'besi') ? img('weapon_' + type) : null;
   if (wi) {
     const ar = wi.width / wi.height;
     if (type === 'pedang') { const w = 38 * s, h = w / ar; c.drawImage(wi, -7 * s, -h / 2, w, h); }
@@ -822,6 +922,49 @@ function drawTree(c, u) {
   c.fillStyle = col + '55'; c.beginPath(); c.arc(x + sw, gy - 52, 18, 0, 7); c.fill(); c.stroke();
   c.fillStyle = '#fff'; c.beginPath(); c.arc(x + sw + 5 * u.dir, gy - 54, 2, 0, 7); c.fill();
   c.shadowBlur = 0; const r = Math.max(0, u.hp / u.maxHp); c.fillStyle = '#ffffff22'; c.fillRect(x - 12, gy - 78, 24, 3); c.fillStyle = u.t.c; c.fillRect(x - 12, gy - 78, 24 * r, 3);
+}
+function drawProj(c, p, x, y, a) {
+  const T = G.t, el = THEME[p.src && (p.src.wt || (p.src.t && p.src.t.id))]?.el || [p.c, '#fff', p.c];
+  c.globalCompositeOperation = 'lighter';
+  switch (p.st) {
+    case 'fire':
+      blob(c, el[0], x, y, 13, 13, 0.9); blob(c, el[1], x, y, 6, 6, 1);
+      if (Math.random() < 0.6) G.parts.push({ x, y, vx: rnd(-20, 20), vy: rnd(-40, -10), life: 0.3, c: pick(el), r: 2.5 });
+      break;
+    case 'ice':
+      c.save(); c.translate(x, y); c.rotate(a); c.globalAlpha = 1; c.fillStyle = '#fff'; c.beginPath(); c.moveTo(9, 0); c.lineTo(0, -3.5); c.lineTo(-7, 0); c.lineTo(0, 3.5); c.closePath(); c.fill(); c.restore();
+      blob(c, el[2], x, y, 10, 10, 0.7);
+      if (Math.random() < 0.4) G.parts.push({ x, y, vx: 0, vy: 10, life: 0.3, c: '#ffffff', r: 1.5 });
+      break;
+    case 'moon':
+      c.save(); c.translate(x, y); c.rotate(T * 18); c.globalAlpha = 1; c.strokeStyle = '#fff'; c.lineWidth = 2.2; c.beginPath(); c.arc(0, 0, 6, 0.3, Math.PI * 1.5); c.stroke(); c.restore();
+      blob(c, el[0], x, y, 12, 12, 0.8);
+      break;
+    case 'poison':
+      blob(c, el[0], x, y, 10, 10, 0.8); c.globalCompositeOperation = 'source-over'; c.globalAlpha = 1;
+      c.strokeStyle = el[0]; c.lineWidth = 1.5; c.beginPath(); c.arc(x, y, 4.5, 0, 7); c.stroke(); c.fillStyle = '#fff'; c.fillRect(x - 1, y - 9, 2, 4);
+      if (Math.random() < 0.4) G.parts.push({ x, y, vx: 0, vy: 20, life: 0.4, c: el[0], r: 2 });
+      break;
+    case 'leaf':
+      c.globalCompositeOperation = 'source-over'; c.globalAlpha = 1; c.lineWidth = 1.8; c.beginPath(); c.moveTo(x - Math.cos(a) * 13, y - Math.sin(a) * 13); c.lineTo(x, y); c.stroke();
+      c.save(); c.translate(x - Math.cos(a) * 12, y - Math.sin(a) * 12); c.rotate(a + Math.sin(T * 20) * 0.5); c.fillStyle = el[0]; c.beginPath(); c.ellipse(0, 0, 4, 2, 0, 0, 7); c.fill(); c.restore();
+      blob(c, el[0], x, y, 6, 6, 0.8);
+      break;
+    case 'bolt':
+      c.globalAlpha = 1; c.lineWidth = 3; c.strokeStyle = '#fff'; c.beginPath(); c.moveTo(x - Math.cos(a) * 9, y - Math.sin(a) * 9); c.lineTo(x, y); c.stroke();
+      blob(c, el[2], x, y, 7, 7, 0.8);
+      break;
+    case 'dart':
+      c.globalAlpha = 0.6; c.lineWidth = 1; c.strokeStyle = el[0]; c.beginPath(); c.moveTo(x - Math.cos(a) * 18, y - Math.sin(a) * 18); c.lineTo(x, y); c.stroke();
+      c.globalAlpha = 1; c.lineWidth = 1.4; c.strokeStyle = '#fff'; c.beginPath(); c.moveTo(x - Math.cos(a) * 6, y - Math.sin(a) * 6); c.lineTo(x, y); c.stroke();
+      break;
+    case 'spirit':
+      c.globalAlpha = 1; c.lineWidth = 2; c.strokeStyle = '#fff'; c.beginPath(); c.moveTo(x - Math.cos(a) * 12, y - Math.sin(a) * 12); c.lineTo(x, y); c.stroke();
+      blob(c, el[0], x, y, 11, 11, 0.85);
+      if (Math.random() < 0.5) G.parts.push({ x, y, vx: rnd(-15, 15), vy: rnd(-25, 5), life: 0.45, c: pick(el), r: 1.8 });
+      break;
+  }
+  c.globalCompositeOperation = 'source-over'; c.globalAlpha = 1;
 }
 function slash(c, s, atk) {
   const ga = c.globalAlpha; c.globalCompositeOperation = 'lighter';
@@ -963,7 +1106,8 @@ function drawStick(c, u, ox, oy, alpha) {
     c.fillStyle = '#ffd36b'; c.globalAlpha = alpha; c.beginPath(); const cx = j.head.x, cy = j.head.y - 19 * s;
     c.moveTo(cx - 5 * s, cy + 4 * s); c.lineTo(cx - 5 * s, cy - 2 * s); c.lineTo(cx - 2 * s, cy + 1 * s); c.lineTo(cx, cy - 4 * s); c.lineTo(cx + 2 * s, cy + 1 * s); c.lineTo(cx + 5 * s, cy - 2 * s); c.lineTo(cx + 5 * s, cy + 4 * s); c.fill();
   }
-  drawWeapon(c, wpnOf(u.type), j.hf.x, j.hf.y, j.ang, d, s, u.stolen ? '#ffffff' : col, u.atk);
+  const W0 = weaponOf(u), wcol = u.stolen ? TRIBES.find(t => t.id === W0.tid).c : col;
+  drawWeapon(c, W0.shape, j.hf.x, j.hf.y, j.ang, d, s, wcol, u.atk, W0);
   c.shadowBlur = 0;
   if (u.stolen) { c.fillStyle = '#fff'; c.font = `${10 * s}px sans-serif`; c.fillText('★', j.head.x - 4, j.head.y - 11 * s); }
   c.globalAlpha = 1;
@@ -1105,7 +1249,7 @@ function draw() {
   for (const u of G.units) blob(c, u.t.g, u.x, GROUND + u.y, 22 * u.size, 6 * u.size, G.sides[u.side].buff.ghost ? 0.1 : 0.35);
   c.globalAlpha = 1;
   // senjata yang jatuh
-  G.drops.forEach(d => { c.shadowColor = d.c; c.globalAlpha = d.life < 2 ? (Math.sin(G.t * 20) > 0 ? 0.9 : 0.3) : 0.9; drawWeapon(c, d.type, d.x - 10, GROUND + d.y - 3, d.rot, 1, 0.9, d.c, 0); c.globalAlpha = 1; });
+  G.drops.forEach(d => { c.shadowColor = d.c; c.globalAlpha = d.life < 2 ? (Math.sin(G.t * 20) > 0 ? 0.9 : 0.3) : 0.9; { const th = THEME[d.wt || 'besi']; drawWeapon(c, th[d.type][1], d.x - 10, GROUND + d.y - 3, d.rot, 1, 0.9, d.c, 0, { tid: d.wt || 'besi', img: 'w_' + (d.wt || 'besi') + '_' + d.type, alt: (d.wt || 'besi') === 'besi' ? 'weapon_' + th[d.type][1] : null }); } c.globalAlpha = 1; });
   // mayat ragdoll
   for (const k of G.corpses) {
     c.shadowColor = k.g; c.globalAlpha = Math.min(1, k.life / 1.5) * 0.85; c.strokeStyle = k.c; c.lineWidth = 3 * k.size; c.lineCap = 'round';
@@ -1141,6 +1285,7 @@ function draw() {
     const nx = p.sx + (tx - p.sx) * (p.t + 0.04), ny = p.sy + (ty - p.sy) * (p.t + 0.04) - Math.sin((p.t + 0.04) * Math.PI) * p.arc;
     const a = Math.atan2(ny - y, nx - x);
     c.shadowBlur = 0; c.strokeStyle = p.c; c.lineCap = 'round';
+    if (p.st && p.st !== 'arrow' && !p.big) { drawProj(c, p, x, y, a); continue; }
     c.globalAlpha = 0.25; c.lineWidth = 5; c.beginPath(); c.moveTo(x - Math.cos(a) * 26, y - Math.sin(a) * 26); c.lineTo(x, y); c.stroke();
     c.globalAlpha = 1; c.lineWidth = 1.8; c.beginPath(); c.moveTo(x - Math.cos(a) * 13, y - Math.sin(a) * 13); c.lineTo(x, y); c.stroke();
     blob(c, p.c, x, y, p.big ? 14 : 7, p.big ? 14 : 7, 0.9); if (p.big) { c.globalAlpha = 1; c.fillStyle = '#fff'; c.beginPath(); c.arc(x, y, 3.5, 0, 7); c.fill(); } c.globalAlpha = 1;
