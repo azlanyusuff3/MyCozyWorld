@@ -582,7 +582,8 @@ function shoot(src, tgt, dmg, kind, lift) {
   const dist = Math.abs(tgt.x - sx);
   const st = THEME[(src.wt) || (src.t && src.t.id)] ? THEME[src.wt || src.t.id].proj : 'arrow';
   const fast = st === 'dart' || st === 'bolt', lob = st === 'poison' || st === 'fire';
-  G.proj.push({ sx, sy, tgt, tx: tgt.x, ty: GROUND + tgt.y - 30, t: 0, dur: (fast ? 0.15 : 0.25) + dist / (fast ? 800 : 520), dmg, src, c: src.t.c, arc: fast ? 6 + dist * 0.05 : (lob ? 30 : 18) + dist * (lob ? 0.25 : 0.18), st });
+  const ptid = src.wt || (src.t && src.t.id), pimg = src.type === 'panah' && THEME[ptid] && THEME[ptid].panah[1] === 'orb' ? 'w_' + ptid + '_panah' : null;
+  G.proj.push({ pimg, sx, sy, tgt, tx: tgt.x, ty: GROUND + tgt.y - 30, t: 0, dur: (fast ? 0.15 : 0.25) + dist / (fast ? 800 : 520), dmg, src, c: src.t.c, arc: fast ? 6 + dist * 0.05 : (lob ? 30 : 18) + dist * (lob ? 0.25 : 0.18), st });
 }
 
 /* ================= ULTIMATE ================= */
@@ -794,7 +795,7 @@ function drawWeapon(c, type, hx, hy, ang, d, s, col, atk, W) {
     const ar = ti.width / ti.height, cat = SHAPE_CAT[type] || 'long';
     if (cat === 'long') { const w = (SHAPE_LEN[type] || 38) * s, h = w / ar; c.drawImage(ti, -7 * s, -h / 2, w, h); }
     else if (cat === 'bow') { const h = 36 * s, w = h * ar; c.drawImage(ti, -w / 2, -h / 2, w, h); }
-    else if (cat === 'shield') { const h = 32 * s, w = h * ar; c.drawImage(ti, 0, -h / 2, w, h); }
+    else if (cat === 'shield') { const h = (ar > 0.7 ? 25 : 32) * s, w = h * ar; c.drawImage(ti, -2 * s, -h / 2, w, h); }
     else { const z = (type === 'tinju_api' ? 15 : 13) * s; c.drawImage(ti, -z / 2 + 3 * s, -z / 2, z, z * ti.height / ti.width); }
     if (cat === 'long' && atk > 0.25 && type !== 'busur_silang' && type !== 'sumpit') slash(c, s, atk);
     c.restore(); return;
@@ -925,6 +926,13 @@ function drawTree(c, u) {
 }
 function drawProj(c, p, x, y, a) {
   const T = G.t, el = THEME[p.src && (p.src.wt || (p.src.t && p.src.t.id))]?.el || [p.c, '#fff', p.c];
+  const pi = p.pimg && img(p.pimg);
+  if (pi) {
+    blob(c, el[0], x, y, 14, 14, 0.6); c.globalAlpha = 1;
+    c.save(); c.translate(x, y); c.rotate(p.st === 'moon' ? T * 18 : a); const z = 18; c.drawImage(pi, -z / 2, -z / 2 * pi.height / pi.width, z, z * pi.height / pi.width); c.restore();
+    if (p.st === 'fire' && Math.random() < 0.6) G.parts.push({ x, y, vx: rnd(-20, 20), vy: rnd(-40, -10), life: 0.3, c: pick(el), r: 2.5 });
+    return;
+  }
   c.globalCompositeOperation = 'lighter';
   switch (p.st) {
     case 'fire':
