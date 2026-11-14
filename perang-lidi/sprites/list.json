@@ -39,5 +39,9 @@
   "w_api_pedang",
   "w_api_panah",
   "w_api_perisai",
-  "w_api_gergaji"
+  "w_api_gergaji",
+  "w_bulan_pedang",
+  "w_bulan_panah",
+  "w_bulan_perisai",
+  "w_bulan_gergaji"
 ]
