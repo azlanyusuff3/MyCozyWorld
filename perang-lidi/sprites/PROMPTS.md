@@ -201,3 +201,42 @@ Semua: gaya sama dengan `elite_besi.webp` / `elite_hutan.webp` yang dah ada, **s
 | `pokok_akar.webp` | ONE single root leg only, **standing straight DOWN**: thick joint at the **TOP-CENTRE** of the image, twisted root, splitting into root toes at the **BOTTOM** pointing RIGHT. |
 
 Penting: `*_badan` dan `*_badan_serang` mesti sama saiz dan kedudukan.
+
+---
+
+## 13. Askar mega 5 puak lain (berbahagian) — BARU
+Sama macam naga, robot dan pokok: setiap makhluk dipecah kepada bahagian, dan game akan gerakkan sendiri. Selagi gambar belum masuk, askar ni masih muncul sebagai stickman besar.
+
+Semua: **side view menghadap KANAN**, background **transparent**, tiada teks, 1024×1024, gaya sama dengan gambar lain dalam game (dark neon fantasy, outline gelap tebal, cahaya neon ikut warna puak). `*_badan` dan `*_badan_serang` mesti **sama pose, saiz dan kedudukan**, beza muka/mulut sahaja.
+
+### Makhluk berkaki empat (Serigala, Harimau, Rusa)
+Template badan: *"[MAKHLUK], side view facing right, standing, **body, head and tail ONLY, with NO legs at all** (smooth body underside with 4 small round leg-joint stumps: 2 near the front chest, 2 near the back hips)."*
+Template kaki: *"ONE single [depan/belakang] leg of the same creature only, **standing straight DOWN**, thick joint at the **TOP-CENTRE** of the image, paw/hoof at the **BOTTOM** pointing RIGHT."*
+
+| Fail | [MAKHLUK] / nota |
+|---|---|
+| `serigala_badan` | A giant moon wolf with thick violet and silver fur, glowing crescent-moon mark on its forehead, fluffy tail, violet and lavender neon rim light. Mouth closed. |
+| `serigala_badan_serang` | Same, mouth wide open howling with a bright silver-white glow in the mouth |
+| `serigala_kaki_depan`, `serigala_kaki_belakang` | front leg (straight, paw) / back leg (bent hock, paw) |
+| `harimau_badan` | A Malayan tiger warrior wearing gold and maroon songket armour plates and a small tengkolok on its head, gold neon rim light. Mouth closed. |
+| `harimau_badan_serang` | Same, roaring with fangs showing |
+| `harimau_kaki_depan`, `harimau_kaki_belakang` | front leg with armoured paw / back leg with paw |
+| `rusa_badan` | A ghostly spirit deer, translucent mint-turquoise body with flowing mist, large glowing crystal antlers, mint and teal neon rim light. Calm face. |
+| `rusa_badan_serang` | Same, eyes glowing bright white and the crystal antlers flaring with light |
+| `rusa_kaki_depan`, `rusa_kaki_belakang` | slim front leg with hoof / slim back leg (bent) with hoof |
+
+### Gergasi Salji (berjalan 2 kaki, macam robot)
+| Fail | Prompt |
+|---|---|
+| `yeti_badan` | A giant friendly-fierce snow yeti, thick white shaggy fur, icy blue face and frost crystals on the shoulders, white and pale cyan neon rim light, side view facing right, **torso and head ONLY, NO arms and NO legs**. Mouth closed. |
+| `yeti_badan_serang` | Same, roaring with mouth wide open, eyes glowing icy blue |
+| `yeti_lengan` | ONE single furry yeti arm only, **hanging straight DOWN**, shoulder joint at the **TOP-CENTRE**, big furry hand with icy claws at the **BOTTOM**, palm facing RIGHT |
+| `yeti_kaki` | ONE single furry yeti leg only, **standing straight DOWN**, hip joint at the **TOP-CENTRE**, big furry foot at the **BOTTOM** pointing RIGHT |
+
+### Kala Jengking Racun
+| Fail | Prompt |
+|---|---|
+| `kala_badan` | A giant poison scorpion, toxic lime-green glowing armour plates, two big pincers reaching forward to the RIGHT, side view facing right, **body and pincers ONLY, NO tail and NO legs**. |
+| `kala_badan_serang` | Same, pincers wide open and eyes glowing bright |
+| `kala_ekor` | ONE single segmented scorpion tail only, base at the **BOTTOM-LEFT corner**, curving UP and forward to a glowing dripping stinger at the **TOP-RIGHT** |
+| `kala_kaki` | ONE single thin jointed scorpion leg only, joint at the **TOP-CENTRE**, bending down to a pointed tip at the **BOTTOM** |

@@ -29,13 +29,13 @@ const UNIT_KEYS = Object.keys(UNITS);
 // askar istimewa setiap puak (unit ke-5)
 const ELITE = {
   api:      { name: 'Naga Api',       cost: 110, hp: 230, dmg: 5,  range: 75,  rate: 0.25, spd: 34, armor: 0.1,  size: 1.45, mech: 'flame',   shape: 'naga',  melee: true, desc: 'Naga terbang, sembur api kena semua musuh di depan' },
-  bulan:    { name: 'Pemanah Bulan',  cost: 120, hp: 150, dmg: 26, range: 280, rate: 2.2,  spd: 32, armor: 0,    size: 1.35, mech: 'beam',    wpn: 'panah',   desc: 'Sinar bulan tembus semua musuh sebaris' },
+  bulan:    { name: 'Serigala Bulan', shape: 'serigala',  cost: 120, hp: 150, dmg: 26, range: 280, rate: 2.2,  spd: 32, armor: 0,    size: 1.35, mech: 'beam',    wpn: 'panah',   desc: 'Serigala gergasi, lolongan sinar bulan tembus semua musuh sebaris' },
   besi:     { name: 'Robot Gergasi',  cost: 130, hp: 650, dmg: 30, range: 30,  rate: 1.6,  spd: 22, armor: 0.4,  size: 1.85, mech: 'punch',   shape: 'robot',   melee: true, desc: 'Tumbukan berat, tolak musuh ke belakang' },
   hutan:    { name: 'Gergasi Pokok',  cost: 120, hp: 520, dmg: 20, range: 30,  rate: 1.5,  spd: 24, armor: 0.15, size: 1.75, mech: 'slam',    shape: 'pokok',   melee: true, desc: 'Hentak tanah: pengsankan musuh, pulihkan kawan' },
-  pendekar: { name: 'Pahlawan Keris', cost: 110, hp: 260, dmg: 26, range: 22,  rate: 0.6,  spd: 50, armor: 0.1,  size: 1.35, mech: 'leap',    wpn: 'keris',   melee: true, desc: 'Lompat terus ke musuh, tikaman maut' },
-  bunian:   { name: 'Penembak Ghaib', cost: 110, hp: 130, dmg: 30, range: 210, rate: 1.6,  spd: 36, armor: 0,    size: 1.3,  mech: 'stealth', wpn: 'panah',   desc: 'Halimunan, hanya nampak bila menembak' },
-  ais:      { name: 'Penyihir Salji', cost: 115, hp: 170, dmg: 14, range: 190, rate: 1.8,  spd: 30, armor: 0,    size: 1.35, mech: 'iceball', wpn: 'tongkat', desc: 'Bola ais membeku sekumpulan musuh' },
-  racun:    { name: 'Bomoh Racun',    cost: 115, hp: 180, dmg: 7,  range: 170, rate: 1.7,  spd: 30, armor: 0,    size: 1.35, mech: 'flask',   wpn: 'tongkat', desc: 'Baling botol racun ke kumpulan musuh' },
+  pendekar: { name: 'Harimau Pendekar', shape: 'harimau', cost: 110, hp: 260, dmg: 26, range: 22,  rate: 0.6,  spd: 50, armor: 0.1,  size: 1.35, mech: 'leap',    wpn: 'keris',   melee: true, desc: 'Harimau Malaya berperisai, menerkam terus ke musuh' },
+  bunian:   { name: 'Rusa Bunian', shape: 'rusa', cost: 110, hp: 130, dmg: 30, range: 210, rate: 1.6,  spd: 36, armor: 0,    size: 1.3,  mech: 'stealth', wpn: 'panah',   desc: 'Rusa roh halimunan, tembak panah roh dari tanduk kristal' },
+  ais:      { name: 'Gergasi Salji', shape: 'yeti', cost: 115, hp: 170, dmg: 14, range: 190, rate: 1.8,  spd: 30, armor: 0,    size: 1.35, mech: 'iceball', wpn: 'tongkat', desc: 'Yeti gergasi, baling bola ais yang membeku sekumpulan musuh' },
+  racun:    { name: 'Kala Jengking Racun', shape: 'kala',    cost: 115, hp: 180, dmg: 7,  range: 170, rate: 1.7,  spd: 30, armor: 0,    size: 1.35, mech: 'flask',   wpn: 'tongkat', desc: 'Kala jengking raksasa, sengat melontar racun ke kumpulan musuh' },
 };
 for (const k in ELITE) UNITS['e_' + k] = Object.assign({ elite: true, tribe: k }, ELITE[k]);
 const ELITE_MAX = 2;
@@ -163,7 +163,7 @@ function cropAlpha(im) {
 }
 fetch('sprites/list.json', { cache: 'no-cache' }).then(r => r.ok ? r.json() : []).catch(() => []).then(l => {
   let n = l.length; if (!n) return;
-  l.forEach(k => { const i = new Image(); i.onload = i.onerror = () => { if (i.naturalWidth && /^(hat|weapon|fort|w|elite|robot|pokok)_|^naga_sayap/.test(k)) IMG[k] = cropAlpha(i); else if (i.naturalWidth && /^naga_badan/.test(k)) IMG[k] = cropRect(i, 0, 0.29, 1, 0.72); if (--n === 0) applyArt(); }; i.src = 'sprites/' + k + '.webp'; IMG[k] = i; });
+  l.forEach(k => { const i = new Image(); i.onload = i.onerror = () => { if (i.naturalWidth && /^(hat|weapon|fort|w|elite|robot|pokok|serigala|harimau|rusa|yeti|kala)_|^naga_sayap/.test(k)) IMG[k] = cropAlpha(i); else if (i.naturalWidth && /^naga_badan/.test(k)) IMG[k] = cropRect(i, 0, 0.29, 1, 0.72); if (--n === 0) applyArt(); }; i.src = 'sprites/' + k + '.webp'; IMG[k] = i; });
 });
 function applyArt() {
   if (img('logo')) document.querySelector('#menu .logo').innerHTML = `<img src="${IMG.logo.src}" alt="Perang Lidi">`;
@@ -191,7 +191,7 @@ function miniStick(tribe, type, w = 44, h = 50, opt) {
   const c = document.createElement('canvas'), dpr = Math.min(2, devicePixelRatio || 1);
   c.width = w * dpr; c.height = h * dpr; c.style.width = w + 'px'; c.style.height = h + 'px';
   const x = c.getContext('2d'); x.scale(dpr, dpr);
-  const u = { side: 0, x: w / 2 - 3, y: 0, type, t: TRIBES.find(t => t.id === tribe), walk: 0.6, atk: 0, size: (UNITS[type].shape ? (UNITS[type].shape === 'naga' ? 0.62 : 0.72) : Math.min(UNITS[type].size, 1.15)) * h / 78, hp: 1, maxHp: 1, stolen: false };
+  const u = { side: 0, x: w / 2 - 3, y: 0, type, t: TRIBES.find(t => t.id === tribe), walk: 0.6, atk: 0, size: (UNITS[type].shape && (['naga', 'robot', 'pokok'].includes(UNITS[type].shape) || img(UNITS[type].shape + '_badan')) ? (UNITS[type].shape === 'naga' ? 0.62 : 0.72) : Math.min(UNITS[type].size, 1.15)) * h / 78, hp: 1, maxHp: 1, stolen: false };
   if (opt) Object.assign(u, opt);
   drawStick(x, u, 0, h - 3 - GROUND, 1);
   return c;
@@ -559,7 +559,7 @@ function kill(u) {
     ks.ult = Math.min(100, ks.ult + U.cost * 0.22);
     ks.kills++;
   }
-  if (U.shape) { G.shake = Math.max(G.shake, 6); snd('boom'); for (let i = 0; i < 40; i++) G.parts.push({ x: u.x + rnd(-20, 20) * u.size, y: GROUND + u.y - rnd(5, 55) * u.size, vx: rnd(-160, 160), vy: rnd(-220, -30), life: rnd(0.5, 1), c: pick([u.t.c, '#ffffff', u.t.g]), r: rnd(2, 4) });
+  if (U.shape && (['naga', 'robot', 'pokok'].includes(U.shape) || img(U.shape === 'kala' ? 'kala_badan' : U.shape + '_badan'))) { G.shake = Math.max(G.shake, 6); snd('boom'); for (let i = 0; i < 40; i++) G.parts.push({ x: u.x + rnd(-20, 20) * u.size, y: GROUND + u.y - rnd(5, 55) * u.size, vx: rnd(-160, 160), vy: rnd(-220, -30), life: rnd(0.5, 1), c: pick([u.t.c, '#ffffff', u.t.g]), r: rnd(2, 4) });
     G.fx.push({ k: 'ring', x: u.x, y: GROUND + u.y - 30 * u.size, c: u.t.c, life: 0.4, max: 0.4 }); return; }
   if (u.clone) { for (let i = 0; i < 10; i++) G.parts.push({ x: u.x, y: GROUND + u.y - rnd(0, 50), vx: rnd(-40, 40), vy: rnd(-80, -10), life: 0.5, c: u.t.c, r: 2 }); return; }
   if (!U.elite && Math.random() < 0.55) G.drops.push({ x: u.x, y: u.y, type: u.type, wt: u.wt || u.t.id, life: 9, c: TRIBES.find(t => t.id === (u.wt || u.t.id)).c, rot: rnd(-0.4, 0.4) });
@@ -996,11 +996,13 @@ function neon(c, col, w, alpha) {
 const WALK_RIG = {
   robot: { pre: 'robot', bodyH: 36, legH: 22, armH: 30, hip: [0.52, 0.9], hipGap: 0.18, shoulder: [0.84, 0.5], backShoulder: [0.14, 0.5],
            legPivot: [0.5, 0.05], armPivot: [0.5, 0.06], legSwing: 0.45, armSwing: 0.3, attack: 'punch' },
+  yeti:  { pre: 'yeti', bodyH: 40, legH: 18, armH: 30, hip: [0.5, 0.93], hipGap: 0.16, shoulder: [0.72, 0.38], backShoulder: [0.3, 0.38],
+           legPivot: [0.5, 0.05], armPivot: [0.5, 0.05], legSwing: 0.4, armSwing: 0.25, attack: 'slam', armName: 'lengan', legName: 'kaki' },
   pokok: { pre: 'pokok', bodyH: 48, legH: 17, armH: 32, hip: [0.49, 0.96], hipGap: 0.12, shoulder: [0.72, 0.52], backShoulder: [0.27, 0.52],
            legPivot: [0.5, 0.05], armPivot: [0.5, 0.05], legSwing: 0.35, armSwing: 0.22, attack: 'slam', flipArm: true },
 };
 function drawWalkRig(c, u, ox, oy, alpha, R) {
-  const body = (u.atk > 0.05 && img(R.pre + '_badan_serang')) || img(R.pre + '_badan'), arm = img(R.pre + (R.pre === 'pokok' ? '_dahan' : '_lengan')), leg = img(R.pre + (R.pre === 'pokok' ? '_akar' : '_kaki'));
+  const body = (u.atk > 0.05 && img(R.pre + '_badan_serang')) || img(R.pre + '_badan'), arm = img(R.pre + '_' + (R.armName || (R.pre === 'pokok' ? 'dahan' : 'lengan'))), leg = img(R.pre + '_' + (R.legName || (R.pre === 'pokok' ? 'akar' : 'kaki')));
   if (!body || !arm || !leg) return false;
   const k = u.size, d = u.dir ?? (u.side ? -1 : 1), x = u.x + (ox || 0), gy = GROUND + (u.y || 0) + (oy || 0);
   const a = u.atk || 0, moving = a <= 0.01, w = u.walk || 0, T = G ? G.t : performance.now() / 1000;
@@ -1037,6 +1039,62 @@ function drawWalkRig(c, u, ox, oy, alpha, R) {
   }
   if (G && R.pre === 'robot' && Math.random() < 0.08) G.parts.push({ x: x - d * BW * 0.4, y: gy - LH - BH * 0.7, vx: -d * rnd(5, 20), vy: rnd(-30, -10), life: 0.6, c: '#9fb4c8', r: 2 });
   if (G && R.pre === 'pokok' && Math.random() < 0.04) G.parts.push({ x: x + rnd(-BW / 2, BW / 2), y: gy - LH - BH * 0.85, vx: rnd(-10, 10), vy: rnd(10, 25), life: 1.1, c: pick(['#7dff6a', '#c8ff9a']), r: 2 });
+  return true;
+}
+// rig berkaki empat: badan + kaki depan + kaki belakang (kaki sebelah jauh digelapkan)
+const QUAD_RIG = {
+  serigala: { pre: 'serigala', bodyH: 30, legH: 17, front: [0.7, 0.72], back: [0.28, 0.7], swing: 0.5, hover: 0 },
+  harimau:  { pre: 'harimau',  bodyH: 28, legH: 16, front: [0.7, 0.72], back: [0.27, 0.7], swing: 0.55, hover: 0 },
+  rusa:     { pre: 'rusa',     bodyH: 36, legH: 22, front: [0.66, 0.68], back: [0.3, 0.66], swing: 0.45, hover: 0 },
+};
+function drawQuadRig(c, u, ox, oy, alpha, R) {
+  const body = (u.atk > 0.05 && img(R.pre + '_badan_serang')) || img(R.pre + '_badan'), lf = img(R.pre + '_kaki_depan'), lb = img(R.pre + '_kaki_belakang');
+  if (!body || !lf || !lb) return false;
+  const k = u.size, d = u.dir ?? (u.side ? -1 : 1), x = u.x + (ox || 0), gy = GROUND + (u.y || 0) + (oy || 0);
+  const a = u.atk || 0, moving = a <= 0.01, w = (u.walk || 0) * 1.3, T = G ? G.t : performance.now() / 1000;
+  const BH = R.bodyH * k, BW = BH * body.width / body.height, LH = R.legH * k;
+  const st = moving ? Math.sin(w) : 0, bob = moving ? -Math.abs(Math.sin(w)) * 2 * k : Math.sin(T * 2.2) * 0.6 * k;
+  const pounce = a > 0 ? Math.sin(a * Math.PI) : 0, tilt = -pounce * 0.12;
+  blob(c, u.t.g, x, gy, BW * 0.5, 5 * k, alpha * 0.55);
+  c.save(); c.globalAlpha = alpha; c.translate(x + d * pounce * 8 * k, gy - LH * 0.92 + bob - pounce * 6 * k); c.scale(d, 1); c.rotate(tilt);
+  c.shadowBlur = 14; c.shadowColor = u.hitFlash > 0 ? '#ffffff' : u.t.g;
+  const fl = u.hitFlash > 0 ? 'brightness(2.2) ' : '';
+  const bx = -0.5 * BW, by = -0.7 * BH;   // (0,0) kira-kira paras pinggul
+  const leg = (im, hip, ang, dark) => { const W2 = LH * im.width / im.height; c.save(); c.translate(bx + hip[0] * BW, by + hip[1] * BH); c.rotate(ang);
+    c.filter = fl + (dark ? 'brightness(0.55)' : '') || 'none'; c.drawImage(im, -0.5 * W2, -0.05 * LH, W2, LH); c.restore(); c.filter = fl || 'none'; };
+  const fA = a > 0 ? -0.9 * pounce : st * R.swing, bA = a > 0 ? 0.7 * pounce : -st * R.swing;
+  leg(lf, [R.front[0] - 0.04, R.front[1]], -fA, true); leg(lb, [R.back[0] - 0.04, R.back[1]], -bA, true);   // kaki sebelah jauh
+  c.drawImage(body, bx, by, BW, BH);
+  leg(lf, R.front, fA, false); leg(lb, R.back, bA, false);
+  c.restore(); c.filter = 'none'; c.shadowBlur = 0; c.globalAlpha = 1;
+  if (G && R.pre === 'rusa' && Math.random() < 0.08) G.parts.push({ x: x + rnd(-BW / 2, BW / 2), y: gy - LH - rnd(0, BH), vx: rnd(-8, 8), vy: rnd(-20, -5), life: 0.9, c: pick(['#5ff5d8', '#ffffff']), r: 1.6 });
+  if (G && R.pre === 'serigala' && Math.random() < 0.05) G.parts.push({ x: x + d * BW * 0.45, y: gy - LH - BH * 0.55, vx: d * rnd(5, 15), vy: rnd(-15, -5), life: 0.8, c: '#e2d4ff', r: 1.5 });
+  return true;
+}
+// kala jengking: badan (dengan sepit) + ekor bersengat + 6 kaki
+const KALA_RIG = { bodyH: 22, legH: 14, tailH: 34, tailBase: [0.16, 0.42], tailPivot: [0.12, 0.92], legs: [0.38, 0.52, 0.66], legY: 0.7, swing: 0.4 };
+function drawKalaRig(c, u, ox, oy, alpha) {
+  const R = KALA_RIG, body = (u.atk > 0.05 && img('kala_badan_serang')) || img('kala_badan'), tail = img('kala_ekor'), lg = img('kala_kaki');
+  if (!body || !tail || !lg) return false;
+  const k = u.size, d = u.dir ?? (u.side ? -1 : 1), x = u.x + (ox || 0), gy = GROUND + (u.y || 0) + (oy || 0);
+  const a = u.atk || 0, moving = a <= 0.01, w = (u.walk || 0) * 1.8, T = G ? G.t : performance.now() / 1000;
+  const BH = R.bodyH * k, BW = BH * body.width / body.height, LH = R.legH * k, TH = R.tailH * k, TW = TH * tail.width / tail.height;
+  blob(c, u.t.g, x, gy, BW * 0.55, 5 * k, alpha * 0.55);
+  c.save(); c.globalAlpha = alpha; c.translate(x, gy - LH * 0.75 + (moving ? Math.sin(w * 2) * 0.8 * k : 0)); c.scale(d, 1);
+  c.shadowBlur = 14; c.shadowColor = u.hitFlash > 0 ? '#ffffff' : u.t.g;
+  const fl = u.hitFlash > 0 ? 'brightness(2.2) ' : '';
+  const bx = -0.5 * BW, by = -R.legY * BH;
+  const legs = (dark, ph) => R.legs.forEach((fx, i) => { const ang = (moving ? Math.sin(w + i * 2.1 + ph) * R.swing : 0) + (i - 1) * 0.25, W2 = LH * lg.width / lg.height;
+    c.save(); c.translate(bx + fx * BW, by + R.legY * BH); c.rotate(ang); c.filter = fl + (dark ? 'brightness(0.5)' : '') || 'none'; c.drawImage(lg, -0.5 * W2, -0.05 * LH, W2, LH); c.restore(); });
+  legs(true, Math.PI);
+  // ekor: berayun perlahan, menyengat ke depan bila serang
+  const sting = a > 0 ? Math.sin(a * Math.PI) : 0, tA = Math.sin(T * 2.5) * 0.06 + sting * 0.55;
+  c.save(); c.translate(bx + R.tailBase[0] * BW, by + R.tailBase[1] * BH); c.rotate(tA); c.filter = fl || 'none';
+  c.drawImage(tail, -R.tailPivot[0] * TW, -R.tailPivot[1] * TH, TW, TH); c.restore();
+  c.filter = fl || 'none'; c.drawImage(body, bx, by, BW, BH);
+  legs(false, 0);
+  c.restore(); c.filter = 'none'; c.shadowBlur = 0; c.globalAlpha = 1;
+  if (G && Math.random() < 0.06) G.parts.push({ x: x - d * BW * 0.1, y: gy - LH - TH * 0.8, vx: rnd(-5, 5), vy: rnd(10, 30), life: 0.6, c: '#b8ff2a', r: 1.8 });
   return true;
 }
 const NAGA_RIG = { bodyH: 30, hover: 34, wingH: 34, shoulder: [0.6, 0.47], wingPivot: [0.93, 0.96], wingRest: -0.45, wingSwing: 0.85, flapSpeed: 6.5, mouth: [0.95, 0.53] };
@@ -1078,6 +1136,9 @@ function drawShape(c, u, ox, oy, alpha) {
     c.globalAlpha = 1; return true;
   }
   if (WALK_RIG[sh] && drawWalkRig(c, u, ox, oy, alpha, WALK_RIG[sh])) return true;
+  if (QUAD_RIG[sh] && drawQuadRig(c, u, ox, oy, alpha, QUAD_RIG[sh])) return true;
+  if (sh === 'kala' && drawKalaRig(c, u, ox, oy, alpha)) return true;
+  if (!['naga', 'robot', 'pokok'].includes(sh)) return false;   // makhluk baru tanpa gambar: guna stickman
   const ei = img('elite_' + u.t.id);
   if (ei) { // gambar ChatGPT: animasi guna transform
     const k = u.size, d = u.dir ?? (u.side ? -1 : 1), x = u.x + (ox || 0), gy = GROUND + (u.y || 0) + (oy || 0);
