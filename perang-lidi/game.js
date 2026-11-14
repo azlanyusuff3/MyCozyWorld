@@ -157,7 +157,7 @@ function cropAlpha(im) {
 }
 fetch('sprites/list.json', { cache: 'no-cache' }).then(r => r.ok ? r.json() : []).catch(() => []).then(l => {
   let n = l.length; if (!n) return;
-  l.forEach(k => { const i = new Image(); i.onload = i.onerror = () => { if (i.naturalWidth && /^(hat|weapon|fort|w|elite)_/.test(k)) IMG[k] = cropAlpha(i); if (--n === 0) applyArt(); }; i.src = 'sprites/' + k + '.webp'; IMG[k] = i; });
+  l.forEach(k => { const i = new Image(); i.onload = i.onerror = () => { if (i.naturalWidth && /^(hat|weapon|fort|w|elite|naga)_/.test(k)) IMG[k] = cropAlpha(i); if (--n === 0) applyArt(); }; i.src = 'sprites/' + k + '.webp'; IMG[k] = i; });
 });
 function applyArt() {
   if (img('logo')) document.querySelector('#menu .logo').innerHTML = `<img src="${IMG.logo.src}" alt="Perang Lidi">`;
@@ -984,8 +984,45 @@ function neon(c, col, w, alpha) {
   c.globalAlpha = alpha; c.lineWidth = w; c.stroke();
   c.globalAlpha = alpha * 0.7; const sc = c.strokeStyle; c.strokeStyle = '#ffffff'; c.lineWidth = w * 0.35; c.stroke(); c.strokeStyle = sc; c.globalAlpha = alpha;
 }
+// kedudukan dalam gambar (pecahan 0..1) — laras di sini bila gambar baru masuk
+const NAGA_RIG = { bodyH: 40, hover: 14, wingH: 40, shoulder: [0.42, 0.38], wingPivot: [0.9, 0.92], wingRest: 0.15, wingSwing: 0.75, flapSpeed: 7, mouth: [0.97, 0.3] };
 function drawShape(c, u, ox, oy, alpha) {
   const sh = UNITS[u.type] && UNITS[u.type].shape; if (!sh) return false;
+  // ---- rig naga berbahagian: badan + sayap berasingan, sayap mengepak betul ----
+  const nb = sh === 'naga' && img('naga_badan'), nw = nb && img('naga_sayap');
+  if (nb && nw) {
+    const R = NAGA_RIG, k = u.size, d = u.dir ?? (u.side ? -1 : 1), x = u.x + (ox || 0), gy = GROUND + (u.y || 0) + (oy || 0);
+    const T = G ? G.t : performance.now() / 1000, a = u.atk || 0, id = (u.id || 0.5) * 10;
+    const body = (a > 0.05 && img('naga_badan_serang')) || nb;
+    const H = R.bodyH * k, W = H * body.width / body.height;
+    const ph = T * R.flapSpeed + id, flap = Math.sin(ph);               // -1 (bawah) .. 1 (atas)
+    const lift = -Math.cos(ph) * 3 * k;                                   // badan naik bila sayap hentak ke bawah
+    const bob = Math.sin(T * 1.7 + id) * 2.5 * k + lift;
+    const lunge = a > 0 ? Math.sin(a * Math.PI) * 6 * k : 0, tilt = (a > 0 ? Math.sin(a * Math.PI) * 0.1 : 0) + Math.sin(T * 1.3 + id) * 0.03;
+    const cy = gy - R.hover * k + bob;
+    blob(c, u.t.g, x, gy, W * 0.4, 5 * k, alpha * (0.4 + 0.15 * Math.cos(ph)));
+    c.save(); c.globalAlpha = alpha; c.translate(x + d * lunge, cy); c.scale(d, 1); c.rotate(tilt);
+    c.shadowBlur = 16; c.shadowColor = u.hitFlash > 0 ? '#ffffff' : u.t.g; if (u.hitFlash > 0) c.filter = 'brightness(2.2)';
+    const bx = -W / 2, by2 = -H;                                           // badan: tengah-bawah di (0,0)
+    const sx = bx + R.shoulder[0] * W, sy = by2 + R.shoulder[1] * H;     // sendi bahu dalam gambar badan
+    const WH = R.wingH * k, WW = WH * nw.width / nw.height;
+    const wing = (ofs, sc, dark) => {
+      c.save(); c.translate(sx + ofs[0] * k, sy + ofs[1] * k);
+      c.rotate(R.wingRest + flap * R.wingSwing);
+      c.scale(sc, sc * (0.55 + 0.45 * Math.abs(Math.cos(ph * 0.5 + 0.8))) ); // pendek bila dilihat dari sisi
+      if (dark) { c.globalAlpha = alpha * 0.75; c.filter = (u.hitFlash > 0 ? 'brightness(2.2) ' : '') + 'brightness(0.6)'; }
+      c.drawImage(nw, -R.wingPivot[0] * WW, -R.wingPivot[1] * WH, WW, WH);
+      c.restore();
+    };
+    wing([-3, -1], 0.9, true);                                             // sayap belakang (lebih gelap)
+    c.drawImage(body, bx, by2, W, H);
+    wing([0, 0], 1, false);                                                // sayap depan
+    c.restore(); c.filter = 'none'; c.shadowBlur = 0;
+    // bara dari mulut, api bila serang
+    const mx = x + d * (R.mouth[0] - 0.5) * W + d * lunge, my = cy - H + R.mouth[1] * H;
+    if (G && Math.random() < (a > 0 ? 0.9 : 0.2)) G.parts.push({ x: mx, y: my, vx: d * rnd(a > 0 ? 120 : 10, a > 0 ? 240 : 30), vy: rnd(-30, 20), life: a > 0 ? 0.35 : 0.5, c: pick(['#ff7a2e', '#ffd36b', '#ff4d00']), r: a > 0 ? 3.5 : 2 });
+    c.globalAlpha = 1; return true;
+  }
   const ei = img('elite_' + u.t.id);
   if (ei) { // gambar ChatGPT: animasi guna transform
     const k = u.size, d = u.dir ?? (u.side ? -1 : 1), x = u.x + (ox || 0), gy = GROUND + (u.y || 0) + (oy || 0);

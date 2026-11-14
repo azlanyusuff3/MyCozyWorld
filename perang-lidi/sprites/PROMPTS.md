@@ -161,3 +161,18 @@ Game dah ada versi neon yang dilukis guna kod. Bila gambar ni masuk, game guna g
 | `elite_api.webp` | A fierce but cute young fire dragon flying, side view facing right, wings spread up, long spiked tail, glowing lava cracks on dark scales, ember glow in its open mouth, blazing orange and red neon rim light |
 | `elite_besi.webp` | A giant heavy battle robot mech standing, side view facing right, boxy armoured body with a glowing blue reactor core in the chest, big piston fist raised forward, red visor eye, small antenna, steel silver with electric ice-blue neon rim light |
 | `elite_hutan.webp` | A giant walking tree guardian (treant) standing, side view facing right, thick twisted trunk body with a kind but fierce glowing face, branch arms with twig fingers, root feet, lush leafy canopy head with small glowing flowers, leaf green and lime neon rim light |
+
+---
+
+## 11. Naga Api berbahagian (animasi terbang sebenar) — BARU
+Supaya naga betul-betul **mengepak sayap**, gambar naga dipecah kepada bahagian. Game akan cantum dan gerakkan sendiri: sayap mengepak naik-turun, badan terangkat setiap kali sayap hentak ke bawah, mulut ternganga dan sembur api bila menyerang.
+
+Semua: **side view menghadap KANAN**, background **transparent**, tiada teks, gaya sama dengan `elite_api.webp` yang dah ada (warna, sisik, outline, cahaya neon api). Saiz persegi 1024×1024.
+
+| Fail | Prompt |
+|---|---|
+| `naga_badan.webp` | The SAME fire dragon as elite_api, side view facing right, flying pose, **WITHOUT ANY WINGS** (no wings at all, smooth back with only two small wing-joint bumps on the upper back), head, curved neck, body, four small legs tucked, long spiked tail curving behind, **mouth closed**. Centred, whole dragon fits inside the image. |
+| `naga_badan_serang.webp` | EXACTLY the same as naga_badan (same pose, same size, same position in the image), but the **mouth is wide open** roaring with a small glow inside the mouth. No fire coming out. |
+| `naga_sayap.webp` | ONE single dragon wing only (no body), bat-like membrane with 3–4 finger bones, glowing lava-orange membrane edges. The wing root (where it joins the body) is at the **BOTTOM-RIGHT corner** of the image, and the wing spreads **UP and to the LEFT**, fully opened. |
+
+Penting: `naga_badan` dan `naga_badan_serang` mesti sama saiz dan kedudukan, beza mulut sahaja.
