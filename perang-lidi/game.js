@@ -187,11 +187,12 @@ segInit('modeSeg', mode, v => { mode = v; store.mode = v; save(); $('diffBox').c
 segInit('diffSeg', diff, v => { diff = +v; store.diff = diff; save(); });
 $('diffBox').classList.toggle('hidden', mode === 'tour');
 
-function miniStick(tribe, type, w = 44, h = 50) {
+function miniStick(tribe, type, w = 44, h = 50, opt) {
   const c = document.createElement('canvas'), dpr = Math.min(2, devicePixelRatio || 1);
   c.width = w * dpr; c.height = h * dpr; c.style.width = w + 'px'; c.style.height = h + 'px';
   const x = c.getContext('2d'); x.scale(dpr, dpr);
   const u = { side: 0, x: w / 2 - 3, y: 0, type, t: TRIBES.find(t => t.id === tribe), walk: 0.6, atk: 0, size: (UNITS[type].shape ? (UNITS[type].shape === 'naga' ? 0.62 : 0.72) : Math.min(UNITS[type].size, 1.15)) * h / 78, hp: 1, maxHp: 1, stolen: false };
+  if (opt) Object.assign(u, opt);
   drawStick(x, u, 0, h - 3 - GROUND, 1);
   return c;
 }
@@ -993,10 +994,10 @@ function neon(c, col, w, alpha) {
 // kedudukan dalam gambar (pecahan 0..1) — laras di sini bila gambar baru masuk
 // rig berjalan (robot & pokok): badan + lengan + kaki berasingan. Pecahan 0..1 dalam gambar.
 const WALK_RIG = {
-  robot: { pre: 'robot', bodyH: 40, legH: 20, armH: 26, hip: [0.5, 0.93], hipGap: 0.16, shoulder: [0.62, 0.3], backShoulder: [0.36, 0.3],
-           legPivot: [0.5, 0.06], armPivot: [0.5, 0.08], legSwing: 0.45, armSwing: 0.3, attack: 'punch' },
-  pokok: { pre: 'pokok', bodyH: 50, legH: 14, armH: 26, hip: [0.5, 0.95], hipGap: 0.14, shoulder: [0.62, 0.55], backShoulder: [0.38, 0.55],
-           legPivot: [0.5, 0.06], armPivot: [0.5, 0.06], legSwing: 0.35, armSwing: 0.2, attack: 'slam' },
+  robot: { pre: 'robot', bodyH: 36, legH: 22, armH: 30, hip: [0.52, 0.9], hipGap: 0.18, shoulder: [0.84, 0.5], backShoulder: [0.14, 0.5],
+           legPivot: [0.5, 0.05], armPivot: [0.5, 0.06], legSwing: 0.45, armSwing: 0.3, attack: 'punch' },
+  pokok: { pre: 'pokok', bodyH: 48, legH: 17, armH: 32, hip: [0.49, 0.96], hipGap: 0.12, shoulder: [0.72, 0.52], backShoulder: [0.27, 0.52],
+           legPivot: [0.5, 0.05], armPivot: [0.5, 0.05], legSwing: 0.35, armSwing: 0.22, attack: 'slam' },
 };
 function drawWalkRig(c, u, ox, oy, alpha, R) {
   const body = (u.atk > 0.05 && img(R.pre + '_badan_serang')) || img(R.pre + '_badan'), arm = img(R.pre + (R.pre === 'pokok' ? '_dahan' : '_lengan')), leg = img(R.pre + (R.pre === 'pokok' ? '_akar' : '_kaki'));
