@@ -93,5 +93,9 @@
   "rusa_badan",
   "rusa_badan_serang",
   "rusa_kaki_depan",
-  "rusa_kaki_belakang"
+  "rusa_kaki_belakang",
+  "yeti_badan",
+  "yeti_badan_serang",
+  "yeti_lengan",
+  "yeti_kaki"
 ]
