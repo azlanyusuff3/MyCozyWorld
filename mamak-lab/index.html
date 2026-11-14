@@ -72,7 +72,7 @@ canvas{display:block;width:100vw;height:100vh}
 <p style="font-size:11px;color:#8a7a62;margin:8px 0 0">Kau masak sendiri = dapat tip ⭐. Pelayan = kurang pressure.</p></div>
 <div class="sheet" id="regs"><h3>👥 Pelanggan Tetap <button id="rgX">✕</button></h3><div id="regList" style="display:flex;flex-direction:column;gap:6px;max-height:60vh;overflow:auto"></div></div>
 <div class="sheet" id="upg"><h3>🛠️ Upgrade <button id="upX">✕</button></h3><div id="upList" style="display:flex;flex-direction:column;gap:8px"></div></div>
-<div class="tag">v0.7</div>
+<div class="tag">v0.6.3</div>
 <div class="cook" id="cook"><h3><span id="ckTitle">Roti Canai</span><span class="timer" id="ckTime">0.0s</span><button id="ckX">✕</button></h3><div class="steps" id="ckSteps"></div><canvas id="rc" width="720" height="380" style="display:none;width:100%;height:190px;border-radius:14px;background:#3a2a22;touch-action:none"></canvas><div id="rcHint" style="display:none;text-align:center;font-size:12px;color:#8a7a62;margin-top:6px"></div><div class="opts" id="ckOpts"></div><div class="tarik" id="ckTarik"><div class="bar"><div class="zone" id="ckZone"></div><div class="needle" id="ckNeedle"></div></div><button id="ckTarikBtn">TARIK! 〰️</button></div></div>
 <script>
 // ===== Mamak Lab v0.1 — prototaip isometric (belum link ke Mamak Rush) =====
@@ -91,15 +91,14 @@ function save(){try{localStorage.setItem('mamakLab',JSON.stringify({money,tables
 
 // ---------- susun atur kedai ----------
 // 8 slot meja; mula dengan 2, beli lagi dalam mod Build
-const SLOTS=[{x:2,y:3.4},{x:7,y:3.4},{x:2,y:5},{x:7,y:5},{x:2,y:6.6},{x:7,y:6.6}];const LANE=.8; // lorong antara baris meja
-const TABLE_COST=[0,0,20,35,55,80];
+const SLOTS=[{x:2,y:4.2},{x:7,y:4.2},{x:2,y:2.6},{x:7,y:2.6},{x:2,y:5.8},{x:7,y:5.8},{x:2,y:7.2},{x:7,y:7.2}];
+const TABLE_COST=[0,0,20,30,45,60,80,100];
 const TABLES=[],SEATS=[];
 function addTable(){const t=SLOTS[TABLES.length];const i=TABLES.length;TABLES.push(t);SEATS.push({x:t.x-.85,y:t.y,t:i,who:null},{x:t.x+.85,y:t.y,t:i,who:null})}
-ownTables=Math.min(ownTables,SLOTS.length);for(let i=0;i<ownTables;i++)addTable();
+for(let i=0;i<ownTables;i++)addTable();
 // staff
 const WAITER_COST=[25,50,90];const waiters=[];
-const WHOME=[4.5,5.5,3.5];
-function addWaiter(){const i=waiters.length;waiters.push({id:'pelayan'+(i+1),x:WHOME[i],y:1.6,home:{x:WHOME[i],y:1.6},st:'idle',path:[],t:0,shirt:'#145c57',skin:SKIN[(i+2)%SKIN.length],cap:false,target:null})}
+function addWaiter(){const i=waiters.length;waiters.push({id:'pelayan'+(i+1),x:4+i,y:1.75,home:{x:4+i,y:1.75},st:'idle',path:[],t:0,shirt:'#145c57',skin:SKIN[(i+2)%SKIN.length],cap:false,target:null})}
 const MENU=[
  {n:'Roti Canai',e:'🫓',p:2.5,r:['🌀 Tebar','👉 Ke tawa','🔄 Terbalik','🍽️ Hidang'],visual:'roti'},
  {n:'Teh Tarik',e:'☕',p:2.2,r:['✋ Tahan','⬆️ Tarik tinggi','🎯 Lepas kat garisan'],visual:'teh'},
@@ -129,13 +128,13 @@ function spawn(){
   const reg=regs.length&&Math.random()<.4?regs[Math.random()*regs.length|0]:null;
   const seat=SEATS.filter(s=>!s.who);if(!seat.length)return;
   const s=seat[Math.random()*seat.length|0];
-  const p={x:13,y:8.6,path:[{x:4.5,y:8.6},{x:4.5,y:s.y-LANE},{x:s.x,y:s.y-LANE},{x:s.x,y:s.y}],seat:s,st:'walk',t:0,
+  const p={x:13,y:8.6,path:[{x:5,y:8.6},{x:5,y:s.y},{x:s.x,y:s.y}],seat:s,st:'walk',t:0,
     skin:SKIN[Math.random()*SKIN.length|0],shirt:SHIRT[Math.random()*SHIRT.length|0],cap:Math.random()<.4,
     order:pickOrder(),pat:1,reg,v:Math.random()*5|0};
   if(reg){Object.assign(p,{skin:reg.skin,shirt:reg.shirt,cap:reg.cap,capc:reg.capc,tud:reg.tud,kopiah:reg.kopiah,order:MENU[reg.fav]})}
   s.who=p;people.push(p);
 }
-const cooks=[{id:'chef1',x:2,y:0.5,c:'#fff',ph:0},{id:'chef2',x:6.9,y:0.5,c:'#fff',ph:2.3}];
+const cooks=[{id:'chef1',x:3,y:0.3,c:'#fff',ph:0},{id:'chef2',x:6.4,y:0.3,c:'#fff',ph:2.3}];
 
 function update(dt){
   for(const p of [...people]){
@@ -149,16 +148,16 @@ function update(dt){
   }
   for(const w of waiters){
     if(w.st==='idle'){const c=people.find(p=>p.st==='wait'&&!p.serving&&p.t>2.5);if(c){c.serving=true;c.byWaiter=true;w.target=c;w.st='prep';w.t=0}}
-    else if(w.st==='prep'){w.t+=dt;if(w.t>3.5*(1-.15*UP.tawa)){const s=w.target.seat;w.path=[{x:4.5,y:1.6},{x:4.5,y:s.y-LANE},{x:s.x,y:s.y-LANE}];w.st='go'}}
+    else if(w.st==='prep'){w.t+=dt;if(w.t>3.5*(1-.15*UP.tawa)){const s=w.target.seat;w.path=[{x:5,y:2},{x:5,y:s.y-.7},{x:s.x,y:s.y-.7}];w.st='go'}}
     else if(w.st==='go'||w.st==='back'){const p=w.path[0];
       if(!p){if(w.st==='go'){const c=w.target;if(c&&c.st==='wait'){c.serving=false;c.st='eat';c.t=0;c.q=0;floaters.push({x:c.x,y:c.y,txt:'🧑‍🍳 Siap!',t:0})}
-          w.target=null;w.path=[{x:4.5,y:w.y},{x:4.5,y:1.6},w.home];w.st='back'}else w.st='idle';continue}
+          w.target=null;w.path=[{x:5,y:w.y},{x:5,y:2},w.home];w.st='back'}else w.st='idle';continue}
       const dx=p.x-w.x,dy=p.y-w.y,d=Math.hypot(dx,dy),sp=2.6*dt;if(d>.001){w.fx=dx;w.fy=dy}if(d<sp){w.x=p.x;w.y=p.y;w.path.shift()}else{w.x+=dx/d*sp;w.y+=dy/d*sp}w.t+=dt}
   }
   for(const f of [...floaters]){f.t+=dt;if(f.t>(f.life||1.4))floaters.splice(floaters.indexOf(f),1)}
 }
 let ratings=[5];
-function leave(p,happy){waiters.forEach(w=>{if(w.target===p){w.target=null;w.path=[w.home];w.st='back'}});p.st='leave';p.seat.who=null;p.path=[{x:p.x,y:p.y-LANE},{x:4.5,y:p.y-LANE},{x:4.5,y:8.6},{x:-4,y:8.6}];
+function leave(p,happy){waiters.forEach(w=>{if(w.target===p){w.target=null;w.path=[w.home];w.st='back'}});p.st='leave';p.seat.who=null;p.path=[{x:5,y:p.y},{x:5,y:8.6},{x:-4,y:8.6}];
   ratings.push(happy?Math.min(5,(p.pat>.5?4:3)+(p.q>=1||UP.pokok?1:0)):1);if(ratings.length>20)ratings.shift();
   if(!happy)floaters.push({x:p.x,y:p.y,txt:'😠',t:0})}
 function needXp(){return 8+lv*4}
@@ -201,7 +200,7 @@ function personSheet(p,cook,i){let s=iso(p.x+.5,p.y+.5);const now=performance.no
   let col=0,row=0,flip=false,y=s.y,w=48;
   if(sit){const t=TABLES[p.seat.t];const left=p.seat.x<t.x;row=left?0:1;col=3;flip=left;s={x:s.x+(left?BUTT_F:-BUTT_B),y:s.y}}
   else if(walk){const fx=p.fx||0,fy=p.fy||0,sx=fx-fy,sy=fx+fy;row=sy>=0?0:1;flip=sx>0;p._f=flip;p._r=row;const fr=Math.floor(p.t*7)%4;col=[1,0,2,0][fr]}
-  else if(cook){const busy=Math.sin(now*1.3+(p.ph||0))>.2;row=busy?1:0;col=busy?3:0;flip=busy;y+=busy?0:Math.sin(now*2+(p.ph||0))*.6}
+  else if(cook){const busy=Math.sin(now*1.3+(p.ph||0))>.2;row=busy?1:0;col=busy?3:0;y+=busy?0:Math.sin(now*2+(p.ph||0))*.6}
   else if(p.isWaiter){row=0;col=0}
   if(p.isWaiter&&p.carry&&!sit){if(walk&&row===0){}else{row=1;col=3;flip=walk?flip:true}}
   cell(i,col,row,s.x,y,w,flip);bubbles(p,s,y-4)}
@@ -261,9 +260,9 @@ function draw(){
   // entiti ikut kedalaman
   const ents=[];
   // kaunter dipecah ikut petak supaya susunan depan/belakang betul
-  for(let k=0;k<GX-1;k++)ents.push({d:-2+k*.01,f:()=>{box(.5+k,.05,1,.6,KH,'#2a8a7e');if(spr('kaunter_depan')){const a=iso(.5,.65);onWall(1,a.x,a.y,()=>{const im=SPR.kaunter_depan,ts=KH*im.width/im.height,u0=k*TW/2;cx.beginPath();cx.rect(u0,-KH,TW/2+.5,KH);cx.clip();for(let u=Math.floor(u0/ts)*ts;u<u0+TW/2;u+=ts)cx.drawImage(im,u,-KH,ts,KH)});const t=[iso(.5+k,.05),iso(1.5+k,.05),iso(1.5+k,.65),iso(.5+k,.65)].map(p=>({x:p.x,y:p.y-KH}));poly(t,'#dfe5e8')}}}); // kaunter
-  ents.push({d:-1,f:()=>{const z=UP.tawa?.8:.5;if(spr('iso_tawa')){const c=iso(1.3+z/2,.6,KH);drawSpr('iso_tawa',c.x,c.y,UP.tawa?40:30);return}box(1.3,1.05,z,.5,6,UP.tawa?'#555':'#888',14);const t=iso(1.3+z/2,1.3,22);cx.fillStyle='#ffd27a';cx.beginPath();cx.ellipse(t.x,t.y,10,5,0,0,7);cx.fill();if(UP.tawa){cx.beginPath();cx.ellipse(t.x+9,t.y+4,8,4,0,0,7);cx.fill()}}}); // tawa roti
-  ents.push({d:-1,f:()=>{if(spr('iso_dandang')){const c=iso(8.5,.55,KH);drawSpr('iso_dandang',c.x,c.y,UP.teko?26:22)}else box(7.8,1.1,.4,.4,UP.teko?14:10,UP.teko?'#e6e6e6':'#c0c0c0',14)}}); // dandang teh
+  for(let k=0;k<GX-1;k++)ents.push({d:k+1+1.3,f:()=>{box(.5+k,1,1,.6,KH,'#2a8a7e');if(spr('kaunter_depan')){const a=iso(.5,1.6);onWall(1,a.x,a.y,()=>{const im=SPR.kaunter_depan,ts=KH*im.width/im.height,u0=k*TW/2;cx.beginPath();cx.rect(u0,-KH,TW/2+.5,KH);cx.clip();for(let u=Math.floor(u0/ts)*ts;u<u0+TW/2;u+=ts)cx.drawImage(im,u,-KH,ts,KH)});const t=[iso(.5+k,1),iso(1.5+k,1),iso(1.5+k,1.6),iso(.5+k,1.6)].map(p=>({x:p.x,y:p.y-KH}));poly(t,'#dfe5e8')}}}); // kaunter
+  ents.push({d:3.35,f:()=>{const z=UP.tawa?.8:.5;if(spr('iso_tawa')){const c=iso(1.3+z/2,1.55,KH);drawSpr('iso_tawa',c.x,c.y,UP.tawa?40:30);return}box(1.3,1.05,z,.5,6,UP.tawa?'#555':'#888',14);const t=iso(1.3+z/2,1.3,22);cx.fillStyle='#ffd27a';cx.beginPath();cx.ellipse(t.x,t.y,10,5,0,0,7);cx.fill();if(UP.tawa){cx.beginPath();cx.ellipse(t.x+9,t.y+4,8,4,0,0,7);cx.fill()}}}); // tawa roti
+  ents.push({d:9.35,f:()=>{if(spr('iso_dandang')){const c=iso(8,1.5,KH);drawSpr('iso_dandang',c.x,c.y,UP.teko?26:22)}else box(7.8,1.1,.4,.4,UP.teko?14:10,UP.teko?'#e6e6e6':'#c0c0c0',14)}}); // dandang teh
   TABLES.forEach((t,ti)=>{ents.push({d:t.x+t.y+1,f:()=>{const c=iso(t.x+.5,t.y+.5);let top=c.y-14;if(spr('iso_meja')){drawSpr('iso_meja',c.x,c.y+8,62);top=c.y-39}else box(t.x+.1,t.y+.1,.8,.8,13,'#fdfdfd');
     SEATS.forEach(st=>{const w=st.who;if(st.t!==ti||!w||w.st!=='eat')return;const L=st.x<t.x;const fx=c.x+(L?-8:8),fy=top+(L?-3:3);
       cx.fillStyle='#fff';cx.strokeStyle='#ccc';cx.lineWidth=1;cx.beginPath();cx.ellipse(fx,fy,8,4,0,0,7);cx.fill();cx.stroke();cx.font='12px system-ui';cx.textAlign='center';cx.textBaseline='alphabetic';cx.fillText(w.order.e,fx,fy+3)})}})});
@@ -274,7 +273,7 @@ function draw(){
     const a=iso(0,3.4,62),b=iso(0,4.6,62);poly([a,b,{x:b.x,y:b.y-26},{x:a.x,y:a.y-26}],'#111');const g=EV.id==='bola'&&evOn();
     const a2=iso(0,3.5,59),b2=iso(0,4.5,59);poly([{x:a2.x,y:a2.y-3},{x:b2.x,y:b2.y-3},{x:b2.x,y:b2.y-23},{x:a2.x,y:a2.y-23}],g?'#2e9e3e':'#2a4a7a')}});
   if(UP.pokok)[[0,7],[9,7]].forEach(([x,y])=>ents.push({d:x+y+1,f:()=>{const c=iso(x+.5,y+.7);if(spr('iso_pokok')){drawSpr('iso_pokok',c.x,c.y,40);return}box(x+.3,y+.4,.4,.4,10,'#b5651d');cx.fillStyle='#3c9a4a';[[0,-30,12],[-8,-22,9],[8,-22,9]].forEach(([dx,dy,r])=>{cx.beginPath();cx.arc(c.x+dx,c.y+dy,r,0,7);cx.fill()})}}));
-  cooks.forEach(c=>ents.push({d:c.x+c.y+1.05,f:()=>person({id:c.id,ph:c.ph,x:c.x,y:c.y,st:'cook',t:0},true)}));
+  cooks.forEach(c=>ents.push({d:-.5,f:()=>person({id:c.id,ph:c.ph,x:c.x,y:c.y,st:'cook',t:0},true)}));
   people.forEach(p=>ents.push({d:p.x+p.y+1.05,f:()=>person(p,false)}));
   waiters.forEach(w=>ents.push({d:w.x+w.y+1.05,f:()=>{person({...w,isWaiter:1,carry:w.st==='prep'||w.st==='go',st:w.st==='go'||w.st==='back'?'walk':'idle'},false);
     if(w.st==='prep'||w.st==='go'){const s=iso(w.x+.5,w.y+.5);cx.font='14px system-ui';cx.textAlign='center';cx.fillText(w.st==='prep'?'⏳':w.target.order.e,s.x+12,s.y-26)}}}));
