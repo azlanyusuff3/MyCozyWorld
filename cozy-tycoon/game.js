@@ -469,7 +469,7 @@ function newGame() {
     own: TILES.map(() => null), lvl: TILES.map(() => 0),
     rz: shuffle([...REZEKI.keys()]), ms: shuffle([...MUSIBAH.keys()]),
     log: ['Selamat datang ke Cozy Tycoon! 🎉'], dice: [1, 1], over: false, math: cfg.math,
-    hand: players.map(() => [drawTac(), drawTac()]), promo: null,
+    hand: players.map(p => [drawTac(p), drawTac(p)]), promo: null,
   };
 }
 function save() { try { if (G && !G.over) localStorage.setItem(SAVE, JSON.stringify(G)); else localStorage.removeItem(SAVE); } catch (e) {} }
@@ -652,7 +652,7 @@ function renderAll() {
   applyWorld();
   $('players').style.gridTemplateColumns = `repeat(${G.players.length},1fr)`;
   $('players').innerHTML = G.players.map((p, k) =>
-    `<div class="pchip ${k === G.turn ? 'turn' : ''} ${p.out ? 'out' : ''}" style="border-color:${k === G.turn ? CHARS[p.ci].color : '#fff'}">${p.sleep ? '<i class="zz">💤</i>' : ''}${avatar(p.ci)}<b>${pname(p)}</b><span id="mon${k}">${p.out ? 'Bankrap' : rm(disp[k] === undefined ? p.money : disp[k])}</span><i class="cnt">🏠 ${G.own.filter(o => o === k).length} · 🃏 ${G.hand ? G.hand[k].length : 0}</i>${p.ai !== null && AIS[p.ai] ? `<i class="pers">${AIS[p.ai].tag}</i>` : ''}</div>`).join('');
+    `<div class="pchip ${k === G.turn ? 'turn' : ''} ${p.out ? 'out' : ''}" style="border-color:${k === G.turn ? CHARS[p.ci].color : '#fff'}">${p.sleep ? '<i class="zz">💤</i>' : ''}${avatar(p.ci)}<b>${pname(p)}</b><span id="mon${k}">${p.out ? 'Bankrap' : rm(disp[k] === undefined ? p.money : disp[k])}</span><i class="cnt">🏠 ${G.own.filter(o => o === k).length} · 🃏 ${G.hand ? G.hand[k].length : 0}</i></div>`).join('');
   TILES.forEach((t, i) => {
     const el = $('tile' + i), o = G.own[i];
     el.classList.toggle('owned', o !== null);
@@ -929,7 +929,6 @@ async function landOn(k, sum) {
         }
       }
       else {
-        if (!G.usedTac && G.hand[k].includes('diskaun') && r >= ai.cardRent) { useTac(k, 'diskaun'); r = Math.ceil(r / 2); aiTalk(k, 'disc'); }
         bubble(k, fill(pick(r >= 100 ? AI_SAY.payBig : AI_SAY.pay), { m: rm(r), o: pname(owner), t: t.name })); await wait(900);
       }
       ensureState(); G.grudge[k][o] += r;
@@ -1100,7 +1099,8 @@ function ensureState() {
   if (!G.stats) G.stats = G.players.map(() => ({ rentPaid: 0, rentEarn: 0, sleeps: 0, kenduri: 0, bought: 0 }));
   if (!G.tileEarn) G.tileEarn = TILES.map(() => 0);
   if (G.math === undefined) G.math = false;
-  if (!G.hand) G.hand = G.players.map(() => [drawTac(), drawTac()]);
+  if (!G.hand) G.hand = G.players.map(p => [drawTac(p), drawTac(p)]);
+  G.players.forEach((p, k) => { if (p.ai !== null) G.hand[k] = G.hand[k].map(c => c === 'diskaun' ? drawTac(p) : c); });
   if (!G.grudge) G.grudge = G.players.map(() => G.players.map(() => 0));
   if (G.promo === undefined) G.promo = null;
 }
@@ -1348,10 +1348,11 @@ const TAC = {
   diskaun: { ic: '🏷️', name: 'Kupon Diskaun', desc: 'Masa kena bayar sewa: bayar separuh je.', w: 3 },
   ambil: { ic: '🤝', name: 'Ambil Alih', desc: 'Paksa beli tanah lawan, harga 1.5×.', w: 1 },
 };
-function drawTac() { const bag = []; for (const c in TAC) for (let n = 0; n < TAC[c].w; n++) bag.push(c); return pick(bag); }
+// AI tak dapat kad Diskaun — bayar separuh untuk pemain manusia sahaja
+function drawTac(p) { const bag = []; for (const c in TAC) if (!(c === 'diskaun' && p && p.ai !== null)) for (let n = 0; n < TAC[c].w; n++) bag.push(c); return pick(bag); }
 function giveTac(k) {
   ensureState(); const h = G.hand[k]; if (h.length >= 3) return;
-  const c = drawTac(); h.push(c); floatText(k, '+🃏', '#7a5af8');
+  const c = drawTac(G.players[k]); h.push(c); floatText(k, '+🃏', '#7a5af8');
   log(`🃏 ${pname(G.players[k])} dapat kad ${G.players[k].ai === null ? TAC[c].ic + ' ' + TAC[c].name : 'baru'}`);
 }
 function useTac(k, c) {
