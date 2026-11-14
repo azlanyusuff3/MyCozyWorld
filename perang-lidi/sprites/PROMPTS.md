@@ -176,3 +176,28 @@ Semua: **side view menghadap KANAN**, background **transparent**, tiada teks, ga
 | `naga_sayap.webp` | ONE single dragon wing only (no body), bat-like membrane with 3–4 finger bones, glowing lava-orange membrane edges. The wing root (where it joins the body) is at the **BOTTOM-RIGHT corner** of the image, and the wing spreads **UP and to the LEFT**, fully opened. |
 
 Penting: `naga_badan` dan `naga_badan_serang` mesti sama saiz dan kedudukan, beza mulut sahaja.
+
+---
+
+## 12. Robot Gergasi & Gergasi Pokok berbahagian (animasi berjalan & menyerang) — BARU
+Sama macam naga: dipecah kepada badan, lengan dan kaki. Game akan cantum dan gerakkan: kaki melangkah, lengan berayun, robot menumbuk ke depan, pokok angkat dahan tinggi dan hentak ke tanah. Lengan dan kaki belakang guna gambar yang sama (game gelapkan).
+
+Semua: gaya sama dengan `elite_besi.webp` / `elite_hutan.webp` yang dah ada, **side view menghadap KANAN**, background **transparent**, tiada teks, saiz 1024×1024.
+
+**Robot Gergasi**
+| Fail | Prompt |
+|---|---|
+| `robot_badan.webp` | The SAME giant battle robot as elite_besi, side view facing right, **ONLY the torso and head** (boxy armoured chest with glowing blue reactor core, shoulder pads, head with red visor and antenna). **NO arms and NO legs at all** (clean round joint sockets where they attach). |
+| `robot_badan_serang.webp` | EXACTLY the same as robot_badan (same pose, size, position), but the visor glows brighter red and the reactor core flares bright. |
+| `robot_lengan.webp` | ONE single robot arm only, **hanging straight DOWN**: round shoulder joint at the **TOP-CENTRE** of the image, upper arm, elbow, forearm and a big armoured piston fist at the **BOTTOM**. Same steel silver and ice-blue neon. |
+| `robot_kaki.webp` | ONE single robot leg only, **standing straight DOWN**: round hip joint at the **TOP-CENTRE** of the image, thigh, knee, shin, and a heavy flat foot at the **BOTTOM** pointing RIGHT. |
+
+**Gergasi Pokok**
+| Fail | Prompt |
+|---|---|
+| `pokok_badan.webp` | The SAME walking tree guardian as elite_hutan, side view facing right, **ONLY the trunk body, face and leafy canopy head** (glowing kind-but-fierce face on the trunk, small glowing flowers in the leaves). **NO branch arms and NO roots/legs** (the trunk ends flat at the bottom). |
+| `pokok_badan_serang.webp` | EXACTLY the same as pokok_badan (same pose, size, position), but the face is angry, mouth open roaring, eyes glowing brighter. |
+| `pokok_dahan.webp` | ONE single thick branch arm only, **hanging straight DOWN**: thick joint at the **TOP-CENTRE** of the image, twisting branch with small leaves, and twig fingers like a hand at the **BOTTOM**. |
+| `pokok_akar.webp` | ONE single root leg only, **standing straight DOWN**: thick joint at the **TOP-CENTRE** of the image, twisted root, splitting into root toes at the **BOTTOM** pointing RIGHT. |
+
+Penting: `*_badan` dan `*_badan_serang` mesti sama saiz dan kedudukan.

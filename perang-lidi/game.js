@@ -163,7 +163,7 @@ function cropAlpha(im) {
 }
 fetch('sprites/list.json', { cache: 'no-cache' }).then(r => r.ok ? r.json() : []).catch(() => []).then(l => {
   let n = l.length; if (!n) return;
-  l.forEach(k => { const i = new Image(); i.onload = i.onerror = () => { if (i.naturalWidth && /^(hat|weapon|fort|w|elite)_|^naga_sayap/.test(k)) IMG[k] = cropAlpha(i); else if (i.naturalWidth && /^naga_badan/.test(k)) IMG[k] = cropRect(i, 0, 0.29, 1, 0.72); if (--n === 0) applyArt(); }; i.src = 'sprites/' + k + '.webp'; IMG[k] = i; });
+  l.forEach(k => { const i = new Image(); i.onload = i.onerror = () => { if (i.naturalWidth && /^(hat|weapon|fort|w|elite|robot|pokok)_|^naga_sayap/.test(k)) IMG[k] = cropAlpha(i); else if (i.naturalWidth && /^naga_badan/.test(k)) IMG[k] = cropRect(i, 0, 0.29, 1, 0.72); if (--n === 0) applyArt(); }; i.src = 'sprites/' + k + '.webp'; IMG[k] = i; });
 });
 function applyArt() {
   if (img('logo')) document.querySelector('#menu .logo').innerHTML = `<img src="${IMG.logo.src}" alt="Perang Lidi">`;
@@ -991,7 +991,54 @@ function neon(c, col, w, alpha) {
   c.globalAlpha = alpha * 0.7; const sc = c.strokeStyle; c.strokeStyle = '#ffffff'; c.lineWidth = w * 0.35; c.stroke(); c.strokeStyle = sc; c.globalAlpha = alpha;
 }
 // kedudukan dalam gambar (pecahan 0..1) — laras di sini bila gambar baru masuk
-const NAGA_RIG = { bodyH: 30, hover: 16, wingH: 34, shoulder: [0.6, 0.47], wingPivot: [0.93, 0.96], wingRest: -0.45, wingSwing: 0.85, flapSpeed: 6.5, mouth: [0.95, 0.53] };
+// rig berjalan (robot & pokok): badan + lengan + kaki berasingan. Pecahan 0..1 dalam gambar.
+const WALK_RIG = {
+  robot: { pre: 'robot', bodyH: 40, legH: 20, armH: 26, hip: [0.5, 0.93], hipGap: 0.16, shoulder: [0.62, 0.3], backShoulder: [0.36, 0.3],
+           legPivot: [0.5, 0.06], armPivot: [0.5, 0.08], legSwing: 0.45, armSwing: 0.3, attack: 'punch' },
+  pokok: { pre: 'pokok', bodyH: 50, legH: 14, armH: 26, hip: [0.5, 0.95], hipGap: 0.14, shoulder: [0.62, 0.55], backShoulder: [0.38, 0.55],
+           legPivot: [0.5, 0.06], armPivot: [0.5, 0.06], legSwing: 0.35, armSwing: 0.2, attack: 'slam' },
+};
+function drawWalkRig(c, u, ox, oy, alpha, R) {
+  const body = (u.atk > 0.05 && img(R.pre + '_badan_serang')) || img(R.pre + '_badan'), arm = img(R.pre + (R.pre === 'pokok' ? '_dahan' : '_lengan')), leg = img(R.pre + (R.pre === 'pokok' ? '_akar' : '_kaki'));
+  if (!body || !arm || !leg) return false;
+  const k = u.size, d = u.dir ?? (u.side ? -1 : 1), x = u.x + (ox || 0), gy = GROUND + (u.y || 0) + (oy || 0);
+  const a = u.atk || 0, moving = a <= 0.01, w = u.walk || 0, T = G ? G.t : performance.now() / 1000;
+  const LH = R.legH * k, LW = LH * leg.width / leg.height, BH = R.bodyH * k, BW = BH * body.width / body.height, AH = R.armH * k, AW = AH * arm.width / arm.height;
+  const step = moving ? Math.sin(w) : 0, bob = moving ? -Math.abs(Math.cos(w)) * 2.2 * k : Math.sin(T * 2) * 0.8 * k;
+  // pose serangan lengan depan
+  let armA;
+  if (a > 0) {
+    if (R.attack === 'punch') { const r = a > 0.5 ? (1 - a) * 2 : a * 2; armA = -0.2 - r * 1.35; }
+    else { armA = a > 0.55 ? -2.7 * ((1 - a) / 0.45) : -2.7 + (0.55 - a) / 0.55 * 3.2; }   // angkat tinggi, hentak ke bawah
+  } else armA = step * R.armSwing;
+  const lean = a > 0 ? Math.sin(a * Math.PI) * 0.07 : 0;
+  blob(c, u.t.g, x, gy, BW * 0.5, 5 * k, alpha * 0.55);
+  c.save(); c.globalAlpha = alpha; c.translate(x, gy - LH * 0.94 + bob); c.scale(d, 1); c.rotate(lean);
+  c.shadowBlur = 14; c.shadowColor = u.hitFlash > 0 ? '#ffffff' : u.t.g;
+  const flash = u.hitFlash > 0 ? 'brightness(2.2) ' : '';
+  const bx = -R.hip[0] * BW, by = -R.hip[1] * BH;                     // (0,0) = pinggul
+  const limb = (im, W2, H2, piv, px, py, ang, dark) => {
+    c.save(); c.translate(px, py); c.rotate(ang);
+    c.filter = flash + (dark ? 'brightness(0.55)' : '') || 'none';
+    c.drawImage(im, -piv[0] * W2, -piv[1] * H2, W2, H2); c.restore(); c.filter = flash || 'none';
+  };
+  const gap = R.hipGap * BW;
+  limb(arm, AW, AH, R.armPivot, bx + R.backShoulder[0] * BW, by + R.backShoulder[1] * BH, -step * R.armSwing, true);   // lengan belakang
+  limb(leg, LW, LH, R.legPivot, -gap, 0, -step * R.legSwing, true);                                                  // kaki belakang
+  c.filter = flash || 'none'; c.drawImage(body, bx, by, BW, BH);
+  limb(leg, LW, LH, R.legPivot, gap, 0, step * R.legSwing, false);                                                   // kaki depan
+  limb(arm, AW, AH, R.armPivot, bx + R.shoulder[0] * BW, by + R.shoulder[1] * BH, armA, false);                      // lengan depan
+  c.restore(); c.filter = 'none'; c.shadowBlur = 0; c.globalAlpha = 1;
+  // efek: percikan tumbukan / gegaran hentakan
+  if (G && a > 0.4 && a < 0.6 && Math.random() < 0.5) {
+    const hx = x + d * (BW * 0.45 + AH * 0.8), hy = gy - LH - BH * 0.45;
+    for (let i = 0; i < 3; i++) G.parts.push({ x: R.attack === 'punch' ? hx : x + d * BW * 0.6, y: R.attack === 'punch' ? hy : gy - 2, vx: d * rnd(30, 120), vy: rnd(-90, 10), life: 0.35, c: pick(R.attack === 'punch' ? ['#ffe28a', '#ffffff'] : ['#7dff6a', '#c8ff9a', '#6b4a2a']), r: 2 });
+  }
+  if (G && R.pre === 'robot' && Math.random() < 0.08) G.parts.push({ x: x - d * BW * 0.4, y: gy - LH - BH * 0.7, vx: -d * rnd(5, 20), vy: rnd(-30, -10), life: 0.6, c: '#9fb4c8', r: 2 });
+  if (G && R.pre === 'pokok' && Math.random() < 0.04) G.parts.push({ x: x + rnd(-BW / 2, BW / 2), y: gy - LH - BH * 0.85, vx: rnd(-10, 10), vy: rnd(10, 25), life: 1.1, c: pick(['#7dff6a', '#c8ff9a']), r: 2 });
+  return true;
+}
+const NAGA_RIG = { bodyH: 30, hover: 34, wingH: 34, shoulder: [0.6, 0.47], wingPivot: [0.93, 0.96], wingRest: -0.45, wingSwing: 0.85, flapSpeed: 6.5, mouth: [0.95, 0.53] };
 function drawShape(c, u, ox, oy, alpha) {
   const sh = UNITS[u.type] && UNITS[u.type].shape; if (!sh) return false;
   // ---- rig naga berbahagian: badan + sayap berasingan, sayap mengepak betul ----
@@ -1029,6 +1076,7 @@ function drawShape(c, u, ox, oy, alpha) {
     if (G && Math.random() < (a > 0 ? 0.9 : 0.2)) G.parts.push({ x: mx, y: my, vx: d * rnd(a > 0 ? 120 : 10, a > 0 ? 240 : 30), vy: rnd(-30, 20), life: a > 0 ? 0.35 : 0.5, c: pick(['#ff7a2e', '#ffd36b', '#ff4d00']), r: a > 0 ? 3.5 : 2 });
     c.globalAlpha = 1; return true;
   }
+  if (WALK_RIG[sh] && drawWalkRig(c, u, ox, oy, alpha, WALK_RIG[sh])) return true;
   const ei = img('elite_' + u.t.id);
   if (ei) { // gambar ChatGPT: animasi guna transform
     const k = u.size, d = u.dir ?? (u.side ? -1 : 1), x = u.x + (ox || 0), gy = GROUND + (u.y || 0) + (oy || 0);
