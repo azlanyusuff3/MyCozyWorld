@@ -67,3 +67,28 @@ Dua jenis gambar dalam batch ni:
 | `deko_bingkai2.webp` | RATA | 256×320 | transparent | A small framed retro photo of a smiling mamak tea maker pulling teh tarik (cartoon style), wooden frame, flat front view |
 | `iso_tawa.webp` | ISO | 256×256 | transparent | A flat iron griddle (tawa) station on a small stand with one golden roti canai cooking on it, isometric |
 | `iso_dandang.webp` | ISO | 256×384 | transparent | A tall shiny stainless steel tea urn with a tap at the bottom and two steel pitchers beside it, isometric |
+
+## Batch 5 — Sprite sheet animasi (jalan depan/belakang, duduk)
+Ganti gambar watak satu-pose. Setiap watak = **SATU fail sprite sheet 1536×1024, transparent**, grid **4 lajur × 2 baris** (setiap petak 384×512). Watak berdiri tengah petak, kaki di bawah petak (~10px dari bawah), saiz watak SAMA dalam semua petak.
+
+| | Lajur 1 | Lajur 2 | Lajur 3 | Lajur 4 |
+|---|---|---|---|---|
+| **Baris 1 — DEPAN** (3/4 depan, muka & badan menghadap **bawah-kiri**) | Berdiri diam | Jalan: kaki KIRI ke depan | Jalan: kaki KANAN ke depan | **Duduk** (lutut bengkok macam duduk atas bangku kecil — JANGAN lukis bangku) |
+| **Baris 2 — BELAKANG** (3/4 belakang, nampak belakang kepala, berjalan menjauh ke **atas-kiri**) | Berdiri diam | Jalan: kaki KIRI ke depan | Jalan: kaki KANAN ke depan | Pelanggan: **duduk dari belakang**. Chef: **sedang masak** (pegang sudip). Pelayan: **pegang dulang** dengan air |
+
+Game akan flip sendiri untuk arah kanan. Nama fail: `sh_<id>.webp`.
+
+### 5A — Staff (muka MESTI berbeza antara satu sama lain)
+| Fail | Watak |
+|---|---|
+| `sh_chef1.webp` | Anna (Tukang roti): Indian Malaysian man, 40s, thick black moustache, round face, white t-shirt, white apron, white cook cap |
+| `sh_chef2.webp` | Bang Kamal (Tukang teh): young Malay man, 20s, slim, short spiky hair, no moustache, orange t-shirt, white apron, towel on shoulder |
+| `sh_pelayan1.webp` | Siva: young Indian Malaysian waiter, curly hair, teal polo shirt, black apron |
+| `sh_pelayan2.webp` | Aiman: Malay teenage waiter, round glasses, buzz cut, teal polo shirt, black apron |
+| `sh_pelayan3.webp` | Mei: Chinese Malaysian waitress, ponytail, teal polo shirt, black apron |
+
+### 5B — Pelanggan tetap (ikut rupa `iso_cust_<id>.webp` sedia ada)
+`sh_jamal`, `sh_lina`, `sh_rahman`, `sh_amir`, `sh_lim` (*Chinese Malaysian uncle — mata sepet, rambut nipis, singlet putih*), `sh_devi`, `sh_raju`, `sh_kiah`
+
+### 5C — Pelanggan biasa (ikut `iso_cust_a..e.webp`)
+`sh_cust_a`, `sh_cust_b`, `sh_cust_c`, `sh_cust_d`, `sh_cust_e`
