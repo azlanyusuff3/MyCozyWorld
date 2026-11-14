@@ -163,7 +163,7 @@ function cropAlpha(im) {
 }
 fetch('sprites/list.json', { cache: 'no-cache' }).then(r => r.ok ? r.json() : []).catch(() => []).then(l => {
   let n = l.length; if (!n) return;
-  l.forEach(k => { const i = new Image(); i.onload = i.onerror = () => { if (i.naturalWidth && /^(hat|weapon|fort|w|elite|robot|pokok|serigala|harimau|rusa|yeti|kala)_|^naga_sayap/.test(k)) IMG[k] = cropAlpha(i); else if (i.naturalWidth && /^naga_badan/.test(k)) IMG[k] = cropRect(i, 0, 0.29, 1, 0.72); if (--n === 0) applyArt(); }; i.src = 'sprites/' + k + '.webp'; IMG[k] = i; });
+  l.forEach(k => { const i = new Image(); i.onload = i.onerror = () => { if (i.naturalWidth && /^(hat|weapon|fort|w|elite|robot|pokok|serigala|harimau|rusa|yeti)_|^naga_sayap|^kala_(ekor|kaki)/.test(k)) IMG[k] = cropAlpha(i); else if (i.naturalWidth && /^naga_badan/.test(k)) IMG[k] = cropRect(i, 0, 0.29, 1, 0.72); else if (i.naturalWidth && /^kala_badan/.test(k)) IMG[k] = cropRect(i, 0, 0.28, 1, 0.75); if (--n === 0) applyArt(); }; i.src = 'sprites/' + k + '.webp'; IMG[k] = i; });
 });
 function applyArt() {
   if (img('logo')) document.querySelector('#menu .logo').innerHTML = `<img src="${IMG.logo.src}" alt="Perang Lidi">`;
@@ -996,7 +996,7 @@ function neon(c, col, w, alpha) {
 const WALK_RIG = {
   robot: { pre: 'robot', bodyH: 36, legH: 22, armH: 30, hip: [0.52, 0.9], hipGap: 0.18, shoulder: [0.84, 0.5], backShoulder: [0.14, 0.5],
            legPivot: [0.5, 0.05], armPivot: [0.5, 0.06], legSwing: 0.45, armSwing: 0.3, attack: 'punch' },
-  yeti:  { pre: 'yeti', bodyH: 40, legH: 18, armH: 30, hip: [0.5, 0.93], hipGap: 0.16, shoulder: [0.72, 0.38], backShoulder: [0.3, 0.38],
+  yeti:  { pre: 'yeti', bodyH: 40, legH: 16, armH: 30, hip: [0.51, 0.97], hipGap: 0.2, shoulder: [0.9, 0.53], backShoulder: [0.1, 0.53],
            legPivot: [0.5, 0.05], armPivot: [0.5, 0.05], legSwing: 0.4, armSwing: 0.25, attack: 'slam', armName: 'lengan', legName: 'kaki' },
   pokok: { pre: 'pokok', bodyH: 48, legH: 17, armH: 32, hip: [0.49, 0.96], hipGap: 0.12, shoulder: [0.72, 0.52], backShoulder: [0.27, 0.52],
            legPivot: [0.5, 0.05], armPivot: [0.5, 0.05], legSwing: 0.35, armSwing: 0.22, attack: 'slam', flipArm: true },
@@ -1043,9 +1043,9 @@ function drawWalkRig(c, u, ox, oy, alpha, R) {
 }
 // rig berkaki empat: badan + kaki depan + kaki belakang (kaki sebelah jauh digelapkan)
 const QUAD_RIG = {
-  serigala: { pre: 'serigala', bodyH: 30, legH: 17, front: [0.7, 0.72], back: [0.28, 0.7], swing: 0.5, hover: 0 },
-  harimau:  { pre: 'harimau',  bodyH: 28, legH: 16, front: [0.7, 0.72], back: [0.27, 0.7], swing: 0.55, hover: 0 },
-  rusa:     { pre: 'rusa',     bodyH: 36, legH: 22, front: [0.66, 0.68], back: [0.3, 0.66], swing: 0.45, hover: 0 },
+  serigala: { pre: 'serigala', bodyH: 26, legH: 17, front: [0.7, 0.86], back: [0.3, 0.86], swing: 0.5 },
+  harimau:  { pre: 'harimau',  bodyH: 27, legH: 16, front: [0.72, 0.87], back: [0.28, 0.87], swing: 0.55 },
+  rusa:     { pre: 'rusa',     bodyH: 44, legH: 21, front: [0.72, 0.95], back: [0.37, 0.95], swing: 0.45 },
 };
 function drawQuadRig(c, u, ox, oy, alpha, R) {
   const body = (u.atk > 0.05 && img(R.pre + '_badan_serang')) || img(R.pre + '_badan'), lf = img(R.pre + '_kaki_depan'), lb = img(R.pre + '_kaki_belakang');
@@ -1056,10 +1056,10 @@ function drawQuadRig(c, u, ox, oy, alpha, R) {
   const st = moving ? Math.sin(w) : 0, bob = moving ? -Math.abs(Math.sin(w)) * 2 * k : Math.sin(T * 2.2) * 0.6 * k;
   const pounce = a > 0 ? Math.sin(a * Math.PI) : 0, tilt = -pounce * 0.12;
   blob(c, u.t.g, x, gy, BW * 0.5, 5 * k, alpha * 0.55);
-  c.save(); c.globalAlpha = alpha; c.translate(x + d * pounce * 8 * k, gy - LH * 0.92 + bob - pounce * 6 * k); c.scale(d, 1); c.rotate(tilt);
+  c.save(); c.globalAlpha = alpha; c.translate(x + d * pounce * 8 * k, gy - LH * 0.95 + bob - pounce * 6 * k); c.scale(d, 1); c.rotate(tilt);
   c.shadowBlur = 14; c.shadowColor = u.hitFlash > 0 ? '#ffffff' : u.t.g;
   const fl = u.hitFlash > 0 ? 'brightness(2.2) ' : '';
-  const bx = -0.5 * BW, by = -0.7 * BH;   // (0,0) kira-kira paras pinggul
+  const bx = -0.5 * BW, by = -Math.max(R.front[1], R.back[1]) * BH;   // (0,0) = paras pinggul
   const leg = (im, hip, ang, dark) => { const W2 = LH * im.width / im.height; c.save(); c.translate(bx + hip[0] * BW, by + hip[1] * BH); c.rotate(ang);
     c.filter = fl + (dark ? 'brightness(0.55)' : '') || 'none'; c.drawImage(im, -0.5 * W2, -0.05 * LH, W2, LH); c.restore(); c.filter = fl || 'none'; };
   const fA = a > 0 ? -0.9 * pounce : st * R.swing, bA = a > 0 ? 0.7 * pounce : -st * R.swing;
@@ -1072,7 +1072,7 @@ function drawQuadRig(c, u, ox, oy, alpha, R) {
   return true;
 }
 // kala jengking: badan (dengan sepit) + ekor bersengat + 6 kaki
-const KALA_RIG = { bodyH: 22, legH: 14, tailH: 34, tailBase: [0.16, 0.42], tailPivot: [0.12, 0.92], legs: [0.38, 0.52, 0.66], legY: 0.7, swing: 0.4 };
+const KALA_RIG = { bodyH: 26, legH: 16, tailH: 32, tailBase: [0.07, 0.3], tailPivot: [0.04, 0.97], legs: [0.16, 0.28, 0.4], legY: 0.66, swing: 0.4 };
 function drawKalaRig(c, u, ox, oy, alpha) {
   const R = KALA_RIG, body = (u.atk > 0.05 && img('kala_badan_serang')) || img('kala_badan'), tail = img('kala_ekor'), lg = img('kala_kaki');
   if (!body || !tail || !lg) return false;
@@ -1084,7 +1084,7 @@ function drawKalaRig(c, u, ox, oy, alpha) {
   c.shadowBlur = 14; c.shadowColor = u.hitFlash > 0 ? '#ffffff' : u.t.g;
   const fl = u.hitFlash > 0 ? 'brightness(2.2) ' : '';
   const bx = -0.5 * BW, by = -R.legY * BH;
-  const legs = (dark, ph) => R.legs.forEach((fx, i) => { const ang = (moving ? Math.sin(w + i * 2.1 + ph) * R.swing : 0) + (i - 1) * 0.25, W2 = LH * lg.width / lg.height;
+  const legs = (dark, ph) => R.legs.forEach((fx, i) => { const ang = (moving ? Math.sin(w + i * 2.1 + ph) * R.swing : 0) + (i - 1) * 0.4 - 0.15, W2 = LH * lg.width / lg.height;
     c.save(); c.translate(bx + fx * BW, by + R.legY * BH); c.rotate(ang); c.filter = fl + (dark ? 'brightness(0.5)' : '') || 'none'; c.drawImage(lg, -0.5 * W2, -0.05 * LH, W2, LH); c.restore(); });
   legs(true, Math.PI);
   // ekor: berayun perlahan, menyengat ke depan bila serang
