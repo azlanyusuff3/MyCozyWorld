@@ -134,7 +134,7 @@ function spawn(){
   if(reg){Object.assign(p,{skin:reg.skin,shirt:reg.shirt,cap:reg.cap,capc:reg.capc,tud:reg.tud,kopiah:reg.kopiah,order:MENU[reg.fav]})}
   s.who=p;people.push(p);
 }
-const cooks=[{id:'chef1',x:3,y:0.1,c:'#fff',ph:0},{id:'chef2',x:6,y:0.1,c:'#fff',ph:2.3}];
+const cooks=[{id:'chef1',x:3,y:0.3,c:'#fff',ph:0},{id:'chef2',x:6.4,y:0.3,c:'#fff',ph:2.3}];
 
 function update(dt){
   for(const p of [...people]){
@@ -189,6 +189,7 @@ function box(x,y,w,d,h,c,z=0){ // kotak isometric
   poly([B,C,T(x+w,y),T(x+w,y+d)],shade(c,.65));
   poly([T(x,y),T(x+w,y),T(x+w,y+d),T(x,y+d)],c);
 }
+const SIT_Y=13;const KH=26; // tinggi kaunter // tinggi tempat duduk bangku (px)
 function sheetKey(p,cook){return 'sh_'+(cook?p.id:p.isWaiter?p.id:p.reg?p.reg.id:'cust_'+'abcde'[p.v||0])}
 // sprite sheet 4x2: baris1 DEPAN [diam,jalan1,jalan2,duduk] · baris2 BELAKANG [diam,jalan1,jalan2,duduk/aksi]
 function cell(i,col,row,x,y,w,flip){const cw=i.width/4,ch=i.height/2,h=w*ch/cw;cx.save();cx.translate(x,y);if(flip)cx.scale(-1,1);cx.drawImage(i,col*cw,row*ch,cw,ch,-w/2,-h,w,h);cx.restore()}
@@ -196,7 +197,7 @@ function personSheet(p,cook,i){const s=iso(p.x+.5,p.y+.5);const now=performance.
   const sit=p.st==='wait'||p.st==='eat',walk=p.st==='walk'||p.st==='leave';
   cx.fillStyle='#0003';cx.beginPath();cx.ellipse(s.x,s.y,10,4,0,0,7);cx.fill();
   let col=0,row=0,flip=false,y=s.y,w=48;
-  if(sit){const t=TABLES[p.seat.t];const left=p.seat.x<t.x;row=left?0:1;col=3;flip=left;y-=6}
+  if(sit){const t=TABLES[p.seat.t];const left=p.seat.x<t.x;row=left?0:1;col=3;flip=left;y-=SIT_Y}
   else if(walk){const fx=p.fx||0,fy=p.fy||0,sx=fx-fy,sy=fx+fy;row=sy>=0?0:1;flip=sx>0;const fr=Math.floor(p.t*7)%4;col=[1,0,2,0][fr]}
   else if(cook){const busy=Math.sin(now*1.3+(p.ph||0))>.2;row=busy?1:0;col=busy?3:0;y+=busy?0:Math.sin(now*2+(p.ph||0))*.6}
   else if(p.isWaiter){row=0;col=0}
@@ -257,18 +258,19 @@ function draw(){
 
   // entiti ikut kedalaman
   const ents=[];
-  ents.push({d:6.2,f:()=>{box(.5,1,GX-1,.6,14,'#2a8a7e');if(spr('kaunter_depan')){const a=iso(.5,1.6);onWall(1,a.x,a.y,()=>{const i=SPR.kaunter_depan,L=(GX-1)*TW/2,ts=14*i.width/i.height;for(let u=0;u<L;u+=ts)cx.drawImage(i,u,-14,Math.min(ts,L-u),14)});const t=[iso(.5,1),iso(GX-.5,1),iso(GX-.5,1.6),iso(.5,1.6)].map(p=>({x:p.x,y:p.y-14}));poly(t,'#dfe5e8')}}}); // kaunter
-  ents.push({d:6.3,f:()=>{const z=UP.tawa?.8:.5;if(spr('iso_tawa')){const c=iso(1.3+z/2,1.55,14);drawSpr('iso_tawa',c.x,c.y,UP.tawa?40:30);return}box(1.3,1.05,z,.5,6,UP.tawa?'#555':'#888',14);const t=iso(1.3+z/2,1.3,22);cx.fillStyle='#ffd27a';cx.beginPath();cx.ellipse(t.x,t.y,10,5,0,0,7);cx.fill();if(UP.tawa){cx.beginPath();cx.ellipse(t.x+9,t.y+4,8,4,0,0,7);cx.fill()}}}); // tawa roti
-  ents.push({d:9.5,f:()=>{if(spr('iso_dandang')){const c=iso(8,1.5,14);drawSpr('iso_dandang',c.x,c.y,UP.teko?26:22)}else box(7.8,1.1,.4,.4,UP.teko?14:10,UP.teko?'#e6e6e6':'#c0c0c0',14)}}); // dandang teh
-  TABLES.forEach(t=>{ents.push({d:t.x+t.y+1,f:()=>{if(spr('iso_meja')){const c=iso(t.x+.5,t.y+.95);drawSpr('iso_meja',c.x,c.y,62)}else box(t.x+.1,t.y+.1,.8,.8,13,'#fdfdfd')}})});
-  SEATS.forEach(s=>ents.push({d:s.x+s.y+.9,f:()=>{if(spr('iso_kerusi')){const c=iso(s.x+.5,s.y+.8);drawSpr('iso_kerusi',c.x,c.y,30)}else box(s.x+.25,s.y+.25,.5,.5,7,'#e66a6a')}}));
+  // kaunter dipecah ikut petak supaya susunan depan/belakang betul
+  for(let k=0;k<GX-1;k++)ents.push({d:k+1+1.3,f:()=>{box(.5+k,1,1,.6,KH,'#2a8a7e');if(spr('kaunter_depan')){const a=iso(.5,1.6);onWall(1,a.x,a.y,()=>{const im=SPR.kaunter_depan,ts=KH*im.width/im.height,u0=k*TW/2;cx.beginPath();cx.rect(u0,-KH,TW/2+.5,KH);cx.clip();for(let u=Math.floor(u0/ts)*ts;u<u0+TW/2;u+=ts)cx.drawImage(im,u,-KH,ts,KH)});const t=[iso(.5+k,1),iso(1.5+k,1),iso(1.5+k,1.6),iso(.5+k,1.6)].map(p=>({x:p.x,y:p.y-KH}));poly(t,'#dfe5e8')}}}); // kaunter
+  ents.push({d:3.35,f:()=>{const z=UP.tawa?.8:.5;if(spr('iso_tawa')){const c=iso(1.3+z/2,1.55,KH);drawSpr('iso_tawa',c.x,c.y,UP.tawa?40:30);return}box(1.3,1.05,z,.5,6,UP.tawa?'#555':'#888',14);const t=iso(1.3+z/2,1.3,22);cx.fillStyle='#ffd27a';cx.beginPath();cx.ellipse(t.x,t.y,10,5,0,0,7);cx.fill();if(UP.tawa){cx.beginPath();cx.ellipse(t.x+9,t.y+4,8,4,0,0,7);cx.fill()}}}); // tawa roti
+  ents.push({d:9.35,f:()=>{if(spr('iso_dandang')){const c=iso(8,1.5,KH);drawSpr('iso_dandang',c.x,c.y,UP.teko?26:22)}else box(7.8,1.1,.4,.4,UP.teko?14:10,UP.teko?'#e6e6e6':'#c0c0c0',14)}}); // dandang teh
+  TABLES.forEach(t=>{ents.push({d:t.x+t.y+1,f:()=>{if(spr('iso_meja')){const c=iso(t.x+.5,t.y+.5);drawSpr('iso_meja',c.x,c.y+8,62)}else box(t.x+.1,t.y+.1,.8,.8,13,'#fdfdfd')}})});
+  SEATS.forEach(s=>ents.push({d:s.x+s.y+.9,f:()=>{if(spr('iso_kerusi')){const c=iso(s.x+.5,s.y+.5);drawSpr('iso_kerusi',c.x,c.y+4,30)}else box(s.x+.25,s.y+.25,.5,.5,7,'#e66a6a')}}));
   // upgrade dalam kedai
   if(UP.kipas){[[2.5,0],[7.5,0]].forEach(([x,y])=>ents.push({d:-1,f:()=>{const c=iso(x,y,64);if(spr('iso_kipas'))drawSpr('iso_kipas',c.x,c.y+20,34);else{cx.fillStyle='#ddd';cx.beginPath();cx.arc(c.x,c.y,4,0,7);cx.fill();cx.strokeStyle='#bbb';cx.lineWidth=4;const a=performance.now()/80;for(let k=0;k<3;k++){cx.beginPath();cx.moveTo(c.x,c.y);cx.lineTo(c.x+Math.cos(a+k*2.1)*16,c.y+Math.sin(a+k*2.1)*7);cx.stroke()}}}}))}
   if(UP.tv)ents.push({d:-1,f:()=>{const c=iso(0,4,58);if(spr('iso_tv')){drawSpr('iso_tv',c.x,c.y+30,46);return}
     const a=iso(0,3.4,62),b=iso(0,4.6,62);poly([a,b,{x:b.x,y:b.y-26},{x:a.x,y:a.y-26}],'#111');const g=EV.id==='bola'&&evOn();
     const a2=iso(0,3.5,59),b2=iso(0,4.5,59);poly([{x:a2.x,y:a2.y-3},{x:b2.x,y:b2.y-3},{x:b2.x,y:b2.y-23},{x:a2.x,y:a2.y-23}],g?'#2e9e3e':'#2a4a7a')}});
   if(UP.pokok)[[0,7],[9,7]].forEach(([x,y])=>ents.push({d:x+y+1,f:()=>{const c=iso(x+.5,y+.7);if(spr('iso_pokok')){drawSpr('iso_pokok',c.x,c.y,40);return}box(x+.3,y+.4,.4,.4,10,'#b5651d');cx.fillStyle='#3c9a4a';[[0,-30,12],[-8,-22,9],[8,-22,9]].forEach(([dx,dy,r])=>{cx.beginPath();cx.arc(c.x+dx,c.y+dy,r,0,7);cx.fill()})}}));
-  cooks.forEach(c=>ents.push({d:c.x+c.y+.5,f:()=>person({id:c.id,ph:c.ph,x:c.x,y:c.y,st:'cook',t:0},true)}));
+  cooks.forEach(c=>ents.push({d:-.5,f:()=>person({id:c.id,ph:c.ph,x:c.x,y:c.y,st:'cook',t:0},true)}));
   people.forEach(p=>ents.push({d:p.x+p.y+1.05,f:()=>person(p,false)}));
   waiters.forEach(w=>ents.push({d:w.x+w.y+1.05,f:()=>{person({...w,isWaiter:1,carry:w.st==='prep',st:w.st==='go'||w.st==='back'?'walk':'idle'},false);
     if(w.st==='prep'||w.st==='go'){const s=iso(w.x+.5,w.y+.5);cx.font='14px system-ui';cx.textAlign='center';cx.fillText(w.st==='prep'?'⏳':w.target.order.e,s.x+12,s.y-26)}}}));
