@@ -35,5 +35,9 @@
   "icon_senjata",
   "icon_zirah",
   "icon_ekonomi",
-  "icon_ult"
+  "icon_ult",
+  "w_api_pedang",
+  "w_api_panah",
+  "w_api_perisai",
+  "w_api_gergaji"
 ]
