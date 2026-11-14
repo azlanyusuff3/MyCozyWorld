@@ -141,6 +141,12 @@ let G = null;        // battle state
 /* ---- gambar pilihan (sprites/list.json). Kalau tiada, semua dilukis neon. ---- */
 const IMG = {};
 const img = k => { const i = IMG[k]; return i && (i.getContext || (i.complete && i.naturalWidth)) ? i : null; };
+// potong ikut kotak tetap (supaya badan biasa & badan serang sama kedudukan)
+function cropRect(im, fx0, fy0, fx1, fy1) {
+  try { const w = im.naturalWidth, h = im.naturalHeight, o = document.createElement('canvas');
+    o.width = Math.round((fx1 - fx0) * w); o.height = Math.round((fy1 - fy0) * h);
+    o.getContext('2d').drawImage(im, fx0 * w, fy0 * h, o.width, o.height, 0, 0, o.width, o.height); return o; } catch (e) { return im; }
+}
 // potong ruang kosong (transparent) supaya saiz dalam game tepat
 function cropAlpha(im) {
   try {
@@ -157,7 +163,7 @@ function cropAlpha(im) {
 }
 fetch('sprites/list.json', { cache: 'no-cache' }).then(r => r.ok ? r.json() : []).catch(() => []).then(l => {
   let n = l.length; if (!n) return;
-  l.forEach(k => { const i = new Image(); i.onload = i.onerror = () => { if (i.naturalWidth && /^(hat|weapon|fort|w|elite|naga)_/.test(k)) IMG[k] = cropAlpha(i); if (--n === 0) applyArt(); }; i.src = 'sprites/' + k + '.webp'; IMG[k] = i; });
+  l.forEach(k => { const i = new Image(); i.onload = i.onerror = () => { if (i.naturalWidth && /^(hat|weapon|fort|w|elite)_|^naga_sayap/.test(k)) IMG[k] = cropAlpha(i); else if (i.naturalWidth && /^naga_badan/.test(k)) IMG[k] = cropRect(i, 0, 0.29, 1, 0.72); if (--n === 0) applyArt(); }; i.src = 'sprites/' + k + '.webp'; IMG[k] = i; });
 });
 function applyArt() {
   if (img('logo')) document.querySelector('#menu .logo').innerHTML = `<img src="${IMG.logo.src}" alt="Perang Lidi">`;
@@ -985,7 +991,7 @@ function neon(c, col, w, alpha) {
   c.globalAlpha = alpha * 0.7; const sc = c.strokeStyle; c.strokeStyle = '#ffffff'; c.lineWidth = w * 0.35; c.stroke(); c.strokeStyle = sc; c.globalAlpha = alpha;
 }
 // kedudukan dalam gambar (pecahan 0..1) — laras di sini bila gambar baru masuk
-const NAGA_RIG = { bodyH: 40, hover: 14, wingH: 40, shoulder: [0.42, 0.38], wingPivot: [0.9, 0.92], wingRest: 0.15, wingSwing: 0.75, flapSpeed: 7, mouth: [0.97, 0.3] };
+const NAGA_RIG = { bodyH: 30, hover: 16, wingH: 34, shoulder: [0.6, 0.47], wingPivot: [0.93, 0.96], wingRest: -0.45, wingSwing: 0.85, flapSpeed: 6.5, mouth: [0.95, 0.53] };
 function drawShape(c, u, ox, oy, alpha) {
   const sh = UNITS[u.type] && UNITS[u.type].shape; if (!sh) return false;
   // ---- rig naga berbahagian: badan + sayap berasingan, sayap mengepak betul ----
