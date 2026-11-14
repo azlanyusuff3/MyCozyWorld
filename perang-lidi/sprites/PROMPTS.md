@@ -148,3 +148,16 @@ Template:
 | `w_racun_gergaji` | large scythe with a toxic green glowing blade | toxic |
 
 Nota: kalau gambar belum ada, game lukis senjata ikut puak guna garisan neon. Gambar lama `weapon_*` kini hanya dipakai oleh Puak Besi.
+
+---
+
+## 10. Askar istimewa gergasi (3 gambar) — BARU
+Game dah ada versi neon yang dilukis guna kod. Bila gambar ni masuk, game guna gambar dan animasikan sendiri (terbang/berjalan, terkam bila serang, kelip putih bila kena).
+
+**Peraturan:** satu watak penuh dari kepala sampai kaki, **side view menghadap KANAN**, kaki/bahagian bawah rata di dasar gambar, background **transparent**, tiada teks. Gaya sama macam senjata puak: dark neon fantasy, outline gelap tebal, cahaya neon ikut warna puak. Saiz persegi ~768×768.
+
+| Fail | Prompt |
+|---|---|
+| `elite_api.webp` | A fierce but cute young fire dragon flying, side view facing right, wings spread up, long spiked tail, glowing lava cracks on dark scales, ember glow in its open mouth, blazing orange and red neon rim light |
+| `elite_besi.webp` | A giant heavy battle robot mech standing, side view facing right, boxy armoured body with a glowing blue reactor core in the chest, big piston fist raised forward, red visor eye, small antenna, steel silver with electric ice-blue neon rim light |
+| `elite_hutan.webp` | A giant walking tree guardian (treant) standing, side view facing right, thick twisted trunk body with a kind but fierce glowing face, branch arms with twig fingers, root feet, lush leafy canopy head with small glowing flowers, leaf green and lime neon rim light |
