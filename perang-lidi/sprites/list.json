@@ -89,5 +89,9 @@
   "harimau_badan",
   "harimau_badan_serang",
   "harimau_kaki_depan",
-  "harimau_kaki_belakang"
+  "harimau_kaki_belakang",
+  "rusa_badan",
+  "rusa_badan_serang",
+  "rusa_kaki_depan",
+  "rusa_kaki_belakang"
 ]
