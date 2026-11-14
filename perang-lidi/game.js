@@ -375,6 +375,7 @@ function update(dt) {
     u.cd -= dt * (me.buff.rage ? 1.5 : 1) * (me.buff.slow ? 0.5 : 1) * (me.buff.silat && U.melee ? 3 : 1) * (u.type === 'gergaji' && me.cards.has('gergaji') ? 1.35 : 1);
     u.atk = Math.max(0, u.atk - dt * 3);
     const tgt = nearestEnemy(u, U.range + 4);
+    if (u.flipT > 0 && !tgt) { u.flipT = 0; u.dir = u.side ? -1 : 1; } // habis lawan di belakang, pusing semula
     const foeBaseX = u.side ? BASE_X + 26 : W - BASE_X - 26;
     const atBase = Math.abs(foeBaseX - u.x) <= U.range + 6;
     if (tgt || atBase) {
@@ -1200,7 +1201,7 @@ function hud() {
   $('goldRate').textContent = `+${6 + 2 * P.ups.ekonomi}/s`;
   $('pHp').style.width = Math.max(0, P.baseHp / BASE_HP * 100) + '%';
   $('eHp').style.width = Math.max(0, E.baseHp / BASE_HP * 100) + '%';
-  [...$('units').children].forEach(b => { const k = b.dataset.k, cst = costOf(0, k); b.classList.toggle('cant', P.gold < cst); b.querySelector('small').textContent = '🪙' + cst; const n = G.units.filter(u => u.side === 0 && u.type === k).length; b.querySelector('.cnt').textContent = n || ''; });
+  [...$('units').children].forEach(b => { const k = b.dataset.k, cst = costOf(0, k); b.classList.toggle('cant', P.gold < cst || (UNITS[k].elite && G.units.filter(u => u.side === 0 && u.type === k).length >= ELITE_MAX)); b.querySelector('small').textContent = '🪙' + cst; const n = G.units.filter(u => u.side === 0 && u.type === k).length; b.querySelector('.cnt').textContent = n || ''; });
   [...$('ups').children].forEach(b => { const k = b.dataset.k, lv = P.ups[k]; b.querySelector('.lv').textContent = 'Lv' + lv;
     b.querySelector('small').textContent = lv >= MAXUP ? 'MAX' : '🪙' + upCost(P, k); b.classList.toggle('cant', lv >= MAXUP || P.gold < upCost(P, k)); });
   $('ultFill').style.height = P.ult + '%';
