@@ -137,6 +137,12 @@ const UTIL_RENT = [180, 450]; // Bekalan Air / Elektrik: 1 atau 2 kemudahan
 const bldValue = i => G.lvl[i] * (UPC[TILES[i].set] || 0); // hotel = kos 5 rumah
 const mortVal = i => Math.round((TILES[i].price || 0) / 2);
 const redeemVal = i => Math.round(mortVal(i) * 1.2);
+// nama pendek atas petak (petak kecil, nama penuh keluar bila tekan)
+const SHORT = { 'Batu Pahat': 'B.Pahat', 'Cukai Pendapatan': 'Cukai', 'Ladang Getah': 'Getah', 'Butterworth': 'B.worth', 'Teluk Intan': 'T.Intan', 'Shah Alam': 'S.Alam',
+  'Ladang Kelapa': 'Kelapa', 'K. Terengganu': 'K.Trg', 'Kota Kinabalu': 'K.K.', 'Alor Setar': 'A.Setar', 'Ladang Kelapa Sawit': 'Sawit', 'Kota Bharu': 'K.Bharu',
+  'Petaling Jaya': 'P.J.', 'Ke Penjara': 'Ke Penjara', 'Bandar Melaka': 'Melaka', 'Johor Bahru': 'J.B.', 'Ladang Nenas': 'Nenas', 'Cukai Taksiran': 'Taksiran',
+  'Bekalan Air': 'Air', 'Bekalan Elektrik': 'Elektrik', 'Georgetown': 'G.town', 'Kuala Lumpur': 'K.L.' };
+const tileShort = t => SHORT[t.name] || t.name;
 function tilePos(i) {
   if (i <= 10) return [10, 10 - i];
   if (i <= 20) return [10 - (i - 10), 0];
@@ -682,6 +688,7 @@ function buildBoard() {
     el.className = 'tile' + (i % 10 === 0 ? ' corner' : ''); el.id = 'tile' + i;
     el.style.gridRow = r + 1; el.style.gridColumn = c + 1;
     el.innerHTML = (t.set ? `<div class="strip" style="background:${SET[t.set]}"></div>` : '') +
+      (t.t === 'kep' ? '' : `<div class="nm${t.set ? ' on' : ''}">${tileShort(t)}</div>`) +
       `<div class="ic">${tileIcon(i)}</div>` + (t.price ? `<div class="pr">${t.price}</div>` : (i % 10 === 0 ? '' : `<div class="pr">${t.amt ? '-' + t.amt : ''}</div>`)) + '<div class="bld"></div><div class="own"></div>';
     el.onclick = () => { if (!busy && $('modal').classList.contains('hidden')) showTileInfo(i); };
     bd.appendChild(el);

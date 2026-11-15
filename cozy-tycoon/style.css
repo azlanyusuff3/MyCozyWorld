@@ -456,3 +456,11 @@ button.kuih:active{transform:scale(.95)}
 .cash-list .btn{display:flex;justify-content:space-between;align-items:center;font-size:.85rem;padding:9px 12px;text-align:left}
 .cash-list .btn:disabled{opacity:.45}
 .b3d .hc{position:absolute;right:-6px;top:-4px;font-size:9px;background:#fff;border-radius:8px;padding:0 3px;color:#333;font-family:Nunito,sans-serif}
+
+/* nama tempat atas petak */
+.tile .nm{position:absolute;top:1px;left:0;right:0;z-index:1;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:clip;font-size:clamp(5px,1.55vw,8.5px);font-weight:900;letter-spacing:-.2px;color:#6d5166;line-height:1.1}
+.tile .nm.on{color:#fff;text-shadow:0 1px 0 #0006,0 0 2px #0005}
+.tile .strip{height:24%}
+.tile .ic{margin-top:22%}
+.tile.corner .nm{top:3px;font-size:clamp(6px,1.8vw,10px)}
+.tile.corner .ic{margin-top:12%}
