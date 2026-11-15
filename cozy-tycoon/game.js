@@ -1513,7 +1513,7 @@ function initNPC() {
 const TAC = {
   ubah: { ic: '🎯', name: 'Ubah Dadu', desc: 'Lepas baling: tambah atau tolak 1 langkah.', w: 3 },
   semula: { ic: '🔄', name: 'Baling Semula', desc: 'Lepas baling: tak suka nombor? Baling lagi.', w: 2 },
-  ambil: { ic: '🤝', name: 'Ambil Alih', desc: 'Paksa beli tanah lawan, harga 1.5×.', w: 1 },
+  ambil: { ic: '🤝', name: 'Ambil Alih', desc: 'Tawar beli tanah lawan dengan harga 1.5×. Tuan tanah boleh setuju atau tolak.', w: 1 },
 };
 // AI tak dapat kad Diskaun — bayar separuh untuk pemain manusia sahaja
 function drawTac(p) { const bag = []; for (const c in TAC) if (!(c === 'diskaun' && p && p.ai !== null)) for (let n = 0; n < TAC[c].w; n++) bag.push(c); return pick(bag); }
@@ -1567,16 +1567,35 @@ async function tacAfterRoll(k, sum) {
 }
 function usePromo(k, i) { useTac(k, 'promosi'); G.promo = { i, k }; renderAll(); tileFx(i, 'up'); log(`📣 Sewa ${TILES[i].name} ×2 sampai giliran ${pname(G.players[k])} seterusnya!`); }
 async function doAmbil(k, i) {
-  const p = G.players[k], o = G.own[i], owner = G.players[o], cost = takeCost(i);
+  const p = G.players[k], o = G.own[i], owner = G.players[o], cost = takeCost(i), t = TILES[i];
+  // tuan tanah kena setuju dulu (ikut Saidina: jual-beli antara pemain mesti dua-dua setuju)
+  let ok;
+  if (owner.ai === null) {
+    ok = await modal(`<div class="big-ic">🤝</div><h2>Tawaran untuk ${pname(owner)}</h2><p><b>${pname(p)}</b> nak beli <b>${t.name}</b> kau dengan harga <b>${rm(cost)}</b>.</p><p class="hint">Harga asal ${rm(t.price)}. Duit kau sekarang ${rm(owner.money)}.</p>`,
+      [{ label: '✅ Setuju jual', v: true, cls: 'mint' }, { label: '❌ Tak nak', v: false, cls: 'grey' }]);
+  } else {
+    // AI tolak kalau tanah tu sebahagian set dia, atau dia memang pendendam dengan pembeli
+    const keepSet = t.set && setIdx(t.set).some(j => j !== i && G.own[j] === o);
+    ensureState(); ok = !keepSet && !(AIS[owner.ai].revenge && G.grudge[o][k] > 100);
+    bubble(o, ok ? `Ok, ${rm(cost)} boleh la. Deal! 🤝` : `Tak nak! ${t.name} aku punya 😤`);
+    await wait(1100);
+  }
+  if (!ok) {
+    log(`🙅 ${pname(owner)} tolak tawaran ${pname(p)} untuk ${t.name}`);
+    (p.ambilNo = p.ambilNo || []).push(i);
+    if (p.ai === null) await modal(`<div class="big-ic">🙅</div><h2>Ditolak!</h2><p>${pname(owner)} tak nak jual ${t.name}. Kad Ambil Alih kau masih ada.</p>`, [{ label: 'OK' }]);
+    return false;
+  }
   useTac(k, 'ambil'); p.money -= cost; owner.money += cost; G.own[i] = k;
   if (G.promo && G.promo.i === i) G.promo = null;
   ensureState(); G.grudge[o][k] += 150;
   floatText(k, '-' + cost, '#e64980'); floatText(o, '+' + cost, '#2f9f73');
   renderAll(); tileFx(i, 'big'); sticker('trade', k);
-  log(`🤝 ${pname(p)} AMBIL ALIH ${TILES[i].name} dari ${pname(owner)} (${rm(cost)})!`);
+  log(`🤝 ${pname(p)} beli ${TILES[i].name} dari ${pname(owner)} (${rm(cost)}) — dua-dua setuju`);
   if (TILES[i].set && setIdx(TILES[i].set).every(j => G.own[j] === k)) sticker('set', k);
   if (p.ai !== null) aiTalk(k, 'card');
-  await modal(`<div class="big-ic">🤝</div><h2>Ambil Alih!</h2><p><b>${pname(p)}</b> paksa beli <b>${TILES[i].name}</b> dari <b>${pname(owner)}</b> dengan <b>${rm(cost)}</b>.</p>`, [{ label: 'OK' }], p.ai !== null ? 4000 : 0);
+  await modal(`<div class="big-ic">🤝</div><h2>Ambil Alih!</h2><p><b>${pname(owner)}</b> setuju jual <b>${TILES[i].name}</b> kepada <b>${pname(p)}</b> dengan <b>${rm(cost)}</b>.</p>`, [{ label: 'OK' }], p.ai !== null ? 4000 : 0);
+  return true;
 }
 async function pickTile(title, list, lbl) {
   if (!list.length) { await modal(`<h2>${title}</h2><p>Takde tanah yang boleh dipilih sekarang.</p>`, [{ label: 'OK' }]); return null; }
@@ -1594,7 +1613,7 @@ $('cardBtn').onclick = async () => {
       const i = await pickTile('📣 Promosi tanah mana?', TILES.map((t, i) => i).filter(i => G.own[i] === k).map(i => [i, false]), i => `Sewa ${rm(rentOf(i, 7))} → ${rm(rentOf(i, 7) * 2)}`);
       if (i !== null) usePromo(k, i);
     } else if (c === 'ambil') {
-      const i = await pickTile('🤝 Ambil alih tanah mana?', TILES.map((t, i) => i).filter(i => G.own[i] !== null && G.own[i] !== k && !G.players[G.own[i]].out).map(i => [i, takeCost(i) > p.money || G.lvl[i] > 0]), i => `${pname(G.players[G.own[i]])} · ${G.lvl[i] ? 'ada rumah' : rm(takeCost(i))}`);
+      const i = await pickTile('🤝 Nak tawar beli tanah mana?', TILES.map((t, i) => i).filter(i => G.own[i] !== null && G.own[i] !== k && !G.players[G.own[i]].out).map(i => [i, takeCost(i) > p.money || G.lvl[i] > 0]), i => `${pname(G.players[G.own[i]])} · ${G.lvl[i] ? 'ada rumah' : rm(takeCost(i))}`);
       if (i !== null) await doAmbil(k, i);
     }
   } finally { busy = false; renderAll(); setRoll(true); save(); }
@@ -1610,7 +1629,7 @@ async function aiPreRoll(k) {
     let best = null, bv = 0;
     TILES.forEach((t, i) => {
       const o = G.own[i];
-      if (o === null || o === k || G.players[o].out || G.lvl[i] || takeCost(i) > p.money - ai.reserve * .5) return;
+      if (o === null || o === k || G.players[o].out || G.lvl[i] || (p.ambilNo || []).includes(i) || takeCost(i) > p.money - ai.reserve * .5) return;
       let v = 0;
       if (t.set) { const all = setIdx(t.set), mine = all.filter(j => G.own[j] === k).length; if (mine === all.length - 1) v += 100; else if (ai.smart) v += mine * 25; }
       if (tg !== null && o === tg) v += 60 + G.lvl[i] * 25;
