@@ -448,3 +448,11 @@ button.kuih:active{transform:scale(.95)}
 .pod.p1 .blk{height:74px;background:linear-gradient(#ffe066,#f59f00)}
 .pod.p2 .blk{height:52px;background:linear-gradient(#e9ecef,#adb5bd)}
 .pod.p3 .blk{height:38px;background:linear-gradient(#f8c291,#d9822b)}
+
+/* Saidina: tanah tergadai, senarai bank, kiraan rumah */
+.tile.mort{filter:grayscale(.85);opacity:.7}
+.tile.mort::after{content:'🏦';position:absolute;right:1px;bottom:1px;font-size:.7em}
+.cash-list{display:flex;flex-direction:column;gap:6px;max-height:46vh;overflow:auto;margin:8px 0}
+.cash-list .btn{display:flex;justify-content:space-between;align-items:center;font-size:.85rem;padding:9px 12px;text-align:left}
+.cash-list .btn:disabled{opacity:.45}
+.b3d .hc{position:absolute;right:-6px;top:-4px;font-size:9px;background:#fff;border-radius:8px;padding:0 3px;color:#333;font-family:Nunito,sans-serif}

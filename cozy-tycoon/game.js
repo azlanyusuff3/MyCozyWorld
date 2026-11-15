@@ -2,7 +2,7 @@
 (function () {
 'use strict';
 const $ = id => document.getElementById(id);
-const SAVE = 'cozyTycoonSave_v1';
+const SAVE = 'cozyTycoonSave_v2'; // v2: papan & peraturan Saidina
 
 /* ---------- Chibi characters (SVG fallback; swap with sprites/token_<id>.webp) ---------- */
 const CHARS = [
@@ -68,13 +68,13 @@ fetch('sprites/list.json').then(r => r.ok ? r.json() : []).then(l => {
 }).catch(() => {});
 /* ---------- Optional art from ChatGPT (see sprites/ART_BRIEF.md) ---------- */
 const ART = {};
-const SLUGS = ['go', 'cendol', 'rezeki', 'roticanai', 'bil_elektrik', 'lrt', 'pasarmalam', 'musibah', 'mamak', 'runcit',
-  'tokwan', 'melaka', 'air', 'ipoh', 'kuantan', 'ktm', 'kotabharu', 'rezeki', 'kterengganu', 'alorsetar',
-  'kenduri', 'cameron', 'musibah', 'genting', 'langkawi', 'ets', 'kuching', 'kk', 'elektrik', 'sandakan',
-  'tertidur', 'putrajaya', 'jb', 'rezeki', 'penang', 'feri', 'musibah', 'menarakl', 'saman', 'klcc'];
+const SLUGS = ['go', 'kangar', 'batupahat', 'air', 'cukai', 'getah', 'keputusan', 'sibu', 'butterworth', 'taiping',
+  'penjara', 'sandakan', 'telukintan', 'shahalam', 'keputusan', 'kelapa', 'keputusan', 'kelang', 'kterengganu', 'kk',
+  'denda', 'kuching', 'seremban', 'alorsetar', 'keputusan', 'sawit', 'keputusan', 'kuantan', 'kotabharu', 'pj',
+  'kepenjara', 'melaka', 'jb', 'ipoh', 'keputusan', 'nenas', 'taksiran', 'elektrik', 'penang', 'kl'];
 const img = (n, cls) => `<img class="${cls || 'art'}" src="${ART[n]}" alt="" draggable="false">`;
 function tileIcon(i) { const n = 'tile_' + SLUGS[i]; return ART[n] ? img(n, 'ti') : TILES[i].ic; }
-function bldIcon(lv) { const n = 'bld_' + ['gerai', 'kedai', 'bangunan'][lv]; return ART[n] ? img(n, 'bi') : LVL_IC[lv]; }
+function bldIcon(lv) { const n = lv >= 5 ? 'bld_hotel' : 'bld_rumah'; return ART[n] ? img(n, 'bi') : (lv >= 5 ? '🏨' : '🏠'.repeat(lv)); }
 function applyArt() {
   const root = document.documentElement.style;
   if (ART.bg_menu) root.setProperty('--bg-menu', `url(sprites/bg_menu.webp)`);
@@ -92,31 +92,42 @@ function applyArt() {
 
 /* ---------- Board ---------- */
 const SET = {
-  coklat: '#a9765a', biru: '#7fd0f0', pink: '#ff8fc1', oren: '#ffa94d',
-  merah: '#ff6b6b', kuning: '#ffd43b', hijau: '#51cf66', ungu: '#7c5cd6',
+  kuning: '#ffe066', oren: '#ffb020', pink: '#e64ca0', ungu: '#7c5cd6',
+  birumuda: '#7fd0f0', biru: '#2f80ed', kelabu: '#b8bec8', gelap: '#5c6370',
 };
-const UPC = { coklat: 50, biru: 50, pink: 100, oren: 100, merah: 150, kuning: 150, hijau: 200, ungu: 200 };
+// harga rumah (ikut papan Saidina). Hotel = 4 rumah + bayar harga rumah sekali lagi
+const UPC = { kuning: 400, oren: 400, pink: 700, ungu: 700, birumuda: 1000, biru: 1000, kelabu: 1400, gelap: 1400 };
 function P(name, ic, set, price) { return { t: 'prop', name, ic, set, price }; }
+const KEP = () => ({ t: 'kep', name: 'Keputusan', ic: '❓' });
 const TILES = [
   { t: 'go', name: 'MULA', ic: '🏁' },
-  P('Gerai Cendol', '🍧', 'coklat', 60), { t: 'rezeki', name: 'Rezeki', ic: '🍀' }, P('Roti Canai', '🫓', 'coklat', 60),
-  { t: 'tax', name: 'Bil Elektrik', ic: '💡', amt: 100 }, { t: 'stn', name: 'Stesen LRT', ic: '🚝', price: 200 },
-  P('Pasar Malam', '🏮', 'biru', 100), { t: 'musibah', name: 'Musibah', ic: '🌧️' }, P('Kedai Mamak', '☕', 'biru', 100), P('Kedai Runcit', '🧺', 'biru', 120),
-  { t: 'jail', name: 'Rumah Tok Wan', ic: '🏡' },
-  P('Melaka', '🛺', 'pink', 140), { t: 'util', name: 'Syarikat Air', ic: '💧', price: 150 }, P('Ipoh', '🥢', 'pink', 140), P('Kuantan', '🐢', 'pink', 160),
-  { t: 'stn', name: 'Stesen KTM', ic: '🚆', price: 200 },
-  P('Kota Bharu', '🪁', 'oren', 180), { t: 'rezeki', name: 'Rezeki', ic: '🍀' }, P('K. Terengganu', '🐟', 'oren', 180), P('Alor Setar', '🌾', 'oren', 200),
-  { t: 'kenduri', name: 'Kenduri Kahwin', ic: '💐' },
-  P('Cameron', '🍓', 'merah', 220), { t: 'musibah', name: 'Musibah', ic: '🌧️' }, P('Genting', '🎡', 'merah', 220), P('Langkawi', '🦅', 'merah', 240),
-  { t: 'stn', name: 'Stesen ETS', ic: '🚄', price: 200 },
-  P('Kuching', '🐱', 'kuning', 260), P('Kota Kinabalu', '⛰️', 'kuning', 260), { t: 'util', name: 'Syarikat Elektrik', ic: '⚡', price: 150 }, P('Sandakan', '🦧', 'kuning', 280),
-  { t: 'gojail', name: 'Tertidur!', ic: '😴' },
-  P('Putrajaya', '🕌', 'hijau', 300), P('Johor Bahru', '🌉', 'hijau', 300), { t: 'rezeki', name: 'Rezeki', ic: '🍀' }, P('Pulau Pinang', '🍜', 'hijau', 320),
-  { t: 'stn', name: 'Stesen Feri', ic: '⛴️', price: 200 },
-  { t: 'musibah', name: 'Musibah', ic: '🌧️' }, P('Menara KL', '🗼', 'ungu', 350), { t: 'tax', name: 'Saman Parking', ic: '🅿️', amt: 75 }, P('KLCC', '🏙️', 'ungu', 400),
+  P('Kangar', '🌾', 'kuning', 400), P('Batu Pahat', '🪨', 'kuning', 400), { t: 'util', name: 'Bekalan Air', ic: '💧', price: 1000 },
+  { t: 'tax', name: 'Cukai Pendapatan', ic: '🧾', amt: 1400 }, { t: 'stn', name: 'Ladang Getah', ic: '🌳', price: 1400 },
+  KEP(), P('Sibu', '🛶', 'oren', 700), P('Butterworth', '⛴️', 'oren', 700), P('Taiping', '🦩', 'oren', 700),
+  { t: 'jail', name: 'Penjara', ic: '🚔' },
+  P('Sandakan', '🦧', 'pink', 1000), P('Teluk Intan', '🗼', 'pink', 1000), P('Shah Alam', '🕌', 'pink', 1000),
+  KEP(), { t: 'stn', name: 'Ladang Kelapa', ic: '🥥', price: 1400 }, KEP(),
+  P('Kelang', '🦀', 'ungu', 1300), P('K. Terengganu', '🐟', 'ungu', 1300), P('Kota Kinabalu', '⛰️', 'ungu', 1300),
+  { t: 'tax', name: 'Denda', ic: '🅿️', amt: 400 },
+  P('Kuching', '🐱', 'birumuda', 1600), P('Seremban', '🍖', 'birumuda', 1600), P('Alor Setar', '🌾', 'birumuda', 1600),
+  KEP(), { t: 'stn', name: 'Ladang Kelapa Sawit', ic: '🌴', price: 1400 }, KEP(),
+  P('Kuantan', '🐢', 'biru', 1900), P('Kota Bharu', '🪁', 'biru', 1900), P('Petaling Jaya', '🏙️', 'biru', 1900),
+  { t: 'gojail', name: 'Ke Penjara', ic: '👮' },
+  P('Bandar Melaka', '🛺', 'kelabu', 2200), P('Johor Bahru', '🌉', 'kelabu', 2200), P('Ipoh', '🥢', 'kelabu', 2200),
+  KEP(), { t: 'stn', name: 'Ladang Nenas', ic: '🍍', price: 1400 }, { t: 'tax', name: 'Cukai Taksiran', ic: '🏛️', amt: 700 },
+  { t: 'util', name: 'Bekalan Elektrik', ic: '⚡', price: 1000 }, P('Georgetown', '🍜', 'gelap', 2600), P('Kuala Lumpur', '🏙️', 'gelap', 2600),
 ];
-const LVL = ['Gerai', 'Kedai', 'Bangunan'], LVL_IC = ['🛖', '🏪', '🏢'], MULT = [1, 6, 18];
-const baseRent = t => Math.max(4, Math.round(t.price / 10 / 2) * 2);
+// tahap: 0 = tanah kosong, 1-4 = rumah, 5 = hotel
+const LVL = ['Tanah', '1 Rumah', '2 Rumah', '3 Rumah', '4 Rumah', 'Hotel'], LVL_IC = ['🟩', '🏠', '🏠🏠', '🏠🏠🏠', '🏠🏠🏠🏠', '🏨'];
+// TODO: tukar ikut kad Geran (Title Deed) Saidina sebenar. Sementara: nisbah macam Monopoly
+const MULT = [1, 5, 15, 40, 55, 70];
+const baseRent = t => Math.max(20, Math.round(t.price * 0.08 / 10) * 10);
+const START_MONEY = 10000, GO_PAY = 1400, JAIL_FINE = 500, JAIL_FINE2 = 1000;
+const LADANG_RENT = [175, 350, 700, 1400]; // TODO: ikut kad Geran sebenar
+const UTIL_MULT = [40, 100];                // TODO: ikut kad Geran sebenar
+const bldValue = i => G.lvl[i] * (UPC[TILES[i].set] || 0); // hotel = kos 5 rumah
+const mortVal = i => Math.round((TILES[i].price || 0) / 2);
+const redeemVal = i => Math.round(mortVal(i) * 1.2);
 function tilePos(i) {
   if (i <= 10) return [10, 10 - i];
   if (i <= 20) return [10 - (i - 10), 0];
@@ -126,65 +137,62 @@ function tilePos(i) {
 
 /* ---------- Fakta tempat (untuk budak belajar) ---------- */
 const FACTS = {
-  cendol: 'Warna hijau cendol datang dari daun pandan.',
-  roticanai: 'Roti canai ditebar nipis-nipis, lepas tu dimakan dengan kuah kari.',
-  pasarmalam: 'Pasar malam buka waktu petang sampai malam. Banyak makanan sedap!',
-  mamak: 'Teh tarik dituang dari satu gelas ke gelas lain supaya berbuih.',
-  runcit: 'Kedai runcit jual barang harian macam roti, telur dan gula.',
-  melaka: 'Bandar Melaka ialah Tapak Warisan Dunia UNESCO.',
-  ipoh: 'Ipoh terkenal dengan ayam tauge dan bukit batu kapur.',
+  kangar: 'Kangar ialah ibu negeri Perlis, negeri paling kecil di Malaysia.',
+  batupahat: 'Batu Pahat di Johor terkenal dengan mi bandung dan pantai Minyak Beku.',
+  sibu: 'Sibu terletak di tepi Sungai Rajang, sungai paling panjang di Malaysia.',
+  butterworth: 'Dari Butterworth, orang naik feri menyeberang ke Pulau Pinang.',
+  taiping: 'Taiping ada Taman Tasik Taiping, taman tasik yang sangat lama dan cantik.',
+  sandakan: 'Dekat Sandakan ada Sepilok, tempat jaga anak orang utan.',
+  telukintan: 'Teluk Intan ada menara condong yang terkenal, macam di Pisa!',
+  shahalam: 'Shah Alam ialah ibu negeri Selangor. Masjid Biru dia antara yang terbesar di Asia Tenggara.',
+  kelang: 'Kelang terkenal dengan bak kut teh dan Pelabuhan Klang.',
+  kterengganu: 'Keropok lekor Terengganu dibuat daripada ikan.',
+  kk: 'Gunung Kinabalu di Sabah ialah gunung paling tinggi di Malaysia.',
+  kuching: 'Kuching ialah ibu negeri Sarawak, digelar Bandaraya Kucing.',
+  seremban: 'Seremban ialah ibu negeri Negeri Sembilan, terkenal dengan siput sedut dan masak lemak.',
+  alorsetar: 'Kedah digelar Jelapang Padi sebab banyak sawah padi.',
   kuantan: 'Kuantan ialah ibu negeri Pahang, negeri paling besar di Semenanjung.',
   kotabharu: 'Kota Bharu ialah ibu negeri Kelantan, negeri wau bulan.',
-  kterengganu: 'Keropok lekor Terengganu dibuat daripada ikan.',
-  alorsetar: 'Kedah digelar Jelapang Padi sebab banyak sawah padi.',
-  cameron: 'Cameron Highlands sejuk, ada ladang teh dan strawberi.',
-  genting: 'Genting Highlands terletak tinggi atas bukit, jadi cuaca dia sejuk.',
-  langkawi: 'Langkawi ada lebih kurang 99 pulau!',
-  kuching: 'Kuching ialah ibu negeri Sarawak, digelar Bandaraya Kucing.',
-  kk: 'Gunung Kinabalu di Sabah ialah gunung paling tinggi di Malaysia.',
-  sandakan: 'Dekat Sandakan ada Sepilok, tempat jaga anak orang utan.',
-  putrajaya: 'Putrajaya ialah pusat pentadbiran kerajaan. Kubah Masjid Putra warna pink!',
+  pj: 'Petaling Jaya ialah bandar satelit pertama di Malaysia.',
+  melaka: 'Bandar Melaka ialah Tapak Warisan Dunia UNESCO.',
   jb: 'Johor Bahru disambung ke Singapura melalui Tambak Johor.',
-  penang: 'Pulau Pinang digelar Mutiara Timur dan terkenal dengan makanan sedap.',
-  menarakl: 'Menara KL tingginya 421 meter!',
-  klcc: 'Menara Berkembar Petronas ada 88 tingkat!',
-  lrt: 'LRT bergerak atas landasan tinggi, jadi tak kena jalan sesak.',
-  ktm: 'KTM maksudnya Keretapi Tanah Melayu.',
-  ets: 'ETS ialah tren elektrik laju yang bawa orang ke bandar jauh.',
-  feri: 'Feri bawa orang menyeberang laut ke pulau.',
+  ipoh: 'Ipoh terkenal dengan ayam tauge dan bukit batu kapur.',
+  penang: 'Georgetown di Pulau Pinang ialah Tapak Warisan Dunia UNESCO, terkenal dengan makanan sedap.',
+  kl: 'Kuala Lumpur ialah ibu negara Malaysia. Menara Berkembar Petronas ada 88 tingkat!',
+  getah: 'Malaysia pernah jadi pengeluar getah asli terbesar di dunia.',
+  kelapa: 'Semua bahagian pokok kelapa boleh digunakan, dari buah sampai ke daun!',
+  sawit: 'Minyak sawit digunakan untuk masak dan buat sabun.',
+  nenas: 'Nenas Johor terkenal manis. Nenas tumbuh atas tanah, bukan atas pokok!',
   air: 'Jimat air! Tutup paip masa gosok gigi.',
   elektrik: 'Jimat elektrik! Tutup lampu bila keluar bilik.',
 };
 
 /* ---------- Cards ---------- */
-const REZEKI = [
-  { txt: 'Durian runtuh! Dapat duit', money: 200, ic: '🍈' },
-  { txt: 'Menang pertandingan mewarna', money: 100, ic: '🖍️' },
-  { txt: 'Dapat duit raya dari Tok Wan', money: 150, ic: '🧧' },
-  { txt: 'Kuih kau laku keras!', money: 80, ic: '🍡' },
-  { txt: 'Jumpa duit dalam poket seluar', money: 50, ic: '👖' },
-  { txt: 'Hari jadi kau! Semua kawan bagi hadiah', each: 30, ic: '🎂' },
-  { txt: 'Naik basikal laju ke MULA', goto: 0, ic: '🚲' },
-  { txt: 'Naik tren ke stesen terdekat', nearest: 'stn', ic: '🚝' },
+// TODO: tukar ikut kad KEPUTUSAN Saidina sebenar (sementara: kad contoh)
+const KEPUTUSAN = [
+  { txt: 'Durian runtuh! Dapat duit', money: 1400, ic: '🍈' },
+  { txt: 'Menang pertandingan mewarna', money: 700, ic: '🖍️' },
+  { txt: 'Dapat duit raya dari Tok Wan', money: 1000, ic: '🧧' },
+  { txt: 'Kuih kau laku keras!', money: 500, ic: '🍡' },
+  { txt: 'Hari jadi kau! Semua kawan bagi hadiah', each: 200, ic: '🎂' },
+  { txt: 'Pergi terus ke MULA', goto: 0, ic: '🏁' },
+  { txt: 'Pergi ke ladang terdekat', nearest: 'stn', ic: '🌴' },
   { txt: 'Pasar Malam! Pilih satu kuih', pasar: true, ic: '🏮' },
-];
-const MUSIBAH = [
-  { txt: 'Kena saman parking!', money: -50, ic: '🚓' },
-  { txt: 'Tayar basikal pancit', money: -40, ic: '🛞' },
-  { txt: 'Kucing pecahkan pasu mak', money: -60, ic: '🏺' },
-  { txt: 'Lupa bawa bekal, beli makan', money: -30, ic: '🍱' },
-  { txt: 'Mengantuk... tidur kat Rumah Tok Wan', jail: true, ic: '😴' },
-  { txt: 'Baiki semua kedai & bangunan (25 setiap satu)', repair: 25, ic: '🔧' },
+  { txt: 'Kena saman parking!', money: -400, ic: '🚓' },
+  { txt: 'Tayar kereta pancit', money: -300, ic: '🛞' },
+  { txt: 'Bayar yuran sekolah', money: -500, ic: '🎒' },
+  { txt: 'Masuk penjara terus! Tak lalu MULA', jail: true, ic: '🚔' },
+  { txt: 'Baiki rumah: RM150 setiap rumah, RM750 setiap hotel', repair: 150, ic: '🔧' },
   { txt: 'Tertinggal barang, undur 3 petak', back: 3, ic: '↩️' },
-  { txt: 'Belanja semua kawan aiskrim', each: -20, ic: '🍦' },
+  { txt: 'Belanja semua kawan aiskrim', each: -150, ic: '🍦' },
 ];
 
 /* ---------- AI personalities ---------- */
 const AIS = [
-  { name: 'Kedekut', tag: '🪙 Kedekut', reserve: 420, upReserve: 600, bid: .45, cardRent: 30, swing: 20 },
-  { name: 'Borong', tag: '🛒 Borong', reserve: 40, upReserve: 150, bid: 1.05, cardRent: 120, swing: 70 },
-  { name: 'Bijak', tag: '🧠 Bijak', reserve: 180, upReserve: 300, smart: true, bid: .75, cardRent: 70, swing: 35 },
-  { name: 'Pendendam', tag: '😤 Pendendam', reserve: 200, upReserve: 350, revenge: true, bid: .7, cardRent: 80, swing: 40 },
+  { name: 'Kedekut', tag: '🪙 Kedekut', reserve: 3000, upReserve: 4200, bid: .45, cardRent: 210, swing: 140 },
+  { name: 'Borong', tag: '🛒 Borong', reserve: 300, upReserve: 1000, bid: 1.05, cardRent: 840, swing: 490 },
+  { name: 'Bijak', tag: '🧠 Bijak', reserve: 1300, upReserve: 2100, smart: true, bid: .75, cardRent: 490, swing: 250 },
+  { name: 'Pendendam', tag: '😤 Pendendam', reserve: 1400, upReserve: 2500, revenge: true, bid: .7, cardRent: 560, swing: 280 },
 ];
 const AI_TALK = {
   0: { disc: ['Jimat! Bayar separuh je, hehe 🪙', 'Duit aku bukan daun kering!'], card: ['Kena kira betul-betul ni...', 'Langkah berjimat!'], bid: ['Murah dapat, baru best 🪙'] },
@@ -334,14 +342,14 @@ const LINES = {
     ['mira', '{p} singgah {t} dan bayar {m}. Ok la tu!', false],
   ],
   go: [
-    ['ann', '{p} lalu MULA dan dapat RM200!', false],
-    ['kiah', '{p} dapat gaji RM200! Jangan boros ye!', false],
-    ['mira', '{p} dapat RM200! Belanja Mira aiskrim boleh?', false],
+    ['ann', '{p} lalu MULA dan dapat RM1,400!', false],
+    ['kiah', '{p} dapat gaji RM1,400! Jangan boros ye!', false],
+    ['mira', '{p} dapat RM1,400! Belanja Mira aiskrim boleh?', false],
   ],
   sleep: [
-    ['polis', 'Shhh... {p} tengah tidur kat Rumah Tok Wan. Jangan bising!', true],
-    ['kiah', '{p} penat sangat agaknya. Tidur je kat rumah Tok Wan.', false],
-    ['mira', 'Hihi, {p} tertidur! Tok Wan bagi selimut tak?', false],
+    ['polis', '{p}, ikut saya ke penjara. Jangan risau, sekejap je!', true],
+    ['kiah', 'Alamak, {p} masuk penjara! Sabar ye nak.', false],
+    ['mira', 'Hihi, {p} masuk penjara! Nanti Mira bawa kuih.', false],
   ],
   kenduri: [
     ['ann', 'Semua dijemput ke kenduri kahwin {p}!', true],
@@ -375,14 +383,14 @@ const LINES = {
   ],
   // berbual biasa (kena dengan tempat dalam board)
   chatter: [
-    ['polis', 'Jalan sesak kat KLCC hari ni. Naik LRT lagi senang!', true],
+    ['polis', 'Jalan sesak kat Kuala Lumpur hari ni. Naik LRT lagi senang!', true],
     ['polis', 'Ingat! Jangan parking merata-rata. Nanti kena saman!', false],
     ['polis', 'Pakai tali pinggang keledar bila naik kereta ye adik-adik.', false],
-    ['mira', 'Cendol kat Gerai Cendol sedap gila! Nak lagi!', false],
-    ['mira', 'Esok cuti sekolah! Jom pergi Langkawi!', false],
+    ['mira', 'Cendol kat Georgetown sedap gila! Nak lagi!', false],
+    ['mira', 'Esok cuti sekolah! Jom pergi Kota Kinabalu!', false],
     ['mira', 'Mira dah siap kerja sekolah. Boleh main dah!', false],
-    ['kiah', 'Kedai Mamak penuh malam ni, semua tengok bola.', false],
-    ['kiah', 'Strawberi Cameron tengah musim. Manis-manis belaka!', false],
+    ['kiah', 'Kedai mamak kat Petaling Jaya penuh malam ni, semua tengok bola.', false],
+    ['kiah', 'Nenas tengah musim. Manis-manis belaka!', false],
     ['kiah', 'Harga barang naik lagi... mak cik pening kepala.', false],
     ['abu', 'Hujan lebat kat Kuantan. Bawa payung kalau nak keluar.', false],
     ['abu', 'Zaman Pak Abu dulu, roti canai sekeping 20 sen je!', false],
@@ -400,8 +408,8 @@ const PL = {
   bangunan: ['Tengok bangunan tinggi aku kat {t}!', '{t} dah ada bangunan! Aku memang tauke besar!', 'Bangunan siap! Sewa {t} mahal sekarang, hehe.'],
   rentHigh: ['Alamak, {m} kat {o}?! Mahalnya!', 'Habis duit aku... {m}!', 'Kenapa aku singgah {t} ni... {m}!', '{o}, kurangkan sikit boleh tak? {m} mahal la!'],
   rentLow: ['Ok la, {m} je. Nah {o}!', 'Bayar {m} kat {o}. Tak apa, murah je.', 'Sewa {t} {m}. Boleh tahan.'],
-  go: ['Yeay! Dapat RM200!', 'Gaji masuk! RM200!', 'Lalu MULA, duit tambah RM200!'],
-  sleep: ['Mengantuknya... aku tidur kat rumah Tok Wan kejap.', 'Zzz... kejut aku nanti ye.', 'Tok Wan, nak tumpang tidur!'],
+  go: ['Yeay! Dapat RM1,400!', 'Gaji masuk! RM1,400!', 'Lalu MULA, duit tambah RM1,400!'],
+  sleep: ['Alamak, aku masuk penjara!', 'Encik Polis, saya tak buat salah!', 'Takpe, sekejap je aku keluar.'],
   kenduri: ['Terima kasih datang kenduri aku semua!', 'Jemput makan nasi minyak! Jangan malu-malu!', 'Kenduri aku! Terima kasih salam berisi!'],
   minigame: ['Yes! Aku tangkap semua syiling!', 'Laju tak aku? Sewa separuh!'],
   sell: ['Alamak, duit tak cukup... terpaksa jual harta.', 'Sedihnya kena jual tanah aku...'],
@@ -433,18 +441,18 @@ function folkChatter() {
   const rich = ps.slice().sort((a, b) => b.n - a.n)[0], poor = ps.slice().sort((a, b) => a.p.money - b.p.money)[0];
   const opts = [];
   if (rich && rich.n >= 4) opts.push(pick([['abu', `Tak puas hati betul! ${pname(rich.p)} dah borong ${rich.n} tempat. Tinggal apa untuk orang lain?`, true], ['kiah', `${pname(rich.p)} dah ada ${rich.n} tanah. Dah macam tauke besar!`, false]]));
-  if (poor && poor.p.money < 300) opts.push(pick([['kiah', `Kesian ${pname(poor.p)}, tinggal ${rm(poor.p.money)} je. Jimat-jimat ye nak!`, false], ['mira', `${pname(poor.p)} tinggal ${rm(poor.p.money)}... Mira boleh pinjamkan duit tabung!`, false]]));
+  if (poor && poor.p.money < 2000) opts.push(pick([['kiah', `Kesian ${pname(poor.p)}, tinggal ${rm(poor.p.money)} je. Jimat-jimat ye nak!`, false], ['mira', `${pname(poor.p)} tinggal ${rm(poor.p.money)}... Mira boleh pinjamkan duit tabung!`, false]]));
   const lead = alive().slice().sort((a, b) => worth(G.players.indexOf(b)) - worth(G.players.indexOf(a)))[0];
   if (lead && G.round > 5 && Math.random() < .4) opts.push(['ann', `Setakat ini, ${pname(lead)} paling kaya di bandar kita!`, true]);
-  const blds = G.lvl.filter(x => x === 2).length;
-  if (blds >= 3) opts.push(['abu', `Dah ada ${blds} bangunan tinggi. Bandar kita dah macam KL!`, false]);
+  const blds = G.lvl.filter(x => x === 5).length;
+  if (blds >= 3) opts.push(['abu', `Dah ada ${blds} hotel. Bandar kita dah macam KL!`, false]);
   const c = pick(LINES.chatter); if (c[1] !== lastLine) opts.push(c);
   const o = pick(opts); lastLine = o[1]; notify(o[0], o[1], o[2]);
 }
 
 /* ---------- State ---------- */
 let G = null, busy = false;
-const cfg = { math: localStorage.getItem('cozyTycoonMathMode') === '1', char: Math.min(7, +(localStorage.getItem('cozyTycoonChar') || 0)), mode: 'ai', count: 4, rounds: 20, speed: +(localStorage.getItem('cozyTycoonSpeed') || 1.15) };
+const cfg = { win: localStorage.getItem('cozyTycoonWin') || 'time', math: localStorage.getItem('cozyTycoonMathMode') === '1', char: Math.min(7, +(localStorage.getItem('cozyTycoonChar') || 0)), mode: 'ai', count: 4, rounds: 20, speed: +(localStorage.getItem('cozyTycoonSpeed') || 1.15) };
 const SPD = () => cfg.speed;
 const wait = ms => new Promise(r => setTimeout(r, ms * SPD()));
 let camOn = localStorage.getItem('cozyTycoonCam') !== '0';
@@ -463,15 +471,22 @@ function newGame() {
     const order = localOrder();
     order.forEach((ci, k) => players.push({ name: getName(k, CHARS[ci].name), ci, ai: null }));
   }
-  players.forEach(p => Object.assign(p, { money: 1500, pos: 0, out: false, sleep: 0 }));
+  players.forEach(p => Object.assign(p, { money: START_MONEY, pos: 0, out: false, jail: false }));
   G = {
-    players, turn: 0, round: 1, maxRounds: cfg.rounds,
-    own: TILES.map(() => null), lvl: TILES.map(() => 0),
-    rz: shuffle([...REZEKI.keys()]), ms: shuffle([...MUSIBAH.keys()]),
+    players, turn: 0, round: 1, win: cfg.win, maxRounds: cfg.win === 'time' ? (cfg.rounds || 20) : 0,
+    own: TILES.map(() => null), lvl: TILES.map(() => 0), mort: TILES.map(() => false),
+    kp: shuffle([...KEPUTUSAN.keys()]),
     log: ['Selamat datang ke Cozy Tycoon! 🎉'], dice: [1, 1], over: false, math: cfg.math,
     hand: players.map(p => [drawTac(p), drawTac(p)]), promo: null,
   };
+  // Mod ikut masa: bank bahagikan 2-3 geran setiap pemain dulu (bayar harga kat bank)
+  if (G.win === 'time') {
+    const deeds = shuffle(TILES.map((t, i) => i).filter(i => TILES[i].price)), n = players.length <= 3 ? 3 : 2;
+    players.forEach((p, k) => { for (let q = 0; q < n; q++) { const i = deeds.pop(); G.own[i] = k; p.money -= TILES[i].price; } });
+    G.log.unshift('📜 Bank dah bahagikan geran tanah kepada semua pemain');
+  }
 }
+const WIN_TXT = { time: 'Ikut masa — paling kaya bila pusingan habis menang', short: 'Pendek — sorang muflis, game tamat', last: 'Penuh — main sampai tinggal sorang' };
 function save() { try { if (G && !G.over) localStorage.setItem(SAVE, JSON.stringify(G)); else localStorage.removeItem(SAVE); } catch (e) {} }
 function load() { try { return JSON.parse(localStorage.getItem(SAVE)); } catch (e) { return null; } }
 
@@ -517,6 +532,9 @@ function seg(id, key, num, after) {
     cfg[key] = num ? +b.dataset.v : b.dataset.v; beep(650); after && after();
   });
 }
+seg('winSeg', 'win', false, () => { localStorage.setItem('cozyTycoonWin', cfg.win); updWin(); });
+function updWin() { [...$('winSeg').children].forEach(b => b.classList.toggle('on', b.dataset.v === cfg.win)); $('roundRow').classList.toggle('hidden', cfg.win !== 'time'); $('winHint').textContent = WIN_TXT[cfg.win]; }
+updWin();
 seg('modeSeg', 'mode', false, () => { $('countRow').classList.toggle('hidden', cfg.mode !== 'local'); renderNames(); });
 seg('countSeg', 'count', true, renderNames);
 seg('mathSeg', 'math', false, () => { cfg.math = cfg.math === '1' || cfg.math === true; localStorage.setItem('cozyTycoonMathMode', cfg.math ? '1' : '0'); });
@@ -652,10 +670,11 @@ function renderAll() {
   applyWorld();
   $('players').style.gridTemplateColumns = `repeat(${G.players.length},1fr)`;
   $('players').innerHTML = G.players.map((p, k) =>
-    `<div class="pchip ${k === G.turn ? 'turn' : ''} ${p.out ? 'out' : ''}" style="border-color:${k === G.turn ? CHARS[p.ci].color : '#fff'}">${p.sleep ? '<i class="zz">💤</i>' : ''}${avatar(p.ci)}<b>${pname(p)}</b><span id="mon${k}">${p.out ? 'Bankrap' : rm(disp[k] === undefined ? p.money : disp[k])}</span><i class="cnt">🏠 ${G.own.filter(o => o === k).length} · 🃏 ${G.hand ? G.hand[k].length : 0}</i></div>`).join('');
+    `<div class="pchip ${k === G.turn ? 'turn' : ''} ${p.out ? 'out' : ''}" style="border-color:${k === G.turn ? CHARS[p.ci].color : '#fff'}">${p.jail ? '<i class="zz">🚔</i>' : ''}${avatar(p.ci)}<b>${pname(p)}</b><span id="mon${k}">${p.out ? 'Muflis' : rm(disp[k] === undefined ? p.money : disp[k])}</span><i class="cnt">🏠 ${G.own.filter(o => o === k).length} · 🃏 ${G.hand ? G.hand[k].length : 0}</i></div>`).join('');
   TILES.forEach((t, i) => {
     const el = $('tile' + i), o = G.own[i];
     el.classList.toggle('owned', o !== null);
+    el.classList.toggle('mort', !!(G.mort && G.mort[i]));
     el.classList.toggle('promo', !!(G.promo && G.promo.i === i));
     if (o !== null) { el.style.setProperty('--own', CHARS[G.players[o].ci].color); el.style.setProperty('--own-bg', CHARS[G.players[o].ci].color + '40'); }
     const ow = el.querySelector('.own'), key = o === null ? '' : 'o' + G.players[o].ci;
@@ -665,7 +684,7 @@ function renderAll() {
   G.players.forEach((p, k) => placeToken(k, p.pos));
   renderBlds();
   const p = cur();
-  $('roundTxt').textContent = ['☀️ ', '🌇 ', '🌙 '][phase()] + (G.maxRounds ? `Pusingan ${Math.min(G.round, G.maxRounds)}/${G.maxRounds}` : `Pusingan ${G.round} · sampai tinggal sorang`) + (festMult() > 1 ? ` · 🎉 Sewa ×${festMult().toFixed(1)}` : '');
+  $('roundTxt').textContent = ['☀️ ', '🌇 ', '🌙 '][phase()] + (G.maxRounds ? `Pusingan ${Math.min(G.round, G.maxRounds)}/${G.maxRounds}` : `Pusingan ${G.round} · ${G.win === 'short' ? 'sorang muflis, tamat' : 'sampai tinggal sorang'}`) + (festMult() > 1 ? ` · 🎉 Sewa ×${festMult().toFixed(1)}` : '');
   $('turnTxt').innerHTML = `${avatar(p.ci)} Giliran ${pname(p)}!`;
   $('log').innerHTML = G.log.slice(0, 3).map(l => `<div>${l}</div>`).join('');
   [...$('dice').children].forEach((d, i) => { if (!d.classList.contains('spin')) setDie(d, G.dice[i]); });
@@ -677,7 +696,7 @@ function placeToken(k, pos) {
   const ox = [.05, .38, .05, .38][idx < 0 ? 0 : idx], oy = [-.22, -.22, .05, .05][idx < 0 ? 0 : idx];
   el.style.left = `calc(${(c + ox) / 11 * 100}% + 3px)`; el.style.top = `calc(${(r + oy) / 11 * 100}% + 3px)`;
   el.style.display = G.players[k].out ? 'none' : '';
-  el.classList.toggle('sleeping', !!G.players[k].sleep);
+  el.classList.toggle('sleeping', !!G.players[k].jail);
   el.style.zIndex = k === G.turn ? 4 : 3;
 }
 function log(m) { G.log.unshift(m); G.log.length = Math.min(G.log.length, 12); renderAll(); }
@@ -709,8 +728,9 @@ function festMult() { return G && G.round > FEST_START ? Math.min(4, 1 + (G.roun
 function rentOf(i, diceSum) { return Math.round(rawRent(i, diceSum) * festMult() * evMult(i) * nightMult(i) * (G.promo && G.promo.i === i ? 2 : 1)); }
 function rawRent(i, diceSum) {
   const t = TILES[i], o = G.own[i]; if (o === null) return 0;
-  if (t.t === 'stn') return 25 * Math.pow(2, TILES.filter((x, j) => x.t === 'stn' && G.own[j] === o).length - 1);
-  if (t.t === 'util') return diceSum * (TILES.filter((x, j) => x.t === 'util' && G.own[j] === o).length === 2 ? 10 : 4);
+  if (G.mort[i]) return 0; // tanah tergadai: tak boleh kutip sewa
+  if (t.t === 'stn') return LADANG_RENT[TILES.filter((x, j) => x.t === 'stn' && G.own[j] === o).length - 1];
+  if (t.t === 'util') return diceSum * UTIL_MULT[TILES.filter((x, j) => x.t === 'util' && G.own[j] === o).length === 2 ? 1 : 0];
   const fullSet = TILES.every((x, j) => x.set !== t.set || G.own[j] === o);
   return baseRent(t) * MULT[G.lvl[i]] * (fullSet && G.lvl[i] === 0 ? 2 : 1);
 }
@@ -719,16 +739,17 @@ function propHtml(i) {
   let body = '';
   if (t.t === 'prop') {
     const b = baseRent(t);
-    body = `<table class="rent-tbl">${LVL.map((l, k) => `<tr class="${o !== null && G.lvl[i] === k ? 'cur' : ''}"><td>${LVL_IC[k]} ${l}</td><td>sewa ${rm(b * MULT[k])}</td></tr>`).join('')}<tr><td>⭐ Set penuh (gerai)</td><td>sewa ×2</td></tr><tr><td>🔨 Kos upgrade</td><td>${rm(UPC[t.set])}</td></tr></table>`;
-  } else if (t.t === 'stn') body = `<p>Sewa RM25 / 50 / 100 / 200 ikut berapa stesen tuan dia ada.</p>`;
-  else if (t.t === 'util') body = `<p>Sewa = dadu × 4 (atau × 10 kalau ada dua-dua syarikat).</p>`;
+    body = `<table class="rent-tbl">${LVL.map((l, k) => `<tr class="${o !== null && G.lvl[i] === k ? 'cur' : ''}"><td>${LVL_IC[k]} ${l}</td><td>sewa ${rm(b * MULT[k])}</td></tr>`).join('')}<tr><td>⭐ Set penuh (tanah kosong)</td><td>sewa ×2</td></tr><tr><td>🏠 Harga rumah</td><td>${rm(UPC[t.set])}</td></tr><tr><td>🏨 Hotel</td><td>4 rumah + ${rm(UPC[t.set])}</td></tr><tr><td>🏦 Gadai</td><td>${rm(mortVal(i))}</td></tr></table>`;
+  } else if (t.t === 'stn') body = `<p>Sewa ${LADANG_RENT.map(rm).join(' / ')} ikut berapa ladang tuan dia ada.</p><p>🏦 Gadai ${rm(mortVal(i))}</p>`;
+  else if (t.t === 'util') body = `<p>Sewa = dadu × ${UTIL_MULT[0]} (atau × ${UTIL_MULT[1]} kalau ada Bekalan Air & Elektrik).</p><p>🏦 Gadai ${rm(mortVal(i))}</p>`;
+  if (o !== null && G.mort[i]) body += `<p class="fest">🏦 Tanah ni <b>tergadai</b> — takde sewa. Tebus ${rm(redeemVal(i))}</p>`;
   else body = `<p>${tileDesc(t)}</p>`;
   if (festMult() > 1 && t.price) body += `<p class="fest">🎉 Musim Perayaan: semua sewa ×${festMult().toFixed(1)}</p>`;
   const fact = FACTS[SLUGS[i]];
   return `<div class="prop-head" style="background:${col}"><div class="big-ic">${tileIcon(i)}</div><h2 style="color:#fff">${t.name}</h2>${t.price ? rm(t.price) : ''}</div>${fact ? `<div class="fact">💡 <b>Tahukah kau?</b> ${fact}</div>` : ''}${body}${o !== null ? `<p>Tuan: <b>${pname(G.players[o])}</b></p>` : ''}`;
 }
 function tileDesc(t) {
-  return { go: 'Lalu sini dapat RM200!', rezeki: 'Ambil kad Rezeki — selalunya best!', musibah: 'Ambil kad Musibah — alamak...', tax: `Bayar ${rm(t.amt)}.`, jail: 'Rumah Tok Wan. Kalau singgah je, takpe. Kalau tertidur, rehat 1 giliran.', gojail: 'Mengantuk! Terus pergi tidur kat Rumah Tok Wan.', kenduri: 'Kenduri kahwin! Semua orang bagi salam berisi RM20 kat kau.' }[t.t] || '';
+  return { go: 'Lalu atau berhenti sini dapat RM1,400!', kep: 'Ambil kad Keputusan dan ikut arahan dia.', tax: `Bayar ${rm(t.amt)} kat bank.`, jail: `Penjara. Kalau singgah je (Cuma Melawat), takpe. Kalau masuk penjara: bayar ${rm(JAIL_FINE)} terus keluar, atau cuba dapat double dalam 3 baling (gagal kena ${rm(JAIL_FINE2)}).`, gojail: 'Terus masuk penjara! Tak lalu MULA.' }[t.t] || '';
 }
 const pname = p => p.ai !== null ? CHARS[p.ci].name : esc(p.name || CHARS[p.ci].name);
 function showTileInfo(i) { if (!G) return; modal(propHtml(i), []); }
@@ -769,40 +790,85 @@ async function pay(k, amt, to) {
   renderAll();
 }
 function gain(k, amt) { if (amt > 0) flyCoins([50, 50], posXY(G.players[k].pos), amt); G.players[k].money += amt; floatText(k, '+' + amt, '#2f9f73'); sfx.coin(); renderAll(); }
+// pilihan nak dapatkan duit dari bank: jual rumah (separuh), gadai tanah (separuh), jual tanah kosong ke bank (separuh)
+function cashOpts(k) {
+  const o = [];
+  TILES.forEach((t, i) => {
+    if (G.own[i] !== k) return;
+    if (G.lvl[i] > 0) o.push({ i, kind: 'house', v: UPC[t.set] / 2 | 0, label: `${G.lvl[i] === 5 ? '🏨 Jual hotel' : '🏠 Jual 1 rumah'} ${t.name}` });
+    else if (!G.mort[i]) {
+      if (t.set && setIdx(t.set).some(j => G.own[j] === k && G.lvl[j] > 0)) return; // jual rumah dalam set dulu
+      o.push({ i, kind: 'mort', v: mortVal(i), label: `🏦 Gadai ${t.name}` });
+      o.push({ i, kind: 'sell', v: t.price / 2 | 0, label: `💰 Jual ${t.name} ke bank` });
+    }
+  });
+  return o;
+}
+function doCash(k, op) {
+  const p = G.players[k];
+  if (op.kind === 'house') G.lvl[op.i]--;
+  else if (op.kind === 'mort') G.mort[op.i] = true;
+  else { G.own[op.i] = null; G.lvl[op.i] = 0; G.mort[op.i] = false; }
+  p.money += op.v; floatText(k, '+' + op.v, '#2f9f73');
+  return `${op.label} (+${rm(op.v)})`;
+}
 async function raiseCash(k, owed) {
   const p = G.players[k], sold = [];
   let raised = 0;
-  const mine = () => TILES.map((t, i) => i).filter(i => G.own[i] === k);
-  while (p.money < 0 && mine().length) {
-    const need = -p.money, list = mine();
-    // 1) sell a building level first (cheapest upgrade), 2) else the cheapest land that covers the debt, 3) else the cheapest land
-    const ups = list.filter(i => G.lvl[i] > 0).sort((a, b) => UPC[TILES[a].set] - UPC[TILES[b].set]);
-    const lands = list.filter(i => G.lvl[i] === 0).sort((a, b) => TILES[a].price - TILES[b].price);
-    let i, v;
-    if (ups.length) { i = ups.find(x => (UPC[TILES[x].set] / 2 | 0) >= need) ?? ups[ups.length - 1]; v = UPC[TILES[i].set] / 2 | 0; G.lvl[i]--; sold.push(`${LVL_IC[G.lvl[i] + 1]} ${LVL[G.lvl[i] + 1]} ${TILES[i].name} (+${rm(v)})`); }
-    else { i = lands.find(x => (TILES[x].price / 2 | 0) >= need) ?? lands[lands.length - 1]; v = TILES[i].price / 2 | 0; G.own[i] = null; sold.push(`${TILES[i].ic} ${TILES[i].name} (+${rm(v)})`); }
-    p.money += v; raised += v;
+  while (p.money < 0) {
+    const ops = cashOpts(k); if (!ops.length) break;
+    let op;
+    if (p.ai === null) {
+      const v = await modal(`<div class="big-ic">🏦</div><h2>Duit tak cukup!</h2><p>${pname(p)} kena bayar <b>${rm(owed)}</b>. Kurang lagi <b>${rm(-p.money)}</b>.</p><p>Pilih harta nak gadai atau jual kat bank:</p><div class="cash-list">${ops.map((o, n) => `<button class="btn mint" data-pick="${n}">${o.label} <b>+${rm(o.v)}</b></button>`).join('')}</div><p class="hint">Gadai: tanah kekal kau, tapi takde sewa sampai kau tebus (+20%).</p>`, []);
+      op = ops[+v] || ops[0];
+    } else {
+      // AI: jual rumah dulu, lepas tu gadai tanah paling murah
+      op = ops.find(o => o.kind === 'house') || ops.filter(o => o.kind === 'mort').sort((a, b) => a.v - b.v)[0] || ops[0];
+    }
+    sold.push(doCash(k, op)); raised += op.v; renderAll();
   }
   renderAll();
   if (sold.length) {
-    log(`🏦 ${pname(p)} tak cukup duit, bank beli: ${sold.join(', ')}`);
+    log(`🏦 ${pname(p)} tak cukup duit: ${sold.join(', ')}`);
     say2('sell', { k, p: pname(p) });
-    await modal(`<div class="big-ic">🏦</div><h2>Duit tak cukup!</h2><p>${pname(p)} kena bayar <b>${rm(owed)}</b> tapi duit tak cukup. Bank beli harta ni separuh harga:</p><div class="sold-list">${sold.map(x => `<div>${x}</div>`).join('')}</div><p>Baki duit sekarang: <b>${rm(Math.max(0, p.money))}</b></p>`, [{ label: 'OK' }], p.ai !== null ? 10000 : 0);
+    if (p.ai !== null) await modal(`<div class="big-ic">🏦</div><h2>Duit tak cukup!</h2><p>${pname(p)} kena bayar <b>${rm(owed)}</b>. Bank ambil:</p><div class="sold-list">${sold.map(x => `<div>${x}</div>`).join('')}</div><p>Baki duit sekarang: <b>${rm(Math.max(0, p.money))}</b></p>`, [{ label: 'OK' }], 10000);
   }
   if (p.money < 0) {
-    p.out = true; p.money = 0; log(`💸 ${pname(p)} dah bankrap!`);
+    p.out = true; p.money = 0; p.jail = false; log(`💸 ${pname(p)} dah muflis!`);
+    // semua harta balik ke bank, boleh dibeli semula macam biasa
+    TILES.forEach((t, i) => { if (G.own[i] === k) { G.own[i] = null; G.lvl[i] = 0; G.mort[i] = false; } });
     say2('bankrupt', { k, p: pname(p) });
-    await modal(`<div class="big-ic">😭</div><h2>${pname(p)} Bankrap!</h2><p>Duit habis... takpe, lain kali cuba lagi!</p>`, [{ label: 'OK' }], p.ai !== null ? 10000 : 0);
+    await modal(`<div class="big-ic">😭</div><h2>${pname(p)} Muflis!</h2><p>Duit habis... semua tanah dia balik ke bank.</p>`, [{ label: 'OK' }], p.ai !== null ? 10000 : 0);
   }
   return raised;
 }
+/* --- Bank: gadai / tebus / jual rumah (bila-bila masa giliran sendiri) --- */
+async function openBank(k) {
+  const p = G.players[k];
+  for (;;) {
+    const ops = cashOpts(k).filter(o => o.kind !== 'sell');
+    TILES.forEach((t, i) => { if (G.own[i] === k && G.mort[i]) ops.push({ i, kind: 'redeem', v: redeemVal(i), label: `🔓 Tebus ${t.name}` }); });
+    if (!ops.length) { await modal(`<h2>🏦 Bank</h2><p>Takde tanah nak gadai atau tebus.</p>`, [{ label: 'OK' }]); return; }
+    const v = await modal(`<h2>🏦 Bank</h2><p>Duit kau: <b>${rm(p.money)}</b></p><div class="cash-list">${ops.map((o, n) => `<button class="btn ${o.kind === 'redeem' ? 'gold' : 'mint'}" data-pick="${n}" ${o.kind === 'redeem' && o.v > p.money ? 'disabled' : ''}>${o.label} <b>${o.kind === 'redeem' ? '-' : '+'}${rm(o.v)}</b></button>`).join('')}</div><p class="hint">Tebus = nilai gadai + faedah 20%.</p>`, [{ label: 'Tutup', v: null, cls: 'grey' }]);
+    if (v === null || v === undefined) return;
+    const op = ops[+v]; if (!op) return;
+    if (op.kind === 'redeem') { p.money -= op.v; G.mort[op.i] = false; floatText(k, '-' + op.v, '#e64980'); sfx.pay(); log(`🔓 ${pname(p)} tebus ${TILES[op.i].name} (${rm(op.v)})`); }
+    else { log(`🏦 ${pname(p)}: ${doCash(k, op)}`); sfx.coin(); }
+    renderAll(); save();
+  }
+}
+$('bankBtn').onclick = async () => {
+  if (busy || !isHumanTurn()) return; busy = true; setRoll(false);
+  try { await openBank(G.turn); } finally { busy = false; renderAll(); setRoll(true); save(); }
+};
 
 /* ---------- Turn flow ---------- */
 const isHumanTurn = () => cur().ai === null;
 function setRoll(on) {
   $('rollBtn').disabled = !on; $('rollBtn').style.visibility = on ? 'visible' : 'hidden';
   const hum = on && G && !G.over && isHumanTurn();
-  $('tradeBtn').classList.toggle('hidden', !hum || !TILES.some((t, i) => G.own[i] !== null && G.own[i] !== G.turn));
+  $('tradeBtn').classList.toggle('hidden', !hum || !TILES.some((t, i) => G.own[i] !== null && G.own[i] !== G.turn && !G.lvl[i]));
+  $('bankBtn').classList.toggle('hidden', !hum || !TILES.some((t, i) => G.own[i] === G.turn));
   const nh = hum && G.hand ? G.hand[G.turn].length : 0;
   $('cardBtn').classList.toggle('hidden', !nh);
   if (nh) $('cardBtn').textContent = `🃏 Kad Taktik (${nh})${G.usedTac ? ' ✓' : ''}`;
@@ -817,36 +883,81 @@ async function nextTurn(first) {
     do { n = (n + 1) % G.players.length; if (n === 0) { G.round++; onNewRound(); (!G.maxRounds || G.round <= G.maxRounds) && setTimeout(G.round === FEST_START + 1 ? festStart : (G.round > FEST_START && (G.round - FEST_START) % 10 === 0 ? festMore : folkChatter), 400); } } while (G.players[n].out);
     G.turn = n;
   }
-  if ((G.maxRounds && G.round > G.maxRounds) || alive().length < 2) return endGame();
+  if ((G.maxRounds && G.round > G.maxRounds) || alive().length < 2 || (G.win === 'short' && G.players.some(q => q.out))) return endGame();
   ensureState(); G.usedTac = false;
   if (G.promo && G.promo.k === G.turn) { log(`📣 Promosi ${TILES[G.promo.i].name} dah tamat`); G.promo = null; }
   renderAll(); save();
   if (G.pendingEvent) await showEvent();
   const p = cur();
-  if (p.sleep > 0) {
-    p.sleep--; log(`💤 ${pname(p)} masih tidur kat Rumah Tok Wan...`);
-    await wait(1100); return nextTurn();
+  if (p.jail) {
+    setRoll(false); busy = true;
+    if (p.ai !== null) { await wait(650); await aiPreRoll(G.turn); if (G.over) return; }
+    const free = await jailTurn(G.turn);
+    if (G.over) return;
+    if (!free) { await wait(500); return nextTurn(); }
   }
-  G.players.forEach((q, j) => { if (!q.out && q.money >= 5000) sticker('rich', j); });
+  G.players.forEach((q, j) => { if (!q.out && q.money >= 30000) sticker('rich', j); });
   if (isHumanTurn()) { setRoll(true); busy = false; }
-  else { setRoll(false); busy = true; await wait(650); await aiPreRoll(G.turn); if (G.over) return; await doRoll(0); }
+  else { setRoll(false); busy = true; if (!p.paidOut) { await wait(650); await aiPreRoll(G.turn); if (G.over) return; } p.paidOut = false; await doRoll(0); }
 }
+async function rollDice(log1) {
+  const dies = [...$('dice').children], a = 1 + (Math.random() * 6 | 0), b = 1 + (Math.random() * 6 | 0);
+  await Promise.all(dies.map((d, i) => roll3d(d, [a, b][i], i)));
+  dies.forEach((d, i) => setDie(d, [a, b][i]));
+  dies.forEach(d => { d.classList.remove('spin'); d.classList.remove('land'); void d.offsetWidth; d.classList.add('land'); });
+  G.dice = [a, b]; renderAll();
+  if (log1 !== false) log(`${pname(cur())} dapat ${a} + ${b} = ${a + b}${a === b ? ' — DOUBLE! 🎉' : ''}`);
+  return [a, b];
+}
+// Giliran dalam penjara. Pulang true kalau pemain bayar denda & boleh baling macam biasa.
+async function jailTurn(k) {
+  const p = G.players[k], ai = p.ai !== null ? AIS[p.ai] : null;
+  let ch;
+  if (ai) ch = p.money - JAIL_FINE >= ai.reserve ? 'pay' : 'try';
+  else ch = await modal(`<div class="big-ic">🚔</div><h2>${pname(p)} dalam penjara</h2><p>Nak keluar macam mana?</p><p class="hint">Bayar ${rm(JAIL_FINE)} terus baling & jalan. Atau cuba dapat <b>double</b> dalam 3 baling — kalau gagal, denda ${rm(JAIL_FINE2)} dan jalan ikut baling ketiga.</p>`,
+    [{ label: `💸 Bayar ${rm(JAIL_FINE)}`, v: 'pay', cls: 'mint', dis: p.money < JAIL_FINE }, { label: '🎲 Cuba double', v: 'try', cls: 'gold' }]);
+  if (ch === 'pay') {
+    log(`💸 ${pname(p)} bayar denda ${rm(JAIL_FINE)} dan keluar penjara`);
+    await pay(k, JAIL_FINE); p.jail = false; renderAll();
+    if (p.out) return false;
+    if (ai) p.paidOut = true;
+    return true;
+  }
+  let a, b;
+  for (let n = 1; n <= 3; n++) {
+    if (!ai) await modal(`<div class="big-ic">🎲</div><h2>Cubaan ${n}/3</h2><p>Dapat double, terus keluar!</p>`, [{ label: '🎲 BALING' }]);
+    else await wait(500);
+    [a, b] = await rollDice(false);
+    log(`🚔 ${pname(p)} cuba ${n}/3: ${a} + ${b}${a === b ? ' — DOUBLE! Bebas! 🎉' : ''}`);
+    if (a === b) break;
+    await wait(400);
+  }
+  p.jail = false;
+  if (a !== b) {
+    log(`💸 ${pname(p)} gagal 3 kali, denda ${rm(JAIL_FINE2)}`);
+    await pay(k, JAIL_FINE2); renderAll();
+    if (p.out) return false;
+  }
+  await wait(300); cam(p.pos); await wait(450);
+  await moveSteps(k, a + b);
+  await landOn(k, a + b);
+  renderAll(); save();
+  return false;
+}
+
 $('rollBtn').onclick = () => { if (busy || !isHumanTurn()) return; busy = true; setRoll(false); doRoll(0); };
 
 async function doRoll(dbl) {
-  const p = cur(), k = G.turn, dies = [...$('dice').children];
+  const p = cur(), k = G.turn;
   if (G.lastBuy && G.lastBuy.k === k) G.lastBuy = null;
   setRoll(false);
-  const roll = async () => {
-    const a = 1 + (Math.random() * 6 | 0), b = 1 + (Math.random() * 6 | 0);
-    await Promise.all(dies.map((d, i) => roll3d(d, [a, b][i], i)));
-    dies.forEach((d, i) => setDie(d, [a, b][i]));
-    dies.forEach(d => { d.classList.remove('spin'); d.classList.remove('land'); void d.offsetWidth; d.classList.add('land'); });
-    G.dice = [a, b]; renderAll();
-    log(`${pname(p)} dapat ${a} + ${b} = ${a + b}${a === b ? ' — DOUBLE! 🎉' : ''}`);
-    return [a, b];
-  };
+  const roll = rollDice;
   let [a, b] = await roll(), steps = a + b;
+  if (a === b && dbl >= 2) {
+    // double kali ketiga berturut-turut: terus masuk penjara
+    await modal(`<div class="big-ic">👮</div><h2>Double 3 kali!</h2><p>${pname(p)} terus masuk penjara.</p>`, [{ label: 'Alamak!' }], p.ai !== null ? 4000 : 0);
+    await sendSleep(k); renderAll(); save(); await wait(500); return nextTurn();
+  }
   const ch = await tacAfterRoll(k, steps);
   if (ch === 'semula') { useTac(k, 'semula'); await wait(300); [a, b] = await roll(); steps = a + b; }
   else if (ch === 'up' || ch === 'down') { useTac(k, 'ubah'); steps += ch === 'up' ? 1 : -1; log(`🎯 ${pname(p)} ubah dadu, jalan ${steps} langkah`); }
@@ -854,7 +965,7 @@ async function doRoll(dbl) {
   await moveSteps(k, steps);
   await landOn(k, steps);
   if (G.over) return;
-  if (!p.out && a === b && dbl < 2 && !p.sleep) {
+  if (!p.out && a === b && dbl < 2 && !p.jail) {
     log(`${pname(p)} dapat baling lagi!`); renderAll(); save();
     if (isHumanTurn()) { busy = false; setRoll(true); return; }
     await wait(600); return doRoll(dbl + 1);
@@ -867,7 +978,7 @@ async function moveSteps(k, n) {
   for (let s = 0; s < Math.abs(n); s++) {
     if (s === Math.abs(n) - 1 && dir > 0 && camOn && Math.abs(n) > 1 && dangerAt(k, (p.pos + 1) % 40)) await suspense();
     p.pos = (p.pos + dir + 40) % 40;
-    if (p.pos === 0 && dir > 0) { gain(k, 200); log(`🏁 ${pname(p)} lalu MULA, dapat RM200!`); giveTac(k); if (Math.random() < .5) say2('go', { k, p: pname(p) }); }
+    if (p.pos === 0 && dir > 0) { gain(k, GO_PAY); log(`🏁 ${pname(p)} lalu MULA, dapat RM1,400!`); giveTac(k); if (Math.random() < .5) say2('go', { k, p: pname(p) }); }
     const tok = $('tok' + k); tok.classList.remove('hop'); void tok.offsetWidth; tok.classList.add('hop');
     G.players.forEach((q, j) => placeToken(j, q.pos)); cam(p.pos); sfx.step();
     await wait(230);
@@ -881,8 +992,8 @@ async function goTo(k, pos) {
 }
 async function sendSleep(k) {
   const p = G.players[k];
-  p.pos = 10; p.sleep = 1; st(k).sleeps++; sticker('tidur', k); renderAll();
-  log(`😴 ${pname(p)} tertidur kat Rumah Tok Wan (rehat 1 giliran)`);
+  p.pos = 10; p.jail = true; st(k).sleeps++; sticker('tidur', k); renderAll();
+  log(`🚔 ${pname(p)} masuk penjara!`);
   say2('sleep', { k, p: pname(p) });
 }
 
@@ -900,24 +1011,37 @@ async function landOn(k, sum) {
       if (want) {
         p.money -= t.price; G.own[i] = k; sfx.buy(); emote(k, 'happy'); st(k).bought++; if (!ai) G.lastBuy = { k, i, price: t.price }; sticker('first_buy', k); if (i === 39) sticker('klcc', k); if (t.set && TILES.every((x, j) => x.set !== t.set || G.own[j] === k)) sticker('set', k); floatText(k, '-' + t.price, '#e64980');
         log(`🛒 ${pname(p)} beli ${t.name}!`); renderAll(); tileFx(i, 'buy'); await wait(1000);
-        say2(t.price >= 300 ? 'buyBig' : 'buy', { k, p: pname(p), t: t.name, m: rm(t.price) });
+        say2(t.price >= 2000 ? 'buyBig' : 'buy', { k, p: pname(p), t: t.name, m: rm(t.price) });
         if (ai) { bubble(k, fill(pick(AI_SAY.buy), { t: t.name })); await wait(1200); }
       } else { log(`${pname(p)} tak beli ${t.name}`); if (ai) { bubble(k, fill(pick(AI_SAY.skip), { t: t.name })); await wait(1100); } await auction(i); }
     } else if (o === k) {
-      if (t.t === 'prop' && G.lvl[i] < 2) {
-        const cost = UPC[t.set], can = p.money >= cost, nx = G.lvl[i] + 1;
-        let up;
-        if (ai) up = can && p.money - cost >= ai.upReserve;
-        else up = await modal(propHtml(i) + `<p>Ni tempat kau! Nak naik taraf jadi <b>${LVL_IC[nx]} ${LVL[nx]}</b>?</p>`, [{ label: `🔨 UPGRADE ${rm(cost)}`, v: true, cls: 'mint', dis: !can }, { label: 'Nanti dulu', v: false, cls: 'grey' }]);
-        if (up) { p.money -= cost; G.lvl[i] = nx; sfx.buy(); emote(k, 'happy'); if (nx === 2) sticker('bangunan', k); renderAll(); tileFx(i, nx === 2 ? 'big' : 'up'); await wait(1100); log(`🔨 ${pname(p)} naik taraf ${t.name} jadi ${LVL[nx]}!`); renderAll(); say2(nx === 2 ? 'bangunan' : 'upgrade', { k, p: pname(p), t: t.name, l: LVL[nx] }); if (ai) { bubble(k, fill(pick(AI_SAY.up), { t: t.name, l: LVL[nx] }) + ' ' + LVL_IC[nx]); await wait(1000); } }
+      if (t.t === 'prop' && G.lvl[i] < 5 && !G.mort[i]) {
+        const hp = UPC[t.set], lv = G.lvl[i];
+        let n = 0; // bilangan rumah nak beli (hotel = 1 langkah lepas 4 rumah)
+        if (ai) { while (lv + n < 5 && p.money - hp * (n + 1) >= ai.upReserve) n++; }
+        else {
+          const btns = lv < 4 ? [1, 2, 3, 4].filter(q => lv + q <= 4).map(q => ({ label: `🏠×${q} ${rm(hp * q)}`, v: q, cls: 'mint', dis: hp * q > p.money }))
+            : [{ label: `🏨 HOTEL ${rm(hp)}`, v: 1, cls: 'mint', dis: hp > p.money }];
+          n = await modal(propHtml(i) + `<p>Ni tanah kau! ${lv < 4 ? `Nak beli rumah? (sekarang ${lv}/4)` : 'Dah ada 4 rumah. Tukar jadi <b>🏨 Hotel</b>? (4 rumah pulang ke bank + bayar harga rumah)'}</p>`, [...btns, { label: 'Nanti dulu', v: 0, cls: 'grey' }]) || 0;
+        }
+        if (n > 0) {
+          const nx = lv + n, cost = hp * n;
+          p.money -= cost; G.lvl[i] = nx; sfx.buy(); emote(k, 'happy'); floatText(k, '-' + cost, '#e64980'); if (nx === 5) sticker('bangunan', k);
+          renderAll(); tileFx(i, nx === 5 ? 'big' : 'up'); await wait(1100);
+          const l = nx === 5 ? 'Hotel' : `${nx} rumah`;
+          log(`${nx === 5 ? '🏨' : '🏠'} ${pname(p)} bina ${nx === 5 ? 'hotel' : n + ' rumah'} kat ${t.name}!`); renderAll();
+          say2(nx === 5 ? 'bangunan' : 'upgrade', { k, p: pname(p), t: t.name, l });
+          if (ai) { bubble(k, fill(pick(AI_SAY.up), { t: t.name, l }) + ' ' + LVL_IC[nx]); await wait(1000); }
+        }
       } else log(`${pname(p)} rehat kat ${t.name} sendiri 😌`);
     } else {
       let r = rentOf(i, sum); const owner = G.players[o];
+      if (G.mort[i]) { log(`🏦 ${t.name} tergadai — ${pname(p)} tak payah bayar sewa`); bubble(k, 'Fuh, tanah ni tergadai! Free 😆'); await wait(900); renderAll(); save(); return; }
       if (G.lastBuy && G.lastBuy.i === i) G.lastBuy = null;
       log(`🏠 ${pname(p)} bayar sewa ${rm(r)} kat ${pname(owner)}`);
-      if (r >= 100) say2('rentHigh', { k, p: pname(p), o: pname(owner), t: t.name, m: rm(r) }); else if (Math.random() < .6) say2('rentLow', { k, p: pname(p), o: pname(owner), t: t.name, m: rm(r) });
+      if (r >= 700) say2('rentHigh', { k, p: pname(p), o: pname(owner), t: t.name, m: rm(r) }); else if (Math.random() < .6) say2('rentLow', { k, p: pname(p), o: pname(owner), t: t.name, m: rm(r) });
       if (!ai) {
-        const big = r >= 20;
+        const big = r >= 140;
         const disc = !G.usedTac && G.hand[k].includes('diskaun') ? [{ label: `🏷️ Guna Diskaun (${rm(Math.ceil(r / 2))})`, v: 'disc', cls: 'gold' }] : [];
         const v = !big && !disc.length ? (bubble(k, `Bayar ${rm(r)} kat ${pname(owner)} 💸`), await wait(700), 'pay') : await modal(propHtml(i) + `<p>Alamak! Ni tempat <b>${pname(owner)}</b>. Kena bayar sewa:</p><h2>${rm(r)}</h2>${big ? '<p class="mg-hint">🎮 Main <b>Tangkap Syiling</b>! Dapat 7 syiling, sewa jadi separuh.</p>' : ''}`,
           [...disc, ...(big ? [{ label: '🎮 CUBA NASIB', v: 'mg', cls: 'mint' }, { label: '💸 Bayar je', v: 'pay', cls: 'pink' }] : [{ label: '💸 BAYAR', v: 'pay', cls: 'pink' }])]);
@@ -929,11 +1053,11 @@ async function landOn(k, sum) {
         }
       }
       else {
-        bubble(k, fill(pick(r >= 100 ? AI_SAY.payBig : AI_SAY.pay), { m: rm(r), o: pname(owner), t: t.name })); await wait(900);
+        bubble(k, fill(pick(r >= 700 ? AI_SAY.payBig : AI_SAY.pay), { m: rm(r), o: pname(owner), t: t.name })); await wait(900);
       }
       ensureState(); G.grudge[k][o] += r;
       st(k).rentPaid += r; st(o).rentEarn += r; G.tileEarn[i] += r;
-      emote(k, r >= 100 ? 'shock' : 'sad'); emote(o, 'happy'); if (r >= 80) shakeBoard();
+      emote(k, r >= 700 ? 'shock' : 'sad'); emote(o, 'happy'); if (r >= 560) shakeBoard();
       await pay(k, r, o);
     }
   } else if (t.t === 'tax') {
@@ -941,7 +1065,7 @@ async function landOn(k, sum) {
     if (!ai) await modal(`<div class="big-ic">${tileIcon(i)}</div><h2>${t.name}</h2><p>Kena bayar <b>${rm(t.amt)}</b>.</p>`, [{ label: 'Bayar' }]);
     await pay(k, t.amt);
   } else if (t.t === 'gojail') {
-    await modal(`<div class="big-ic">😴</div><h2>Tertidur!</h2><p>${pname(p)} mengantuk sangat... terus pergi tidur kat Rumah Tok Wan.</p>`, [{ label: 'Zzz...' }], auto || 0);
+    await modal(`<div class="big-ic">👮</div><h2>Ke Penjara!</h2><p>${pname(p)} kena tangkap... terus masuk penjara. Tak lalu MULA.</p>`, [{ label: 'Alamak!' }], auto || 0);
     await sendSleep(k);
   } else if (t.t === 'kenduri') {
     let tot = 0;
@@ -950,19 +1074,20 @@ async function landOn(k, sum) {
     st(k).kenduri++; if (st(k).kenduri >= 3) sticker('kenduri3', k);
     say2('kenduri', { k, p: pname(p) });
     await modal(`<div class="big-ic">💐</div><h2>Kenduri Kahwin!</h2><p>Semua orang datang bagi salam berisi. ${pname(p)} dapat <b>${rm(tot)}</b>!</p>`, [{ label: 'Yeay!' }], auto || 0);
-  } else if (t.t === 'rezeki' || t.t === 'musibah') {
-    await drawCard(k, t.t);
+  } else if (t.t === 'kep') {
+    await drawCard(k);
   }
   renderAll(); save();
 }
-async function drawCard(k, type) {
-  const p = G.players[k], deckKey = type === 'rezeki' ? 'rz' : 'ms', deck = type === 'rezeki' ? REZEKI : MUSIBAH;
-  if (!G[deckKey].length) G[deckKey] = shuffle([...deck.keys()]);
-  const c = deck[G[deckKey].shift()];
+async function drawCard(k) {
+  const p = G.players[k], deck = KEPUTUSAN;
+  if (!G.kp || !G.kp.length) G.kp = shuffle([...deck.keys()]);
+  const ci = G.kp.shift(); G.kp.push(ci); // kad pulang ke bawah dek
+  const c = deck[ci], type = (c.money > 0 || c.each > 0 || c.pasar || c.goto === 0) ? 'rezeki' : 'musibah';
   let extra = '';
   if (c.money) extra = c.money > 0 ? `+${rm(c.money)}` : `-${rm(-c.money)}`;
   if (c.each) extra = c.each > 0 ? `Setiap kawan bagi ${rm(c.each)}` : `Bayar setiap kawan ${rm(-c.each)}`;
-  await modal(`<p style="margin:0 0 8px"><b>${pname(p)}</b> ambil kad...</p><div class="flip"><div class="flip-in"><div class="face back ${type} ${ART['card_' + type + '_back'] ? 'art' : ''}"><span>${type === 'rezeki' ? '🍀' : '🌧️'}</span>${type === 'rezeki' ? 'REZEKI' : 'MUSIBAH'}</div><div class="face front ${type} ${ART['card_' + type + '_front'] ? 'art' : ''}"><div class="big-ic">${c.ic}</div><h2>${c.txt}</h2>${extra ? `<b>${extra}</b>` : ''}</div></div></div>`, [{ label: 'OK!', cls: type === 'rezeki' ? 'mint' : 'pink' }], p.ai !== null ? 10000 : 0);
+  await modal(`<p style="margin:0 0 8px"><b>${pname(p)}</b> ambil kad...</p><div class="flip"><div class="flip-in"><div class="face back ${type} ${ART['card_' + type + '_back'] ? 'art' : ''}"><span>❓</span>KEPUTUSAN</div><div class="face front ${type} ${ART['card_' + type + '_front'] ? 'art' : ''}"><div class="big-ic">${c.ic}</div><h2>${c.txt}</h2>${extra ? `<b>${extra}</b>` : ''}</div></div></div>`, [{ label: 'OK!', cls: type === 'rezeki' ? 'mint' : 'pink' }], p.ai !== null ? 10000 : 0);
   log(`${c.ic} ${pname(p)}: ${c.txt}`);
   if (c.pasar) await pasarMalam(k);
   else if (c.money > 0) { emote(k, 'happy'); gain(k, c.money); }
@@ -986,8 +1111,8 @@ function aiWantsBuy(k, i) {
   if (ai.smart && t.set) {
     const mineInSet = TILES.filter((x, j) => x.set === t.set && G.own[j] === k).length;
     const othersInSet = TILES.filter((x, j) => x.set === t.set && G.own[j] !== null && G.own[j] !== k).length;
-    if (mineInSet > 0 && left >= 30) return true;
-    if (othersInSet > 0 && left < 400) return false;
+    if (mineInSet > 0 && left >= 200) return true;
+    if (othersInSet > 0 && left < 2800) return false;
   }
   return left >= ai.reserve;
 }
@@ -995,14 +1120,14 @@ function aiWantsBuy(k, i) {
 /* ===================== WORLD: events, day/night, emotes, music ===================== */
 // ---- day / night (cycles every round: siang -> petang -> malam) ----
 const phase = () => G ? (G.round - 1) % 3 : 0;
-function nightMult(i) { return phase() === 2 && [6, 8, 1].includes(i) ? 1.5 : 1; }
+function nightMult(i) { return phase() === 2 && [29, 38, 39].includes(i) ? 1.5 : 1; }
 // ---- events ----
 const EVENTS = {
-  banjir: { ic: '🌧️', name: 'Banjir di Pantai Timur', desc: 'Hujan lebat! Sewa Kota Bharu, Kuala Terengganu dan Kuantan jadi <b>separuh</b>.', tiles: [14, 16, 18], mult: .5, fx: 'rain' },
-  cuti: { ic: '🏖️', name: 'Cuti Sekolah!', desc: 'Ramai pelancong! Sewa Langkawi, Genting dan Cameron jadi <b>×2</b>.', tiles: [21, 23, 24], mult: 2, fx: 'sun' },
-  makan: { ic: '🍜', name: 'Pesta Makanan', desc: 'Semua orang lapar! Sewa Gerai Cendol, Roti Canai, Kedai Mamak, Ipoh dan Pulau Pinang <b>×1.5</b>.', tiles: [1, 3, 8, 13, 34], mult: 1.5, fx: 'food' },
-  merdeka: { ic: '🇲🇾', name: 'Hari Merdeka!', desc: 'Kerajaan bagi duit raya Merdeka: semua pemain dapat <b>RM100</b>!', tiles: [], mult: 1, fx: 'fireworks', once: true },
-  angin: { ic: '🌬️', name: 'Angin Kencang', desc: 'Pokok tumbang, jalan sesak! Sewa semua stesen jadi <b>separuh</b>.', tiles: [5, 15, 25, 35], mult: .5, fx: 'wind' },
+  banjir: { ic: '🌧️', name: 'Banjir di Pantai Timur', desc: 'Hujan lebat! Sewa Kota Bharu, Kuala Terengganu dan Kuantan jadi <b>separuh</b>.', tiles: [28, 18, 27], mult: .5, fx: 'rain' },
+  cuti: { ic: '🏖️', name: 'Cuti Sekolah!', desc: 'Ramai pelancong! Sewa Bandar Melaka, Kota Kinabalu dan Sandakan jadi <b>×2</b>.', tiles: [31, 19, 11], mult: 2, fx: 'sun' },
+  makan: { ic: '🍜', name: 'Pesta Makanan', desc: 'Semua orang lapar! Sewa Ipoh, Georgetown, Kelang dan Seremban <b>×1.5</b>.', tiles: [33, 38, 17, 22], mult: 1.5, fx: 'food' },
+  merdeka: { ic: '🇲🇾', name: 'Hari Merdeka!', desc: 'Kerajaan bagi duit raya Merdeka: semua pemain dapat <b>RM700</b>!', tiles: [], mult: 1, fx: 'fireworks', once: true },
+  angin: { ic: '🌬️', name: 'Ribut Kencang', desc: 'Pokok tumbang! Sewa semua ladang jadi <b>separuh</b>.', tiles: [5, 15, 25, 35], mult: .5, fx: 'wind' },
 };
 function evMult(i) { const e = G && G.event && EVENTS[G.event.id]; return e && e.tiles.includes(i) ? e.mult : 1; }
 function onNewRound() {
@@ -1017,7 +1142,7 @@ async function showEvent() {
   G.lastEv = id; G.event = e.once ? null : { id, until: G.round + 2 };
   applyWorld(); boardFx(e.fx);
   await modal(`<div class="big-ic">${e.ic}</div><h2>${e.name}</h2><p>${e.desc}</p>${e.once ? '' : '<p class="hint">Berlaku selama 3 pusingan</p>'}`, [{ label: 'OK!' }], cur().ai !== null ? 10000 : 0);
-  if (id === 'merdeka') { alive().forEach(p => { const k = G.players.indexOf(p); gain(k, 100); emote(k, 'happy'); }); }
+  if (id === 'merdeka') { alive().forEach(p => { const k = G.players.indexOf(p); gain(k, 700); emote(k, 'happy'); }); }
   notify('ann', `${e.name}! ${e.desc.replace(/<[^>]+>/g, '')}`, true);
   log(`${e.ic} ${e.name}`); renderAll(); save();
 }
@@ -1028,7 +1153,7 @@ function applyWorld() {
   w.dataset.fx = e ? e.fx : '';
   let ban = $('evBanner');
   if (!ban) { ban = document.createElement('div'); ban.id = 'evBanner'; ban.className = 'ev-banner'; $('center').appendChild(ban); }
-  ban.innerHTML = e ? `${e.ic} ${e.name} · ${G.event.until - G.round + 1} pusingan lagi` : (phase() === 2 ? '🌙 Malam · Pasar Malam & Mamak sewa ×1.5' : '');
+  ban.innerHTML = e ? `${e.ic} ${e.name} · ${G.event.until - G.round + 1} pusingan lagi` : (phase() === 2 ? '🌙 Malam · KL, Georgetown & PJ sewa ×1.5' : '');
   ban.style.display = ban.innerHTML ? '' : 'none';
   TILES.forEach((t, i) => { const el = $('tile' + i); if (el) el.classList.toggle('ev', !!(e && e.tiles.includes(i))); });
   ensureSky();
@@ -1103,18 +1228,21 @@ function ensureState() {
   G.players.forEach((p, k) => { if (p.ai !== null) G.hand[k] = G.hand[k].map(c => c === 'diskaun' ? drawTac(p) : c); });
   if (!G.grudge) G.grudge = G.players.map(() => G.players.map(() => 0));
   if (G.promo === undefined) G.promo = null;
+  if (!G.mort) G.mort = TILES.map(() => false);
+  if (!G.kp) G.kp = shuffle([...KEPUTUSAN.keys()]);
+  if (!G.win) G.win = G.maxRounds ? 'time' : 'last';
 }
 const st = k => { ensureState(); return G.stats[k]; };
 
 /* --- Stickers (simpan kekal dalam phone) --- */
 const STICKERS = [
   ['first_buy', '🛒', 'Tanah Pertama', 'Beli tanah pertama'],
-  ['klcc', '🏙️', 'Tuan KLCC', 'Beli KLCC'],
-  ['bangunan', '🏢', 'Arkitek Cilik', 'Naik taraf jadi Bangunan'],
+  ['klcc', '🏙️', 'Tuan KL', 'Beli Kuala Lumpur'],
+  ['bangunan', '🏨', 'Arkitek Cilik', 'Bina hotel'],
   ['set', '⭐', 'Set Lengkap', 'Kumpul satu set warna penuh'],
   ['kenduri3', '💐', 'Raja Kenduri', '3 kali kenduri dalam satu game'],
-  ['tidur', '😴', 'Kaki Tidur', 'Tertidur kat Rumah Tok Wan'],
-  ['rich', '💰', 'Jutawan Comel', 'Kumpul RM5000'],
+  ['tidur', '🚔', 'Banduan Comel', 'Masuk penjara'],
+  ['rich', '💰', 'Jutawan Comel', 'Kumpul RM30,000'],
   ['win', '🏆', 'Juara Tycoon', 'Menang satu game'],
   ['minigame', '🪙', 'Penangkap Syiling', 'Menang Tangkap Syiling'],
   ['trade', '🤝', 'Pakar Tawar', 'Berjaya beli tanah kawan'],
@@ -1181,7 +1309,7 @@ function coinGame() {
 /* --- Pasar Malam: pilih kuih --- */
 const KUIH = [['🍡', 'Kuih Lapis'], ['🥟', 'Karipap'], ['🍩', 'Donut Gula'], ['🍢', 'Sate'], ['🍧', 'ABC'], ['🌽', 'Jagung Bakar'], ['🍮', 'Puding'], ['🥞', 'Apam Balik']];
 async function pasarMalam(k) {
-  const p = G.players[k], three = shuffle(KUIH.slice()).slice(0, 3), prizes = shuffle([30, 80, 150]);
+  const p = G.players[k], three = shuffle(KUIH.slice()).slice(0, 3), prizes = shuffle([200, 500, 1000]);
   const ki = c => ART['kuih_' + KUIH.indexOf(c)] ? img('kuih_' + KUIH.indexOf(c), 'ki') : c[0];
   let pickI;
   if (p.ai === null) {
@@ -1189,14 +1317,14 @@ async function pasarMalam(k) {
     if (isNaN(pickI)) pickI = 0;
   } else { await wait(600); pickI = Math.random() * 3 | 0; }
   const won = prizes[pickI];
-  await modal(`<div class="big-ic">${ki(three[pickI])}</div><h2>${three[pickI][1]}!</h2><p>${pname(p)} dapat <b>${rm(won)}</b>${won === 150 ? ' — paling sedap! 🤩' : won === 30 ? ' — sikit je, tapi sedap 😋' : ' 😄'}</p><div class="kuih-row">${three.map((c, n) => `<div class="kuih ${n === pickI ? 'sel' : 'dim'}"><span>${ki(c)}</span>${rm(prizes[n])}</div>`).join('')}</div>`, [{ label: 'Sedap!', cls: 'mint' }], p.ai !== null ? 10000 : 0);
+  await modal(`<div class="big-ic">${ki(three[pickI])}</div><h2>${three[pickI][1]}!</h2><p>${pname(p)} dapat <b>${rm(won)}</b>${won === 1000 ? ' — paling sedap! 🤩' : won === 200 ? ' — sikit je, tapi sedap 😋' : ' 😄'}</p><div class="kuih-row">${three.map((c, n) => `<div class="kuih ${n === pickI ? 'sel' : 'dim'}"><span>${ki(c)}</span>${rm(prizes[n])}</div>`).join('')}</div>`, [{ label: 'Sedap!', cls: 'mint' }], p.ai !== null ? 10000 : 0);
   gain(k, won); log(`🏮 ${pname(p)} pilih ${three[pickI][1]}, dapat ${rm(won)}`); sticker('pasar', k);
 }
 
 /* --- Mod Belajar Kira --- */
 async function mathQuiz(k, before, amt) {
   const p = G.players[k], ans = before - amt, opts = new Set([ans]);
-  const ds = [10, 20, 50, 100].filter(d => d !== 0);
+  const ds = [10, 50, 100, 500];
   while (opts.size < 3) { const v = ans + (Math.random() < .5 ? -1 : 1) * pick(ds); if (v >= 0) opts.add(v); }
   const list = shuffle([...opts]);
   const v = +(await modal(`<div class="big-ic">🧮</div><h2>Jom Kira!</h2><p><b>${pname(p)}</b> ada <b>${rm(before)}</b> dan kena bayar <b>${rm(amt)}</b>.</p><div class="math-eq">${before} − ${amt} = ?</div>`, list.map(o => ({ label: rm(o), v: o, cls: 'mint' }))));
@@ -1225,12 +1353,12 @@ function aiValue(k, i) {
   let v = (t.price || 0) + G.lvl[i] * (UPC[t.set] || 0);
   let m = [1.8, 1.4, 1.55][G.players[o].ai] || 1.5;
   if (t.set) { const mine = TILES.filter((x, j) => x.set === t.set && G.own[j] === o).length; if (mine >= 2) m += .8; }
-  if (G.players[o].money < 150) m -= .4; // need cash: more willing
+  if (G.players[o].money < 1000) m -= .4; // need cash: more willing
   void ai; return Math.round(v * m / 10) * 10;
 }
 async function openTrade(k) {
-  const p = G.players[k], tiles = TILES.map((t, i) => i).filter(i => G.own[i] !== null && G.own[i] !== k && !G.players[G.own[i]].out);
-  const iStr = await modal(`<h2>🤝 Beli Tanah Kawan</h2><p>Pilih tanah yang kau nak. Kawan boleh setuju atau tolak!</p><div class="tr-grid">${tiles.map(i => `<button class="tr-tile" data-pick="${i}" style="--own:${CHARS[G.players[G.own[i]].ci].color}"><span class="tr-ic">${tileIcon(i)}</span><b>${TILES[i].name}</b><small>${pname(G.players[G.own[i]])}${G.lvl[i] ? ' · ' + LVL_IC[G.lvl[i]] : ''}</small></button>`).join('')}</div>`, [{ label: 'Batal', v: null, cls: 'grey' }]);
+  const p = G.players[k], tiles = TILES.map((t, i) => i).filter(i => G.own[i] !== null && G.own[i] !== k && !G.players[G.own[i]].out && !G.lvl[i]);
+  const iStr = await modal(`<h2>🤝 Beli Tanah Kawan</h2><p>Pilih tanah yang kau nak. Kawan boleh setuju atau tolak! (Tanah ada rumah tak boleh dijual)</p><div class="tr-grid">${tiles.map(i => `<button class="tr-tile" data-pick="${i}" style="--own:${CHARS[G.players[G.own[i]].ci].color}"><span class="tr-ic">${tileIcon(i)}</span><b>${TILES[i].name}</b><small>${pname(G.players[G.own[i]])}${G.mort[i] ? ' · 🏦 tergadai' : ''}</small></button>`).join('')}</div>`, [{ label: 'Batal', v: null, cls: 'grey' }]);
   if (iStr === null || iStr === undefined) return;
   const i = +iStr, t = TILES[i], o = G.own[i], owner = G.players[o], base = (t.price || 0) + G.lvl[i] * (UPC[t.set] || 0);
   const offers = [base, Math.round(base * 1.5 / 10) * 10, base * 2];
@@ -1262,7 +1390,7 @@ function renderBlds() {
   const box = $('tokens'); if (!box || !G) return;
   TILES.forEach((t, i) => {
     let el = $('b3d' + i);
-    if (t.t !== 'prop' || G.own[i] === null) { if (el) el.remove(); delete bldPrev[i]; return; }
+    if (t.t !== 'prop' || G.own[i] === null || !G.lvl[i]) { if (el) el.remove(); delete bldPrev[i]; return; }
     const lv = G.lvl[i];
     if (!el) { el = document.createElement('div'); el.id = 'b3d' + i; el.className = 'b3d'; el.innerHTML = '<div class="stand"></div><div class="shadow"></div>'; box.appendChild(el); }
     const [r, c] = tilePos(i);
@@ -1270,7 +1398,7 @@ function renderBlds() {
     el.style.setProperty('--own', CHARS[G.players[G.own[i]].ci].color);
     if (bldPrev[i] !== lv) {
       el.dataset.lv = lv;
-      el.querySelector('.stand').innerHTML = (ART['b3d_' + lv] ? img('b3d_' + lv, '') : bldIcon(lv)) + '<i class="flag"></i>';
+      el.querySelector('.stand').innerHTML = (lv >= 5 ? (ART.b3d_hotel ? img('b3d_hotel', '') : '🏨') : (ART.b3d_rumah ? img('b3d_rumah', '') : '🏠') + (lv > 1 ? `<b class="hc">×${lv}</b>` : '')) + '<i class="flag"></i>';
       if (bldReady) { el.classList.remove('grow'); void el.offsetWidth; el.classList.add('grow'); }
       bldPrev[i] = lv;
     }
@@ -1293,7 +1421,7 @@ function moneyTick() {
 requestAnimationFrame(moneyTick);
 function flyCoins(from, to, amt) {
   const box = $('tokens'); if (!box) return;
-  const n = Math.min(10, 3 + Math.floor(amt / 60));
+  const n = Math.min(10, 3 + Math.floor(amt / 400));
   for (let q = 0; q < n; q++) {
     const c = document.createElement('div'); c.className = 'coinfly';
     c.innerHTML = ART.mg_coin ? img('mg_coin', '') : '🪙';
@@ -1310,7 +1438,7 @@ function bubble(k, text, ms) {
   setTimeout(() => b.remove(), ms || 2300);
 }
 // --- suspen sebelum mendarat atas tanah mahal ---
-const dangerAt = (k, i) => { const o = G.own[i]; return o !== null && o !== k && !G.players[o].out && rentOf(i, 7) >= 80; };
+const dangerAt = (k, i) => { const o = G.own[i]; return o !== null && o !== k && !G.players[o].out && rentOf(i, 7) >= 560; };
 async function suspense() {
   const b = $('board'); b.style.transform = 'rotateX(32deg) scale(1.6)';
   for (let q = 0; q < 9; q++) { beep(160 + q * 22, .07, 'square', .05); await wait(150 - q * 9); }
@@ -1369,15 +1497,15 @@ function setIdx(set) { return TILES.map((t, i) => i).filter(i => TILES[i].set ==
 function tileScore(k, i) {
   const p = G.players[k], t = TILES[i], o = G.own[i];
   if (t.t === 'prop' || t.t === 'stn' || t.t === 'util') {
-    if (o === null) return p.money >= t.price && aiWantsBuy(k, i) ? 30 + (t.set && setIdx(t.set).some(j => G.own[j] === k) ? 40 : 0) : 0;
-    return o === k ? 10 : -rentOf(i, 7);
+    if (o === null) return p.money >= t.price && aiWantsBuy(k, i) ? 200 + (t.set && setIdx(t.set).some(j => G.own[j] === k) ? 280 : 0) : 0;
+    return o === k ? 70 : -rentOf(i, 7);
   }
-  return { tax: -(t.amt || 100), gojail: -60, kenduri: 40, rezeki: 20, musibah: -25 }[t.t] || 0;
+  return { tax: -(t.amt || 400), gojail: -500, kep: 0 }[t.t] || 0;
 }
 function destTag(k, i) {
   const t = TILES[i], o = G.own[i];
   if (t.t === 'prop' || t.t === 'stn' || t.t === 'util') return o === null ? '🛒' : o === k ? '🏠' : '💸' + rentOf(i, 7);
-  return { tax: '💸', gojail: '😴', kenduri: '💐', rezeki: '🍀', musibah: '🌧️' }[t.t] || '';
+  return { tax: '💸', gojail: '👮', kep: '❓' }[t.t] || '';
 }
 async function tacAfterRoll(k, sum) {
   ensureState(); const p = G.players[k], h = G.hand[k];
@@ -1427,31 +1555,34 @@ $('cardBtn').onclick = async () => {
       const i = await pickTile('📣 Promosi tanah mana?', TILES.map((t, i) => i).filter(i => G.own[i] === k).map(i => [i, false]), i => `Sewa ${rm(rentOf(i, 7))} → ${rm(rentOf(i, 7) * 2)}`);
       if (i !== null) usePromo(k, i);
     } else if (c === 'ambil') {
-      const i = await pickTile('🤝 Ambil alih tanah mana?', TILES.map((t, i) => i).filter(i => G.own[i] !== null && G.own[i] !== k && !G.players[G.own[i]].out).map(i => [i, takeCost(i) > p.money]), i => `${pname(G.players[G.own[i]])} · ${rm(takeCost(i))}`);
+      const i = await pickTile('🤝 Ambil alih tanah mana?', TILES.map((t, i) => i).filter(i => G.own[i] !== null && G.own[i] !== k && !G.players[G.own[i]].out).map(i => [i, takeCost(i) > p.money || G.lvl[i] > 0]), i => `${pname(G.players[G.own[i]])} · ${G.lvl[i] ? 'ada rumah' : rm(takeCost(i))}`);
       if (i !== null) await doAmbil(k, i);
     }
   } finally { busy = false; renderAll(); setRoll(true); save(); }
 };
 async function aiPreRoll(k) {
-  ensureState(); if (G.usedTac) return;
+  ensureState();
   const p = G.players[k], ai = AIS[p.ai], h = G.hand[k];
+  // tebus tanah tergadai kalau duit lebih
+  TILES.forEach((t, i) => { if (G.own[i] === k && G.mort[i] && p.money - redeemVal(i) >= ai.reserve * 1.5) { p.money -= redeemVal(i); G.mort[i] = false; log(`🔓 ${pname(p)} tebus ${t.name}`); } });
+  if (G.usedTac) return;
   if (h.includes('ambil')) {
     const tg = ai.revenge ? grudgeTarget(k) : null;
     let best = null, bv = 0;
     TILES.forEach((t, i) => {
       const o = G.own[i];
-      if (o === null || o === k || G.players[o].out || takeCost(i) > p.money - ai.reserve * .5) return;
+      if (o === null || o === k || G.players[o].out || G.lvl[i] || takeCost(i) > p.money - ai.reserve * .5) return;
       let v = 0;
       if (t.set) { const all = setIdx(t.set), mine = all.filter(j => G.own[j] === k).length; if (mine === all.length - 1) v += 100; else if (ai.smart) v += mine * 25; }
       if (tg !== null && o === tg) v += 60 + G.lvl[i] * 25;
-      if (ai.reserve < 100) v += 25 + G.lvl[i] * 20;
+      if (ai.reserve < 700) v += 25 + G.lvl[i] * 20;
       if (v > bv) { bv = v; best = i; }
     });
     if (best !== null && bv >= 60) { await doAmbil(k, best); return; }
   }
   if (h.includes('promosi')) {
     const mine = TILES.map((t, i) => i).filter(i => G.own[i] === k).sort((a, b) => rawRent(b, 7) - rawRent(a, 7));
-    if (mine.length && rawRent(mine[0], 7) >= (ai.reserve < 100 ? 15 : 40) && Math.random() < .65) { usePromo(k, mine[0]); aiTalk(k, 'card'); await wait(900); }
+    if (mine.length && rawRent(mine[0], 7) >= (ai.reserve < 700 ? 100 : 280) && Math.random() < .65) { usePromo(k, mine[0]); aiTalk(k, 'card'); await wait(900); }
   }
 }
 function aiBid(j, i) {
@@ -1507,14 +1638,15 @@ function statsHtml() {
   const c = top(s => s.bought); if (c.s.bought) rows.push(['🏠', 'Paling banyak beli', `${pname(c.p)} (${c.s.bought})`]);
   const e = top(s => s.auc || 0); if (e.s.auc) rows.push(['🔨', 'Raja Lelong', `${pname(e.p)} (${e.s.auc}×)`]);
   const f = top(s => s.tac || 0); if (f.s.tac) rows.push(['🃏', 'Paling rajin guna kad', `${pname(f.p)} (${f.s.tac}×)`]);
-  const d = top(s => s.sleeps); if (d.s.sleeps) rows.push(['😴', 'Paling kuat tidur', `${pname(d.p)} (${d.s.sleeps}×)`]);
+  const d = top(s => s.sleeps); if (d.s.sleeps) rows.push(['🚔', 'Paling kerap masuk penjara', `${pname(d.p)} (${d.s.sleeps}×)`]);
   const ti = G.tileEarn.indexOf(Math.max(...G.tileEarn)); if (G.tileEarn[ti] > 0) rows.push([TILES[ti].ic, 'Tanah paling untung', `${TILES[ti].name} (${rm(G.tileEarn[ti])})`]);
   return rows.length ? `<div class="stats">${rows.map(r => `<div><span>${r[0]}</span><small>${r[1]}</small><b>${r[2]}</b></div>`).join('')}</div>` : '';
 }
 
 /* ---------- End ---------- */
 function worth(k) {
-  return G.players[k].money + TILES.reduce((s, t, i) => s + (G.own[i] === k ? (t.price || 0) + G.lvl[i] * (UPC[t.set] || 0) : 0), 0);
+  // Saidina: duit + tanah aktif (harga penuh) + rumah/hotel (kos) + tanah tergadai (separuh)
+  return G.players[k].money + TILES.reduce((s, t, i) => s + (G.own[i] === k ? (G.mort[i] ? mortVal(i) : (t.price || 0) + bldValue(i)) : 0), 0);
 }
 async function endGame() {
   cam(null); clearInterval(npcT);
@@ -1524,8 +1656,8 @@ async function endGame() {
   sticker('win', G.players.indexOf(win));
   sfx.win(); confetti(); say2('win', { k: G.players.indexOf(win), p: pname(win) });
   await modal(`<div class="big-ic">🏆</div><h2>${pname(win)} ${win.ai === null && G.players.filter(x => x.ai === null).length === 1 ? 'menang! Hebat!' : 'jadi Jutawan Comel!'}</h2>
-    <p>Kekayaan = duit + nilai tanah & bangunan</p>
-    <div class="podium">${[1, 0, 2].filter(n => rank[n]).map(n => `<div class="pod p${n + 1}"><div class="pav">${avatar(rank[n].p.ci)}</div><b>${pname(rank[n].p)}</b><small>${rank[n].w < 0 ? 'Bankrap' : rm(rank[n].w)}</small><div class="blk">${n + 1}</div></div>`).join('')}</div>${rank[3] ? `<ol class="rank"><li>4️⃣ ${avatar(rank[3].p.ci)} ${pname(rank[3].p)}<span>${rank[3].w < 0 ? 'Bankrap' : rm(rank[3].w)}</span></li></ol>` : ''}${statsHtml()}`,
+    <p>Kekayaan = duit + tanah + rumah/hotel (tanah tergadai kira separuh)</p>
+    <div class="podium">${[1, 0, 2].filter(n => rank[n]).map(n => `<div class="pod p${n + 1}"><div class="pav">${avatar(rank[n].p.ci)}</div><b>${pname(rank[n].p)}</b><small>${rank[n].w < 0 ? 'Muflis' : rm(rank[n].w)}</small><div class="blk">${n + 1}</div></div>`).join('')}</div>${rank[3] ? `<ol class="rank"><li>4️⃣ ${avatar(rank[3].p.ci)} ${pname(rank[3].p)}<span>${rank[3].w < 0 ? 'Muflis' : rm(rank[3].w)}</span></li></ol>` : ''}${statsHtml()}`,
     [{ label: '🔁 MAIN LAGI', v: 'again' }, { label: 'Menu', v: 'menu', cls: 'grey' }]).then(v => {
       if (v === 'again') { newGame(); startPlay(); }
       else { $('play').classList.add('hidden'); $('menu').classList.remove('hidden'); document.body.classList.remove('playing'); G = null; renderMenu(); }
