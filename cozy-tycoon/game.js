@@ -749,7 +749,7 @@ function modal(html, buttons, autoMs) {
 // Musim Perayaan: from round 31, rent grows 10% per round (max x4) so long games finish
 const FEST_START = 30;
 function festMult() { return 1; /* dibuang: sewa ikut kad */ return G && G.round > FEST_START ? Math.min(4, 1 + (G.round - FEST_START) * 0.1) : 1; }
-function rentOf(i, diceSum) { return Math.round(rawRent(i, diceSum) * (G.promo && G.promo.i === i ? 2 : 1)); }
+function rentOf(i, diceSum) { return rawRent(i, diceSum); }
 function rawRent(i, diceSum) {
   const t = TILES[i], o = G.own[i]; if (o === null) return 0;
   if (G.mort[i]) return 0; // tanah tergadai: tak boleh kutip sewa
@@ -1252,7 +1252,8 @@ function ensureState() {
   if (!G.tileEarn) G.tileEarn = TILES.map(() => 0);
   if (G.math === undefined) G.math = false;
   if (!G.hand) G.hand = G.players.map(p => [drawTac(p), drawTac(p)]);
-  G.players.forEach((p, k) => { if (p.ai !== null) G.hand[k] = G.hand[k].map(c => c === 'diskaun' ? drawTac(p) : c); });
+  G.hand = G.hand.map((h, k) => h.map(c => TAC[c] ? c : drawTac(G.players[k]))); // kad Promosi & Diskaun dah dibuang
+  G.promo = null;
   if (!G.grudge) G.grudge = G.players.map(() => G.players.map(() => 0));
   if (G.promo === undefined) G.promo = null;
   if (!G.mort) G.mort = TILES.map(() => false);
@@ -1499,8 +1500,6 @@ function initNPC() {
 const TAC = {
   ubah: { ic: '🎯', name: 'Ubah Dadu', desc: 'Lepas baling: tambah atau tolak 1 langkah.', w: 3 },
   semula: { ic: '🔄', name: 'Baling Semula', desc: 'Lepas baling: tak suka nombor? Baling lagi.', w: 2 },
-  promosi: { ic: '📣', name: 'Promosi', desc: 'Sewa satu tanah kau ×2 sampai giliran kau seterusnya.', w: 2 },
-  diskaun: { ic: '🏷️', name: 'Kupon Diskaun', desc: 'Masa kena bayar sewa: bayar separuh je.', w: 3 },
   ambil: { ic: '🤝', name: 'Ambil Alih', desc: 'Paksa beli tanah lawan, harga 1.5×.', w: 1 },
 };
 // AI tak dapat kad Diskaun — bayar separuh untuk pemain manusia sahaja
@@ -1607,7 +1606,7 @@ async function aiPreRoll(k) {
     });
     if (best !== null && bv >= 60) { await doAmbil(k, best); return; }
   }
-  if (h.includes('promosi')) {
+  if (false && h.includes('promosi')) {
     const mine = TILES.map((t, i) => i).filter(i => G.own[i] === k).sort((a, b) => rawRent(b, 7) - rawRent(a, 7));
     if (mine.length && rawRent(mine[0], 7) >= (ai.reserve < 700 ? 100 : 280) && Math.random() < .65) { usePromo(k, mine[0]); aiTalk(k, 'card'); await wait(900); }
   }
