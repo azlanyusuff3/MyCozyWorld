@@ -464,3 +464,11 @@ button.kuih:active{transform:scale(.95)}
 .tile .ic{margin-top:22%}
 .tile.corner .nm{top:3px;font-size:clamp(6px,1.8vw,10px)}
 .tile.corner .ic{margin-top:12%}
+/* 5-8 pemain: chip lebih kecil, 2 baris */
+.players.many{gap:3px}
+.players.many .pchip{padding:1px 2px 2px;border-width:2px;border-radius:10px}
+.players.many .pchip img,.players.many .pchip svg{width:24px;height:26px}
+.players.many .pchip b{font-size:8.5px}
+.players.many .pchip span{font-size:10px}
+.players.many .pchip i.cnt,.players.many .pchip i.pers{font-size:8px}
+.seg.small#countSeg button{min-width:0;padding-left:6px;padding-right:6px}

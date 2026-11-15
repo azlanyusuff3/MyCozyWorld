@@ -483,7 +483,7 @@ function folkChatter() {
 
 /* ---------- State ---------- */
 let G = null, busy = false;
-const cfg = { win: localStorage.getItem('cozyTycoonWin') || 'time', math: localStorage.getItem('cozyTycoonMathMode') === '1', char: Math.min(7, +(localStorage.getItem('cozyTycoonChar') || 0)), mode: 'ai', count: 4, rounds: 20, speed: +(localStorage.getItem('cozyTycoonSpeed') || 1.15) };
+const cfg = { win: localStorage.getItem('cozyTycoonWin') || 'time', math: localStorage.getItem('cozyTycoonMathMode') === '1', char: Math.min(7, +(localStorage.getItem('cozyTycoonChar') || 0)), mode: 'ai', count: Math.min(8, Math.max(2, +(localStorage.getItem('cozyTycoonCount') || 4))), rounds: 20, speed: +(localStorage.getItem('cozyTycoonSpeed') || 1.15) };
 const SPD = () => cfg.speed;
 const wait = ms => new Promise(r => setTimeout(r, ms * SPD()));
 let camOn = localStorage.getItem('cozyTycoonCam') !== '0';
@@ -495,9 +495,9 @@ const rm = n => 'RM' + n;
 function newGame() {
   const players = [];
   if (cfg.mode === 'ai') {
-    const others = shuffle(CHARS.map((c, i) => i).filter(i => i !== cfg.char)).slice(0, 3);
+    const others = shuffle(CHARS.map((c, i) => i).filter(i => i !== cfg.char)).slice(0, cfg.count - 1);
     players.push({ name: getName(0, 'Kau'), ci: cfg.char, ai: null });
-    const pers = shuffle([0, 1, 2, 3]); others.forEach((ci, k) => players.push({ name: CHARS[ci].name, ci, ai: pers[k] }));
+    const pers = shuffle([0, 1, 2, 3]); others.forEach((ci, k) => players.push({ name: CHARS[ci].name, ci, ai: pers[k % 4] }));
   } else {
     const order = localOrder();
     order.forEach((ci, k) => players.push({ name: getName(k, CHARS[ci].name), ci, ai: null }));
@@ -566,8 +566,9 @@ function seg(id, key, num, after) {
 seg('winSeg', 'win', false, () => { localStorage.setItem('cozyTycoonWin', cfg.win); updWin(); });
 function updWin() { [...$('winSeg').children].forEach(b => b.classList.toggle('on', b.dataset.v === cfg.win)); $('roundRow').classList.toggle('hidden', cfg.win !== 'time'); $('winHint').textContent = WIN_TXT[cfg.win]; }
 updWin();
-seg('modeSeg', 'mode', false, () => { $('countRow').classList.toggle('hidden', cfg.mode !== 'local'); renderNames(); });
-seg('countSeg', 'count', true, renderNames);
+seg('modeSeg', 'mode', false, () => renderNames());
+seg('countSeg', 'count', true, () => { localStorage.setItem('cozyTycoonCount', cfg.count); renderNames(); });
+[...$('countSeg').children].forEach(b => b.classList.toggle('on', +b.dataset.v === cfg.count));
 seg('mathSeg', 'math', false, () => { cfg.math = cfg.math === '1' || cfg.math === true; localStorage.setItem('cozyTycoonMathMode', cfg.math ? '1' : '0'); });
 [...$('mathSeg').children].forEach(b => b.classList.toggle('on', (b.dataset.v === '1') === cfg.math)); seg('speedSeg', 'speed', true, () => localStorage.setItem('cozyTycoonSpeed', cfg.speed));
 [...$('speedSeg').children].forEach(b => b.classList.toggle('on', +b.dataset.v === cfg.speed)); seg('roundSeg', 'rounds', true);
@@ -700,7 +701,8 @@ function buildBoard() {
 function renderAll() {
   if (!G || !$('board').querySelector('.tile')) return;
   applyWorld();
-  $('players').style.gridTemplateColumns = `repeat(${G.players.length},1fr)`;
+  $('players').style.gridTemplateColumns = `repeat(${G.players.length > 4 ? Math.ceil(G.players.length / 2) : G.players.length},1fr)`;
+  $('players').classList.toggle('many', G.players.length > 4);
   $('players').innerHTML = G.players.map((p, k) =>
     `<div class="pchip ${k === G.turn ? 'turn' : ''} ${p.out ? 'out' : ''}" style="border-color:${k === G.turn ? CHARS[p.ci].color : '#fff'}">${p.jail ? '<i class="zz">🚔</i>' : ''}${avatar(p.ci)}<b>${pname(p)}</b><span id="mon${k}">${p.out ? 'Muflis' : rm(disp[k] === undefined ? p.money : disp[k])}</span><i class="cnt">🏠 ${G.own.filter(o => o === k).length} · 🃏 ${G.hand ? G.hand[k].length : 0}</i></div>`).join('');
   TILES.forEach((t, i) => {
