@@ -119,11 +119,20 @@ const TILES = [
 ];
 // tahap: 0 = tanah kosong, 1-4 = rumah, 5 = hotel
 const LVL = ['Tanah', '1 Rumah', '2 Rumah', '3 Rumah', '4 Rumah', 'Hotel'], LVL_IC = ['🟩', '🏠', '🏠🏠', '🏠🏠🏠', '🏠🏠🏠🏠', '🏨'];
-// TODO: tukar ikut kad Geran (Title Deed) Saidina sebenar. Sementara: nisbah macam Monopoly
-const MULT = [1, 5, 15, 40, 55, 70];
-const baseRent = t => Math.max(20, Math.round(t.price * 0.08 / 10) * 10);
+// Sewa ikut kad Surat Hakmilik Saidina. land = sewa ikut berapa tanah dalam kumpulan yang tuan ada
+// bld = 1 rumah, 2 rumah, 3 rumah, 4 rumah, hotel
+const RENT = {
+  kuning: { land: [20, 40], bld: [100, 300, 950, 1700, 2500] },
+  oren: { land: [50, 100, 150], bld: [230, 650, 2000, 2900, 4000] },
+  pink: { land: [70, 140, 210], bld: [370, 1100, 3300, 4600, 5600] },
+  ungu: { land: [100, 200, 300], bld: [500, 1400, 4000, 5400, 6800] },
+  birumuda: { land: [130, 260, 390], bld: [650, 1900, 5000, 6200, 7500] },
+  biru: { land: [150, 300, 450], bld: [790, 2400, 5700, 6900, 8200] },
+  kelabu: { land: [190, 380, 570], bld: [960, 2900, 6500, 7900, 9200] },
+  gelap: { land: [300, 600], bld: [1300, 3900, 8800, 10500, 12300] },
+};
 const START_MONEY = 10000, GO_PAY = 1400, JAIL_FINE = 500, JAIL_FINE2 = 1000;
-const LADANG_RENT = [175, 350, 700, 1400]; // TODO: ikut kad Geran sebenar
+const LADANG_RENT = [180, 350, 700, 1400];
 const UTIL_MULT = [40, 100];                // TODO: ikut kad Geran sebenar
 const bldValue = i => G.lvl[i] * (UPC[TILES[i].set] || 0); // hotel = kos 5 rumah
 const mortVal = i => Math.round((TILES[i].price || 0) / 2);
@@ -168,23 +177,38 @@ const FACTS = {
 };
 
 /* ---------- Cards ---------- */
-// TODO: tukar ikut kad KEPUTUSAN Saidina sebenar (sementara: kad contoh)
+// 30 kad Keputusan Saidina
 const KEPUTUSAN = [
-  { txt: 'Durian runtuh! Dapat duit', money: 1400, ic: '🍈' },
-  { txt: 'Menang pertandingan mewarna', money: 700, ic: '🖍️' },
-  { txt: 'Dapat duit raya dari Tok Wan', money: 1000, ic: '🧧' },
-  { txt: 'Kuih kau laku keras!', money: 500, ic: '🍡' },
-  { txt: 'Hari jadi kau! Semua kawan bagi hadiah', each: 200, ic: '🎂' },
-  { txt: 'Pergi terus ke MULA', goto: 0, ic: '🏁' },
-  { txt: 'Pergi ke ladang terdekat', nearest: 'stn', ic: '🌴' },
-  { txt: 'Pasar Malam! Pilih satu kuih', pasar: true, ic: '🏮' },
-  { txt: 'Kena saman parking!', money: -400, ic: '🚓' },
-  { txt: 'Tayar kereta pancit', money: -300, ic: '🛞' },
-  { txt: 'Bayar yuran sekolah', money: -500, ic: '🎒' },
-  { txt: 'Masuk penjara terus! Tak lalu MULA', jail: true, ic: '🚔' },
-  { txt: 'Baiki rumah: RM150 setiap rumah, RM750 setiap hotel', repair: 150, ic: '🔧' },
-  { txt: 'Tertinggal barang, undur 3 petak', back: 3, ic: '↩️' },
-  { txt: 'Belanja semua kawan aiskrim', each: -150, ic: '🍦' },
+  { txt: 'Kehadapan 3 petak', fwd: 3, ic: '⏩' },
+  { txt: 'Keuntungan RM350 dari pertukaran wang asing', money: 350, ic: '💱' },
+  { txt: 'Kebelakang 3 petak', back: 3, ic: '↩️' },
+  { txt: 'Bayar RM400 bagi perbelanjaan perjalanan', money: -400, ic: '🧳' },
+  { txt: 'Bayar RM800 bagi yuran guaman', money: -800, ic: '⚖️' },
+  { txt: 'Kebelakang 13 petak', back: 13, ic: '⏪' },
+  { txt: 'Daripada penjualan stok barangan, terima RM700', money: 700, ic: '📦' },
+  { txt: 'Bonus tahunan, terima RM350', money: 350, ic: '🎁' },
+  { txt: 'Kehadapan 3 petak', fwd: 3, ic: '⏩' },
+  { txt: 'Pembiayaan semula pinjaman bangunan, terima RM700', money: 700, ic: '🏢' },
+  { txt: 'Langsung masuk penjara', jail: true, ic: '🚔' },
+  { txt: 'Bayar RM800 untuk gaji pekerja', money: -800, ic: '👷' },
+  { txt: 'Bayar RM800 untuk yuran juruaudit', money: -800, ic: '📊' },
+  { txt: 'Langsung masuk penjara', jail: true, ic: '🚔' },
+  { txt: 'Menang cabutan bertuah, terima RM700', money: 700, ic: '🎟️' },
+  { txt: 'Kehadapan 13 petak', fwd: 13, ic: '⏩' },
+  { txt: 'Wang cukai pendapatan dikembalikan, terima RM350', money: 350, ic: '🧾' },
+  { txt: 'Kematangan anuiti, terima RM700', money: 700, ic: '💰' },
+  { txt: 'Bayar RM100 untuk denda trafik', money: -100, ic: '🚓' },
+  { txt: 'Bayar cukai pintu: RM200 setiap rumah, RM800 setiap hotel', repair: true, ic: '🏛️' },
+  { txt: 'Bayar pembaikan bangunan: RM200 setiap rumah, RM800 setiap hotel', repair: true, ic: '🔧' },
+  { txt: 'Bayar RM200 untuk bil air dan elektrik', money: -200, ic: '💡' },
+  { txt: 'Keuntungan dari pelaburan asing, terima RM700', money: 700, ic: '🌏' },
+  { txt: 'Bank bayar dividen RM350 kepada kau', money: 350, ic: '🏦' },
+  { txt: 'Terima komisen RM350 dari setiap pemain', each: 350, ic: '🤝' },
+  { txt: "Kehadapan sampai petak 'MULA' dan terima RM1,400", goto: 0, ic: '🏁' },
+  { txt: 'Bayar RM200 untuk pembiayaan perubatan', money: -200, ic: '🏥' },
+  { txt: 'Bayar RM400 untuk premium insuran', money: -400, ic: '🛡️' },
+  { txt: 'Bank pulangkan RM350 kerana kesilapan', money: 350, ic: '🏦' },
+  { txt: 'Kebelakang 3 petak', back: 3, ic: '↩️' },
 ];
 
 /* ---------- AI personalities ---------- */
@@ -731,15 +755,16 @@ function rawRent(i, diceSum) {
   if (G.mort[i]) return 0; // tanah tergadai: tak boleh kutip sewa
   if (t.t === 'stn') return LADANG_RENT[TILES.filter((x, j) => x.t === 'stn' && G.own[j] === o).length - 1];
   if (t.t === 'util') return diceSum * UTIL_MULT[TILES.filter((x, j) => x.t === 'util' && G.own[j] === o).length === 2 ? 1 : 0];
-  const fullSet = TILES.every((x, j) => x.set !== t.set || G.own[j] === o);
-  return baseRent(t) * MULT[G.lvl[i]] * (fullSet && G.lvl[i] === 0 ? 2 : 1);
+  const R = RENT[t.set];
+  if (G.lvl[i]) return R.bld[G.lvl[i] - 1];
+  return R.land[setIdx(t.set).filter(j => G.own[j] === o).length - 1];
 }
 function propHtml(i) {
   const t = TILES[i], col = t.set ? SET[t.set] : '#a98bc4', o = G.own[i];
   let body = '';
   if (t.t === 'prop') {
-    const b = baseRent(t);
-    body = `<table class="rent-tbl">${LVL.map((l, k) => `<tr class="${o !== null && G.lvl[i] === k ? 'cur' : ''}"><td>${LVL_IC[k]} ${l}</td><td>sewa ${rm(b * MULT[k])}</td></tr>`).join('')}<tr><td>⭐ Set penuh (tanah kosong)</td><td>sewa ×2</td></tr><tr><td>🏠 Harga rumah</td><td>${rm(UPC[t.set])}</td></tr><tr><td>🏨 Hotel</td><td>4 rumah + ${rm(UPC[t.set])}</td></tr><tr><td>🏦 Gadai</td><td>${rm(mortVal(i))}</td></tr></table>`;
+    const R = RENT[t.set], n = o === null ? 0 : setIdx(t.set).filter(j => G.own[j] === o).length;
+    body = `<table class="rent-tbl">${R.land.map((v, q) => `<tr class="${o !== null && !G.lvl[i] && n === q + 1 ? 'cur' : ''}"><td>🟩 ${q + 1} tanah</td><td>sewa ${rm(v)}</td></tr>`).join('')}${R.bld.map((v, q) => `<tr class="${o !== null && G.lvl[i] === q + 1 ? 'cur' : ''}"><td>${LVL_IC[q + 1]} ${LVL[q + 1]}</td><td>sewa ${rm(v)}</td></tr>`).join('')}<tr><td>🏠 Harga rumah</td><td>${rm(UPC[t.set])}</td></tr><tr><td>🏨 Hotel</td><td>4 rumah + ${rm(UPC[t.set])}</td></tr><tr><td>🏦 Gadai</td><td>${rm(mortVal(i))}</td></tr></table>`;
   } else if (t.t === 'stn') body = `<p>Sewa ${LADANG_RENT.map(rm).join(' / ')} ikut berapa ladang tuan dia ada.</p><p>🏦 Gadai ${rm(mortVal(i))}</p>`;
   else if (t.t === 'util') body = `<p>Sewa = dadu × ${UTIL_MULT[0]} (atau × ${UTIL_MULT[1]} kalau ada Bekalan Air & Elektrik).</p><p>🏦 Gadai ${rm(mortVal(i))}</p>`;
   if (o !== null && G.mort[i]) body += `<p class="fest">🏦 Tanah ni <b>tergadai</b> — takde sewa. Tebus ${rm(redeemVal(i))}</p>`;
@@ -1083,7 +1108,7 @@ async function drawCard(k) {
   const p = G.players[k], deck = KEPUTUSAN;
   if (!G.kp || !G.kp.length) G.kp = shuffle([...deck.keys()]);
   const ci = G.kp.shift(); G.kp.push(ci); // kad pulang ke bawah dek
-  const c = deck[ci], type = (c.money > 0 || c.each > 0 || c.pasar || c.goto === 0) ? 'rezeki' : 'musibah';
+  const c = deck[ci], type = (c.money > 0 || c.each > 0 || c.fwd || c.goto === 0) ? 'rezeki' : 'musibah';
   let extra = '';
   if (c.money) extra = c.money > 0 ? `+${rm(c.money)}` : `-${rm(-c.money)}`;
   if (c.each) extra = c.each > 0 ? `Setiap kawan bagi ${rm(c.each)}` : `Bayar setiap kawan ${rm(-c.each)}`;
@@ -1102,9 +1127,11 @@ async function drawCard(k) {
     await goTo(k, n); await landOn(k, G.dice[0] + G.dice[1]);
   } else if (c.jail) await sendSleep(k);
   else if (c.repair) {
-    const n = TILES.reduce((s, t, i) => s + (G.own[i] === k ? G.lvl[i] : 0), 0);
-    if (n) await pay(k, n * c.repair); else log(`${pname(p)} takde kedai nak baiki. Fuh!`);
-  } else if (c.back) { await moveSteps(k, -c.back); await landOn(k, G.dice[0] + G.dice[1]); }
+    let h = 0, ht = 0; TILES.forEach((t, i) => { if (G.own[i] === k) { if (G.lvl[i] === 5) ht++; else h += G.lvl[i]; } });
+    const amt = h * 200 + ht * 800;
+    if (amt) await pay(k, amt); else log(`${pname(p)} takde rumah. Fuh!`);
+  } else if (c.fwd) { await moveSteps(k, c.fwd); await landOn(k, G.dice[0] + G.dice[1]); }
+  else if (c.back) { await moveSteps(k, -c.back); await landOn(k, G.dice[0] + G.dice[1]); }
 }
 function aiWantsBuy(k, i) {
   const p = G.players[k], ai = AIS[p.ai], t = TILES[i], left = p.money - t.price;
