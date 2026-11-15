@@ -471,6 +471,7 @@ function folkChatter() {
   const blds = G.lvl.filter(x => x === 5).length;
   if (blds >= 3) opts.push(['abu', `Dah ada ${blds} hotel. Bandar kita dah macam KL!`, false]);
   const c = pick(LINES.chatter); if (c[1] !== lastLine) opts.push(c);
+  if (!opts.length) return;
   const o = pick(opts); lastLine = o[1]; notify(o[0], o[1], o[2]);
 }
 
@@ -495,7 +496,7 @@ function newGame() {
     const order = localOrder();
     order.forEach((ci, k) => players.push({ name: getName(k, CHARS[ci].name), ci, ai: null }));
   }
-  players.forEach(p => Object.assign(p, { money: START_MONEY, pos: 0, out: false, jail: false }));
+  players.forEach(p => Object.assign(p, { money: START_MONEY, pos: 0, out: false, jail: false, lap: false }));
   G = {
     players, turn: 0, round: 1, win: cfg.win, maxRounds: cfg.win === 'time' ? (cfg.rounds || 20) : 0,
     own: TILES.map(() => null), lvl: TILES.map(() => 0), mort: TILES.map(() => false),
@@ -988,7 +989,7 @@ async function doRoll(dbl) {
   else if (ch === 'up' || ch === 'down') { useTac(k, 'ubah'); steps += ch === 'up' ? 1 : -1; log(`🎯 ${pname(p)} ubah dadu, jalan ${steps} langkah`); }
   await wait(300); cam(p.pos); await wait(450);
   await moveSteps(k, steps);
-  await landOn(k, steps);
+  await landOn(k, steps, a === b && dbl < 2);
   if (G.over) return;
   if (!p.out && a === b && dbl < 2 && !p.jail) {
     log(`${pname(p)} dapat baling lagi!`); renderAll(); save();
@@ -1003,7 +1004,7 @@ async function moveSteps(k, n) {
   for (let s = 0; s < Math.abs(n); s++) {
     if (s === Math.abs(n) - 1 && dir > 0 && camOn && Math.abs(n) > 1 && dangerAt(k, (p.pos + 1) % 40)) await suspense();
     p.pos = (p.pos + dir + 40) % 40;
-    if (p.pos === 0 && dir > 0) { gain(k, GO_PAY); log(`🏁 ${pname(p)} lalu MULA, dapat RM1,400!`); giveTac(k); if (Math.random() < .5) say2('go', { k, p: pname(p) }); }
+    if (p.pos === 0 && dir > 0) { p.lap = true; gain(k, GO_PAY); log(`🏁 ${pname(p)} lalu MULA, dapat RM1,400!`); giveTac(k); if (Math.random() < .5) say2('go', { k, p: pname(p) }); }
     const tok = $('tok' + k); tok.classList.remove('hop'); void tok.offsetWidth; tok.classList.add('hop');
     G.players.forEach((q, j) => placeToken(j, q.pos)); cam(p.pos); sfx.step();
     await wait(230);
@@ -1022,12 +1023,16 @@ async function sendSleep(k) {
   say2('sleep', { k, p: pname(p) });
 }
 
-async function landOn(k, sum) {
+async function landOn(k, sum, dbl) {
   const p = G.players[k], t = TILES[p.pos], i = p.pos, ai = p.ai !== null ? AIS[p.ai] : null;
   const auto = ai ? 10000 : 0;
   const say = t => `<div class="ai-say">${avatar(p.ci)}<span>${t}</span></div>`;
   if (t.t === 'prop' || t.t === 'stn' || t.t === 'util') {
     const o = G.own[i];
+    // Double: singgah je — beli/bayar sewa/bina rumah hanya kira pada baling terakhir (bukan double)
+    if (dbl && o !== k) { log(`🎲 Double! ${pname(p)} singgah ${t.name} je${o === null ? '' : ', tak payah bayar'}`); bubble(k, o === null ? 'Double, jalan lagi! 🎲' : 'Fuh, double! Free 😆'); await wait(800); renderAll(); save(); return; }
+    if (dbl) { log(`🎲 Double! ${pname(p)} singgah tanah sendiri`); renderAll(); save(); return; }
+    if (o === null && !p.lap) { log(`🏁 ${pname(p)} belum habis 1 pusingan — belum boleh beli ${t.name}`); bubble(k, 'Kena habis 1 pusingan dulu baru boleh beli 🏁'); await wait(900); renderAll(); save(); return; }
     if (o === null) {
       const can = p.money >= t.price;
       let want;
@@ -1112,7 +1117,7 @@ async function drawCard(k) {
   let extra = '';
   if (c.money) extra = c.money > 0 ? `+${rm(c.money)}` : `-${rm(-c.money)}`;
   if (c.each) extra = c.each > 0 ? `Setiap kawan bagi ${rm(c.each)}` : `Bayar setiap kawan ${rm(-c.each)}`;
-  await modal(`<p style="margin:0 0 8px"><b>${pname(p)}</b> ambil kad...</p><div class="flip"><div class="flip-in"><div class="face back ${type} ${ART['card_' + type + '_back'] ? 'art' : ''}"><span>❓</span>KEPUTUSAN</div><div class="face front ${type} ${ART['card_' + type + '_front'] ? 'art' : ''}"><div class="big-ic">${c.ic}</div><h2>${c.txt}</h2>${extra ? `<b>${extra}</b>` : ''}</div></div></div>`, [{ label: 'OK!', cls: type === 'rezeki' ? 'mint' : 'pink' }], p.ai !== null ? 10000 : 0);
+  await modal(`<p style="margin:0 0 8px"><b>${pname(p)}</b> ambil kad...</p><div class="flip"><div class="flip-in"><div class="face back rezeki ${ART.card_rezeki_back ? 'art' : ''}"><span>❓</span>KEPUTUSAN</div><div class="face front ${type} ${ART['card_' + type + '_front'] ? 'art' : ''}"><div class="big-ic">${c.ic}</div><h2>${c.txt}</h2>${extra ? `<b>${extra}</b>` : ''}</div></div></div>`, [{ label: 'OK!', cls: type === 'rezeki' ? 'mint' : 'pink' }], p.ai !== null ? 10000 : 0);
   log(`${c.ic} ${pname(p)}: ${c.txt}`);
   if (c.pasar) await pasarMalam(k);
   else if (c.money > 0) { emote(k, 'happy'); gain(k, c.money); }
@@ -1257,6 +1262,7 @@ function ensureState() {
   if (!G.grudge) G.grudge = G.players.map(() => G.players.map(() => 0));
   if (G.promo === undefined) G.promo = null;
   if (!G.mort) G.mort = TILES.map(() => false);
+  G.players.forEach((p, k) => { if (p.lap === undefined) p.lap = G.round > 1 || G.own.includes(k); });
   if (!G.kp) G.kp = shuffle([...KEPUTUSAN.keys()]);
   if (!G.win) G.win = G.maxRounds ? 'time' : 'last';
 }
@@ -1628,7 +1634,7 @@ function aiBid(j, i) {
 }
 async function auction(i) {
   if (G.own[i] !== null) return;
-  const t = TILES[i], bidders = G.players.map((p, j) => j).filter(j => !G.players[j].out && G.players[j].money >= 10);
+  const t = TILES[i], bidders = G.players.map((p, j) => j).filter(j => !G.players[j].out && G.players[j].lap && G.players[j].money >= 10);
   if (!bidders.length) return;
   const humans = bidders.filter(j => G.players[j].ai === null), multi = humans.length > 1;
   const steps = [...new Set([.3, .6, .9, 1.2].map(f => Math.max(10, Math.round(t.price * f / 10) * 10)))];
