@@ -1080,12 +1080,12 @@ async function landOn(k, sum, dbl) {
       if (!ai) {
         const big = r >= 140;
         const disc = !G.usedTac && G.hand[k].includes('diskaun') ? [{ label: `🏷️ Guna Diskaun (${rm(Math.ceil(r / 2))})`, v: 'disc', cls: 'gold' }] : [];
-        const v = !big && !disc.length ? (bubble(k, `Bayar ${rm(r)} kat ${pname(owner)} 💸`), await wait(700), 'pay') : await modal(propHtml(i) + `<p>Alamak! Ni tempat <b>${pname(owner)}</b>. Kena bayar sewa:</p><h2>${rm(r)}</h2>${big ? '<p class="mg-hint">🎮 Main <b>Tangkap Syiling</b>! Dapat 7 syiling, sewa jadi separuh.</p>' : ''}`,
+        const v = !big && !disc.length ? (bubble(k, `Bayar ${rm(r)} kat ${pname(owner)} 💸`), await wait(700), 'pay') : await modal(propHtml(i) + `<p>Alamak! Ni tempat <b>${pname(owner)}</b>. Kena bayar sewa:</p><h2>${rm(r)}</h2>${big ? '<p class="mg-hint">🎮 Main <b>Tangkap Syiling</b>! Dapat 7 syiling bayar separuh, 14 syiling bayar 10% je!</p>' : ''}`,
           [...disc, ...(big ? [{ label: '🎮 CUBA NASIB', v: 'mg', cls: 'mint' }, { label: '💸 Bayar je', v: 'pay', cls: 'pink' }] : [{ label: '💸 BAYAR', v: 'pay', cls: 'pink' }])]);
         if (v === 'disc') { useTac(k, 'diskaun'); r = Math.ceil(r / 2); }
         if (v === 'mg') {
-          const ok = await coinGame();
-          if (ok) { r = Math.ceil(r / 2); sticker('minigame', k); log(`🪙 ${pname(p)} menang Tangkap Syiling! Sewa jadi ${rm(r)}`); say2('minigame', { k, p: pname(p) }); }
+          const got = await coinGame();
+          if (got >= 7) { r = got >= 14 ? Math.ceil(r / 10) : Math.ceil(r / 2); sticker('minigame', k); log(`🪙 ${pname(p)} tangkap ${got} syiling! Sewa jadi ${rm(r)}`); say2('minigame', { k, p: pname(p) }); }
           else log(`🪙 ${pname(p)} tak sempat... bayar penuh ${rm(r)}`);
         }
       }
@@ -1313,9 +1313,9 @@ function renderStickers() {
 /* --- Mini game: Tangkap Syiling --- */
 function coinGame() {
   return new Promise(res => {
-    const need = 7, ov = document.createElement('div'); let score = 0, t = 7, end = false;
+    const need = 14, half = 7, ov = document.createElement('div'); let score = 0, t = 9, end = false;
     ov.className = 'mg';
-    ov.innerHTML = `<div class="mg-card"><h2>Tangkap Syiling! 🪙</h2><div class="mg-top"><span id="mgScore">🪙 0/${need}</span><span id="mgTime">⏱ ${t}</span></div><div class="mg-area" id="mgArea"><div class="mg-go">SEDIA...</div></div><p>Tap syiling yang jatuh! Jangan tap 💣</p></div>`;
+    ov.innerHTML = `<div class="mg-card"><h2>Tangkap Syiling! 🪙</h2><div class="mg-top"><span id="mgScore">🪙 0/${need}</span><span id="mgTime">⏱ ${t}</span></div><div class="mg-area" id="mgArea"><div class="mg-go">SEDIA...</div></div><p>Tap syiling! 7 = bayar separuh, 14 = bayar 10% je. Jangan tap 💣</p></div>`;
     document.body.appendChild(ov);
     const area = ov.querySelector('#mgArea'), coinArt = ART.mg_coin ? img('mg_coin', 'mgi') : '🪙', bombArt = ART.mg_bomb ? img('mg_bomb', 'mgi') : '💣';
     let sp, tm;
@@ -1329,20 +1329,21 @@ function coinGame() {
         if (bomb) { score = Math.max(0, score - 2); beep(180, .25, 'sawtooth', .06); area.classList.remove('shake'); void area.offsetWidth; area.classList.add('shake'); }
         else { score++; sfx.coin(); }
         c.remove(); ov.querySelector('#mgScore').textContent = `🪙 ${score}/${need}`;
-        if (score >= need) finish(true);
+        if (score >= need) finish(score);
       };
       c.addEventListener('animationend', () => c.remove());
       area.appendChild(c);
     };
     setTimeout(() => {
       area.innerHTML = ''; sp = setInterval(spawn, 360); spawn();
-      tm = setInterval(() => { t--; ov.querySelector('#mgTime').textContent = '⏱ ' + t; if (t <= 0) finish(score >= need); }, 1000);
+      tm = setInterval(() => { t--; ov.querySelector('#mgTime').textContent = '⏱ ' + t; if (t <= 0) finish(score); }, 1000);
     }, 1100);
     function finish(ok) {
       if (end) return; end = true; clearInterval(sp); clearInterval(tm);
-      ok ? sfx.win() : sfx.pay();
-      ov.querySelector('.mg-card').insertAdjacentHTML('beforeend', `<div class="mg-res ${ok ? 'win' : 'lose'}">${ok ? '🎉 BERJAYA! Sewa separuh!' : '😅 Tak cukup... bayar penuh'}</div>`);
-      setTimeout(() => { ov.remove(); res(ok); }, 1800);
+      const n = ok, win = n >= half;
+      win ? sfx.win() : sfx.pay();
+      ov.querySelector('.mg-card').insertAdjacentHTML('beforeend', `<div class="mg-res ${win ? 'win' : 'lose'}">${n >= need ? '🤩 HEBAT! Bayar 10% je!' : win ? '🎉 BERJAYA! Sewa separuh!' : '😅 Tak cukup... bayar penuh'}</div>`);
+      setTimeout(() => { ov.remove(); res(n); }, 1800);
     }
   });
 }
