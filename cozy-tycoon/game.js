@@ -133,7 +133,7 @@ const RENT = {
 };
 const START_MONEY = 10000, GO_PAY = 1400, JAIL_FINE = 500, JAIL_FINE2 = 1000;
 const LADANG_RENT = [180, 350, 700, 1400];
-const UTIL_MULT = [40, 100];                // TODO: ikut kad Geran sebenar
+const UTIL_RENT = [180, 450]; // Bekalan Air / Elektrik: 1 atau 2 kemudahan
 const bldValue = i => G.lvl[i] * (UPC[TILES[i].set] || 0); // hotel = kos 5 rumah
 const mortVal = i => Math.round((TILES[i].price || 0) / 2);
 const redeemVal = i => Math.round(mortVal(i) * 1.2);
@@ -748,13 +748,13 @@ function modal(html, buttons, autoMs) {
 }
 // Musim Perayaan: from round 31, rent grows 10% per round (max x4) so long games finish
 const FEST_START = 30;
-function festMult() { return G && G.round > FEST_START ? Math.min(4, 1 + (G.round - FEST_START) * 0.1) : 1; }
-function rentOf(i, diceSum) { return Math.round(rawRent(i, diceSum) * festMult() * evMult(i) * nightMult(i) * (G.promo && G.promo.i === i ? 2 : 1)); }
+function festMult() { return 1; /* dibuang: sewa ikut kad */ return G && G.round > FEST_START ? Math.min(4, 1 + (G.round - FEST_START) * 0.1) : 1; }
+function rentOf(i, diceSum) { return Math.round(rawRent(i, diceSum) * (G.promo && G.promo.i === i ? 2 : 1)); }
 function rawRent(i, diceSum) {
   const t = TILES[i], o = G.own[i]; if (o === null) return 0;
   if (G.mort[i]) return 0; // tanah tergadai: tak boleh kutip sewa
   if (t.t === 'stn') return LADANG_RENT[TILES.filter((x, j) => x.t === 'stn' && G.own[j] === o).length - 1];
-  if (t.t === 'util') return diceSum * UTIL_MULT[TILES.filter((x, j) => x.t === 'util' && G.own[j] === o).length === 2 ? 1 : 0];
+  if (t.t === 'util') return UTIL_RENT[TILES.filter((x, j) => x.t === 'util' && G.own[j] === o).length - 1];
   const R = RENT[t.set];
   if (G.lvl[i]) return R.bld[G.lvl[i] - 1];
   return R.land[setIdx(t.set).filter(j => G.own[j] === o).length - 1];
@@ -766,7 +766,7 @@ function propHtml(i) {
     const R = RENT[t.set], n = o === null ? 0 : setIdx(t.set).filter(j => G.own[j] === o).length;
     body = `<table class="rent-tbl">${R.land.map((v, q) => `<tr class="${o !== null && !G.lvl[i] && n === q + 1 ? 'cur' : ''}"><td>🟩 ${q + 1} tanah</td><td>sewa ${rm(v)}</td></tr>`).join('')}${R.bld.map((v, q) => `<tr class="${o !== null && G.lvl[i] === q + 1 ? 'cur' : ''}"><td>${LVL_IC[q + 1]} ${LVL[q + 1]}</td><td>sewa ${rm(v)}</td></tr>`).join('')}<tr><td>🏠 Harga rumah</td><td>${rm(UPC[t.set])}</td></tr><tr><td>🏨 Hotel</td><td>4 rumah + ${rm(UPC[t.set])}</td></tr><tr><td>🏦 Gadai</td><td>${rm(mortVal(i))}</td></tr></table>`;
   } else if (t.t === 'stn') body = `<p>Sewa ${LADANG_RENT.map(rm).join(' / ')} ikut berapa ladang tuan dia ada.</p><p>🏦 Gadai ${rm(mortVal(i))}</p>`;
-  else if (t.t === 'util') body = `<p>Sewa = dadu × ${UTIL_MULT[0]} (atau × ${UTIL_MULT[1]} kalau ada Bekalan Air & Elektrik).</p><p>🏦 Gadai ${rm(mortVal(i))}</p>`;
+  else if (t.t === 'util') body = `<p>Sewa ${rm(UTIL_RENT[0])} (1 kemudahan) atau ${rm(UTIL_RENT[1])} (ada Bekalan Air & Elektrik).</p><p>🏦 Gadai ${rm(mortVal(i))}</p>`;
   if (o !== null && G.mort[i]) body += `<p class="fest">🏦 Tanah ni <b>tergadai</b> — takde sewa. Tebus ${rm(redeemVal(i))}</p>`;
   else body = `<p>${tileDesc(t)}</p>`;
   if (festMult() > 1 && t.price) body += `<p class="fest">🎉 Musim Perayaan: semua sewa ×${festMult().toFixed(1)}</p>`;
@@ -905,7 +905,7 @@ async function nextTurn(first) {
   if (G.over) return;
   if (!first) {
     let n = G.turn;
-    do { n = (n + 1) % G.players.length; if (n === 0) { G.round++; onNewRound(); (!G.maxRounds || G.round <= G.maxRounds) && setTimeout(G.round === FEST_START + 1 ? festStart : (G.round > FEST_START && (G.round - FEST_START) % 10 === 0 ? festMore : folkChatter), 400); } } while (G.players[n].out);
+    do { n = (n + 1) % G.players.length; if (n === 0) { G.round++; onNewRound(); (!G.maxRounds || G.round <= G.maxRounds) && setTimeout(folkChatter, 400); } } while (G.players[n].out);
     G.turn = n;
   }
   if ((G.maxRounds && G.round > G.maxRounds) || alive().length < 2 || (G.win === 'short' && G.players.some(q => q.out))) return endGame();
@@ -1159,7 +1159,7 @@ const EVENTS = {
 function evMult(i) { const e = G && G.event && EVENTS[G.event.id]; return e && e.tiles.includes(i) ? e.mult : 1; }
 function onNewRound() {
   if (G.event && G.round > G.event.until) { G.event = null; }
-  if (!G.event && G.round > 2 && G.round % 4 === 0 && G.round !== FEST_START + 1) {
+  if (false) { // event ubah sewa dibuang — sewa ikut kad Saidina
     const keys = Object.keys(EVENTS).filter(k => k !== G.lastEv);
     G.pendingEvent = pick(keys);
   }
@@ -1180,7 +1180,7 @@ function applyWorld() {
   w.dataset.fx = e ? e.fx : '';
   let ban = $('evBanner');
   if (!ban) { ban = document.createElement('div'); ban.id = 'evBanner'; ban.className = 'ev-banner'; $('center').appendChild(ban); }
-  ban.innerHTML = e ? `${e.ic} ${e.name} · ${G.event.until - G.round + 1} pusingan lagi` : (phase() === 2 ? '🌙 Malam · KL, Georgetown & PJ sewa ×1.5' : '');
+  ban.innerHTML = e ? `${e.ic} ${e.name} · ${G.event.until - G.round + 1} pusingan lagi` : '';
   ban.style.display = ban.innerHTML ? '' : 'none';
   TILES.forEach((t, i) => { const el = $('tile' + i); if (el) el.classList.toggle('ev', !!(e && e.tiles.includes(i))); });
   ensureSky();
