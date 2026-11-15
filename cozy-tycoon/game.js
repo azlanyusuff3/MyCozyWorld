@@ -508,7 +508,7 @@ function newGame() {
     own: TILES.map(() => null), lvl: TILES.map(() => 0), mort: TILES.map(() => false),
     kp: shuffle([...KEPUTUSAN.keys()]),
     log: ['Selamat datang ke Cozy Tycoon! 🎉'], dice: [1, 1], over: false, math: cfg.math,
-    hand: players.map(p => [drawTac(p), drawTac(p)]), promo: null,
+    hand: players.map(p => p.ai !== null ? [] : [drawTac(p), drawTac(p)]), promo: null, // AI takde kad taktik
   };
   // Mod ikut masa: bank bahagikan 2-3 geran setiap pemain dulu (bayar harga kat bank)
   if (G.win === 'time') {
@@ -1264,7 +1264,7 @@ function ensureState() {
   if (!G.tileEarn) G.tileEarn = TILES.map(() => 0);
   if (G.math === undefined) G.math = false;
   if (!G.hand) G.hand = G.players.map(p => [drawTac(p), drawTac(p)]);
-  G.hand = G.hand.map((h, k) => h.map(c => TAC[c] ? c : drawTac(G.players[k]))); // kad Promosi & Diskaun dah dibuang
+  G.hand = G.hand.map((h, k) => G.players[k].ai !== null ? [] : h.map(c => TAC[c] ? c : drawTac(G.players[k]))); // kad Promosi & Diskaun dah dibuang
   G.promo = null;
   if (!G.grudge) G.grudge = G.players.map(() => G.players.map(() => 0));
   if (G.promo === undefined) G.promo = null;
@@ -1518,7 +1518,7 @@ const TAC = {
 // AI tak dapat kad Diskaun — bayar separuh untuk pemain manusia sahaja
 function drawTac(p) { const bag = []; for (const c in TAC) if (!(c === 'diskaun' && p && p.ai !== null)) for (let n = 0; n < TAC[c].w; n++) bag.push(c); return pick(bag); }
 function giveTac(k) {
-  ensureState(); const h = G.hand[k]; if (h.length >= 3) return;
+  ensureState(); const h = G.hand[k]; if (h.length >= 3 || G.players[k].ai !== null) return;
   const c = drawTac(G.players[k]); h.push(c); floatText(k, '+🃏', '#7a5af8');
   log(`🃏 ${pname(G.players[k])} dapat kad ${G.players[k].ai === null ? TAC[c].ic + ' ' + TAC[c].name : 'baru'}`);
 }
