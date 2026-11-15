@@ -699,6 +699,7 @@ function buildBoard() {
   initNPC();
 }
 function renderAll() {
+  kickMoney();
   if (!G || !$('board').querySelector('.tile')) return;
   applyWorld();
   $('players').style.gridTemplateColumns = `repeat(${G.players.length > 4 ? Math.ceil(G.players.length / 2) : G.players.length},1fr)`;
@@ -1240,7 +1241,7 @@ function musicTick() {
   const fest = typeof festMult === 'function' && festMult() > 1, night = phase() === 2;
   const bpm = fest ? 128 : night ? 84 : 100, st = 60 / bpm / 2;
   if (musNext < AC.currentTime) musNext = AC.currentTime + .05;
-  while (musNext < AC.currentTime + .25) {
+  while (musNext < AC.currentTime + 1.5) {
     const bar = Math.floor(musStep / 8) % 4, ch = CHORDS[bar], pos = musStep % 8, t = musNext;
     if (pos === 0) note(hz(ch[0] - 12), t, st * 7, 'sine', .035);
     if (pos === 4) note(hz(ch[1] - 12), t, st * 3, 'sine', .022);
@@ -1252,7 +1253,7 @@ function musicTick() {
     musNext += st; musStep++;
   }
 }
-function startMusic() { if (!musT) musT = setInterval(() => { try { musicTick(); } catch (e) {} }, 60); }
+function startMusic() { if (!musT) musT = setInterval(() => { try { musicTick(); } catch (e) {} }, 700); }
 setTimeout(() => {
   const b = $('musicBtn'); if (!b) return;
   const upd = () => b.classList.toggle('off', !musicOn); upd();
@@ -1451,18 +1452,22 @@ function renderBlds() {
 }
 // --- duit: kaunter berpusing + syiling terbang ---
 const disp = {};
+let monRun = false;
+setInterval(() => kickMoney(), 1000); // jaring keselamatan, murah
+function kickMoney() { if (!monRun) { monRun = true; requestAnimationFrame(moneyTick); } }
 function moneyTick() {
+  let busyM = false;
   if (G && G.players) G.players.forEach((p, k) => {
     const el = $('mon' + k); if (!el || p.out) return;
     const d = disp[k] === undefined ? p.money : disp[k];
     if (d !== p.money) {
       const diff = p.money - d; disp[k] = d + Math.sign(diff) * Math.max(1, Math.ceil(Math.abs(diff) / 14));
-      el.textContent = rm(disp[k]); el.className = diff > 0 ? 'up' : 'down';
+      el.textContent = rm(disp[k]); el.className = diff > 0 ? 'up' : 'down'; busyM = true;
     } else if (el.className) { disp[k] = d; el.className = ''; el.textContent = rm(d); }
   });
-  requestAnimationFrame(moneyTick);
+  // berhenti bila semua nombor dah sampai — tak jalan 60 kali sesaat masa duduk diam
+  if (busyM) requestAnimationFrame(moneyTick); else monRun = false;
 }
-requestAnimationFrame(moneyTick);
 function flyCoins(from, to, amt) {
   const box = $('tokens'); if (!box) return;
   const n = Math.min(10, 3 + Math.floor(amt / 400));
@@ -1491,7 +1496,7 @@ function shakeBoard() { const w = $('boardWrap'); if (!w) return; w.classList.re
 // --- orang lalu-lalang + bunga api festival ---
 let npcT = null;
 function initNPC() {
-  clearInterval(npcT);
+  clearInterval(npcT); return; // dibuang: jimat bateri/kurang panas
   const box = $('tokens'); if (!box) return;
   const list = [['npc_kucing', '🐈', 1], ['folk_kiah', '👵', 1], ['npc_motor', '🛵', 3], ['npc_aiskrim', '🍦', 1]];
   const npcs = list.map(([a, e, sp], q) => {
