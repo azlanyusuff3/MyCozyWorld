@@ -291,7 +291,7 @@ async function aiTurn(){if(phase!=='turn')return;const me=P[cur],hc=hidden(),rat
   const pick=[...'AIUEO'].find(c=>!used.has(c)&&(Math.random()<.7||true));return guessLetter(pick)}
   phase='solving';return attempt(cands[0]||answer)}
  host(`${me.n} pusing roda!`);await sleep(500);doSpin((me.style==='berani'?.03:.02)+Math.random()*.012)}
-function aiPickCons(){const me=P[cur],cons=[...FREQ].filter(c=>!used.has(c));let pick;
+function aiPickCons(){const me=P[cur],cons=[...FREQ].filter(c=>!used.has(c)&&!VOW.includes(c));let pick;
  const smartCands=aiCandidates();if(smartCands.length&&Math.random()<(me.style==='rawak'?.05:.15)){const pool=[...new Set(smartCands.join('').replace(/ /g,''))].filter(c=>!VOW.includes(c)&&!used.has(c));if(pool.length)pick=rnd(pool)}
  if(!pick)pick=Math.random()<(me.style==='rawak'?.6:.4)?rnd(cons):cons[Math.floor(Math.random()*Math.min(7,cons.length))];
  host(`${me.n} pilih huruf ${pick}!`);setTimeout(()=>guessLetter(pick),700)}
