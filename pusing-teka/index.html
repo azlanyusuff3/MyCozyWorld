@@ -303,9 +303,9 @@ async function bonus(){pickPuzzle();used=new Set([...'RSTLNE']);buildBoard();$('
  ['bSpin','bVowel','bSolve'].forEach(b=>$(b).disabled=true);
  await new Promise(res=>{ks.onclick=e=>{const c=e.target.dataset&&e.target.dataset.c;if(!c||used.has(c))return;const v=VOW.includes(c),nc=picks.filter(x=>!VOW.includes(x)).length,nv=picks.length-nc;
   if((v&&nv>=1)||(!v&&nc>=3))return;picks.push(c);used.add(c);e.target.classList.add('used');e.target.disabled=true;host('Pilihan: '+picks.join(' '));if(picks.length===4)res()}});
- buildKeys();for(const c of picks)await reveal(c);host('10 saat! Jawab sekarang!');
- $('solveCat').innerHTML='🏷️ '+cat+'<br><span id="timer">10</span>';$('solveIn').value='';$('mSolve').classList.remove('hide');$('bSolveNo').style.display='none';$('solveIn').focus();
- let t=10,done=false;const finish=ok=>{if(done)return;done=true;clearInterval(iv);$('mSolve').classList.add('hide');$('bSolveNo').style.display='';$('bSolveOk').onclick=()=>{$('mSolve').classList.add('hide');attempt($('solveIn').value)};revealAll();
+ buildKeys();for(const c of picks)await reveal(c);host('60 saat! Jawab sekarang!');
+ $('solveCat').innerHTML='🏷️ '+cat+'<br><span id="timer">60</span>';$('solveIn').value='';$('mSolve').classList.remove('hide');$('bSolveNo').style.display='none';$('solveIn').focus();
+ let t=60,done=false;const finish=ok=>{if(done)return;done=true;clearInterval(iv);$('mSolve').classList.add('hide');$('bSolveNo').style.display='';$('bSolveOk').onclick=()=>{$('mSolve').classList.add('hide');attempt($('solveIn').value)};revealAll();
   if(ok){sFan();sClap(3,.35);sign('MENANG KERETA!','car');mood(0,'happy');floatE(['🚗','🎉','🏆','💰','🥳'],30);chatter('solve',4);host(`LUAR BIASA! ${P[0].n} MENANG KERETA KANCIL COMEL!`);setTimeout(()=>msg('🚗 MENANG!',`"${answer}"<br>Kau bawa balik kereta + RM${P[0].tot}! 🎉`,[['🔁 MAIN LAGI',restart]]),3000)}
   else{sBuzz();sAww();chatter('wrong',3);host(`Ohh tak sempat! Jawapan: "${answer}". Tapi tetap juara!`);setTimeout(()=>msg('HAMPIR!',`Jawapan: <b>${answer}</b><br>Kau tetap juara dengan RM${P[0].tot} 💪`,[['🔁 MAIN LAGI',restart]]),2500)}};
  const iv=setInterval(()=>{t--;const el=$('timer');if(el)el.textContent=t;sTick();if(t<=0)finish(false)},1000);
