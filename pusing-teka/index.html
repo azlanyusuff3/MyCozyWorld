@@ -134,9 +134,9 @@ const PUZ={
  'PERIBAHASA':['BAGAI AUR DENGAN TEBING','SEPERTI KATAK DI BAWAH TEMPURUNG','AIR DICINCANG TIDAK AKAN PUTUS','HARAPKAN PAGAR PAGAR MAKAN PADI','SEDIKIT SEDIKIT LAMA LAMA JADI BUKIT','BAGAI MENATANG MINYAK YANG PENUH','ADA UDANG DI SEBALIK BATU','BERAT SAMA DIPIKUL RINGAN SAMA DIJINJING','BIAR LAMBAT ASAL SELAMAT','MALU BERTANYA SESAT JALAN'],
  'SIMPULAN BAHASA':['KAKI BANGKU','BUAH TANGAN','TANGAN TERBUKA','ANAK EMAS','KEPALA ANGIN','BESAR KEPALA','OTAK UDANG','LIDAH BERCABANG','MULUT MURAI','KUTU BUKU','MAKAN TANGAN','BERAT TULANG'],
  'MAKANAN MALAYSIA':['NASI LEMAK SAMBAL SOTONG','ROTI CANAI BANJIR','TEH TARIK KURANG MANIS','CENDOL PULUT','SATE KAJANG','LAKSA PENANG','NASI KERABU','AYAM PERCIK','KEROPOK LEKOR','MEE GORENG MAMAK','AIS KACANG','CUCUR UDANG','KUIH LAPIS','NASI DAGANG'],
- 'TEMPAT':['MENARA BERKEMBAR PETRONAS','GUA TEMPURUNG','PULAU LANGKAWI','BUKIT FRASER','CAMERON HIGHLANDS','JAMBATAN PULAU PINANG','TASIK KENYIR','GUNUNG KINABALU','BANDAR HILIR MELAKA','PASAR BESAR SITI KHADIJAH'],
- 'BENDA DAPUR':['PERIUK NASI ELEKTRIK','LESUNG BATU','SENDUK KAYU','PARUT KELAPA','TERMOS AIR PANAS','KUALI BESI','PEMBANCUH TEH'],
- 'AKTIVITI RAYA':['BALIK KAMPUNG','BAKAR LEMANG','PASANG PELITA','DUIT RAYA SAMPUL HIJAU','RUMAH TERBUKA','MAIN BUNGA API','BAJU MELAYU SEDONDON'],
+ 'TEMPAT MENARIK DI MALAYSIA':['MENARA BERKEMBAR PETRONAS','GUA TEMPURUNG','PULAU LANGKAWI','BUKIT FRASER','CAMERON HIGHLANDS','JAMBATAN PULAU PINANG','TASIK KENYIR','GUNUNG KINABALU','BANDAR HILIR MELAKA','PASAR BESAR SITI KHADIJAH'],
+ 'PERALATAN DAPUR':['PERIUK NASI ELEKTRIK','LESUNG BATU','SENDUK KAYU','PARUT KELAPA','TERMOS AIR PANAS','KUALI BESI','CEREK ELEKTRIK','PISAU POTONG','PENAPIS SANTAN','KUKUSAN BULUH'],
+ 'AKTIVITI HARI RAYA':['BALIK KAMPUNG','BAKAR LEMANG','PASANG PELITA','DUIT RAYA SAMPUL HIJAU','RUMAH TERBUKA','MAIN BUNGA API','BAJU MELAYU SEDONDON'],
  'PERMAINAN TRADISIONAL':['BALING SELIPAR','LOMPAT GETAH','MAIN GULI','WAU BULAN','GASING PANGKAH','SEPAK RAGA','TEPUK AMAI AMAI','BATU SERIBU','POLIS SENTRI']
 };
 const VOW='AEIOU',ALL='ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -226,7 +226,7 @@ function pickPuzzle(){let c,a,g=0;do{c=rnd(Object.keys(PUZ));a=rnd(PUZ[c]);g++}w
 async function startRound(){pickPuzzle();used=new Set();P.forEach(p=>p.rb=0);buildBoard();$('rLbl').textContent='PUSINGAN '+round+'/3';phase='wait';refresh();
  sign('PUSINGAN '+round);sClap(1.2,.15);host(round===1?`Selamat datang ke PUSING TEKA! Malam ni kita ada ${P[0].n}, ${P[1].n} dan ${P[2].n}! Kategori: ${cat}!`:`Pusingan ${round}! Kategori kali ni... ${cat}!`);
  chatter('idle',2);await sleep(2200);cur=(round-1)%3;turn()}
-async function turn(){phase='turn';refresh();renderPods();
+async function turn(){phase='turn';save();refresh();renderPods();
  if(cur===0){host(rnd([`${P[0].n}, giliran awak! Pusing, beli vokal, atau jawab?`,`Ok ${P[0].n}, apa langkah awak?`,`Penonton tengah tunggu ni ${P[0].n}!`]));}
  else{host(`Giliran ${P[cur].n}!`);await sleep(900);aiTurn()}}
 async function nextTurn(msg){if(msg)host(msg);phase='wait';refresh();await sleep(1500);cur=(cur+1)%3;turn()}
@@ -282,7 +282,7 @@ function aiPickCons(){const me=P[cur],cons=[...FREQ].filter(c=>!used.has(c));let
 
 // ---------- FINALE / BONUS ----------
 function msg(t,p,btns){$('msgT').textContent=t;$('msgP').innerHTML=p;$('msgBtns').innerHTML='';btns.forEach(([l,f,alt])=>{const b=document.createElement('button');b.className='big'+(alt?' alt':'');b.textContent=l;b.onclick=()=>{$('mMsg').classList.add('hide');f()};$('msgBtns').appendChild(b)});$('mMsg').classList.remove('hide')}
-async function finale(){phase='off';cur=-1;renderPods();const best=[...P].sort((a,b)=>b.tot-a.tot)[0];
+async function finale(){clearSave();phase='off';cur=-1;renderPods();const best=[...P].sort((a,b)=>b.tot-a.tot)[0];
  if(best===P[0]){host(`${P[0].n} JUARA malam ni! Masuk ke PUSINGAN BONUS!`);sFan();sClap(2.5,.3);floatE(['🏆','🎉','👑'],20);chatter('solve',3);await sleep(2500);
   msg('🏆 JUARA!',`Tahniah ${P[0].n}! Jumlah RM${P[0].tot}.<br>Sedia untuk <b>PUSINGAN BONUS</b>? Hadiah: <b>KERETA KANCIL COMEL</b> 🚗`,[['🎬 JOM!',bonus]])}
  else{host(`${best.n} juara malam ni! Terima kasih ${P[0].n}, jumpa lagi!`);sClap(1.5,.2);chatter('lose',2);
@@ -301,14 +301,26 @@ async function bonus(){pickPuzzle();used=new Set([...'RSTLNE']);buildBoard();$('
   else{sBuzz();sAww();chatter('wrong',3);host(`Ohh tak sempat! Jawapan: "${answer}". Tapi tetap juara!`);setTimeout(()=>msg('HAMPIR!',`Jawapan: <b>${answer}</b><br>Kau tetap juara dengan RM${P[0].tot} 💪`,[['🔁 MAIN LAGI',restart]]),2500)}};
  const iv=setInterval(()=>{t--;const el=$('timer');if(el)el.textContent=t;sTick();if(t<=0)finish(false)},1000);
  $('bSolveOk').onclick=()=>finish(norm($('solveIn').value)===norm(answer))}
-function restart(){round=1;P.forEach(p=>{p.rb=0;p.tot=0});buildKeys();startRound()}
+function restart(){clearSave();usedPuz=new Set();round=1;P.forEach(p=>{p.rb=0;p.tot=0});buildKeys();startRound()}
+
+// ---------- SAVE ----------
+const SK='pt_save';
+function save(){try{localStorage.setItem(SK,JSON.stringify({P,cur,round,answer,cat,used:[...used],usedPuz:[...usedPuz]}))}catch(e){}}
+function clearSave(){try{localStorage.removeItem(SK)}catch(e){}}
+function loadSave(){try{const d=JSON.parse(localStorage.getItem(SK));return d&&d.answer&&d.P?d:null}catch(e){return null}}
+function resume(d){P=d.P;cur=d.cur;round=d.round;answer=d.answer;cat=d.cat;used=new Set(d.used);usedPuz=new Set(d.usedPuz);
+ buildBoard();document.querySelectorAll('.tile.l').forEach(t=>{if(used.has(t.dataset.c))t.classList.add('show')});
+ $('rLbl').textContent='PUSINGAN '+round+'/3';buildKeys();sClap(1,.15);sign('KITA KEMBALI!');
+ host(`Selamat kembali ke PUSING TEKA! Kita sambung pusingan ${round}, kategori ${cat}.`);comment('yeay dah balik dari iklan 📺');setTimeout(turn,1800)}
 
 // ---------- START ----------
 drawWheel();buildKeys();
 P=[{n:'KAU',av:'🙋',rb:0,tot:0},...[...RIVALS].sort(()=>Math.random()-.5).slice(0,2).map(r=>({...r,rb:0,tot:0}))];renderPods();
 try{$('nameIn').value=localStorage.getItem('pt_name')||''}catch(e){}
 $('bStart').onclick=()=>{const n=($('nameIn').value.trim()||'KAU').toUpperCase();P[0].n=n;try{localStorage.setItem('pt_name',n)}catch(e){}ac();$('mStart').classList.add('hide');
- comment('dah start!! 📺');comment('salam dari Kelantan 👋');startRound()};
+ clearSave();comment('dah start!! 📺');comment('salam dari Kelantan 👋');startRound()};
+(function(){const d=loadSave();if(!d)return;const b=document.createElement('button');b.className='big alt';b.textContent=`▶ SAMBUNG (Pusingan ${d.round}, RM${d.P[0].tot+d.P[0].rb})`;
+ b.onclick=()=>{ac();$('mStart').classList.add('hide');resume(d)};$('bStart').before(b);$('bStart').textContent='🎬 MAIN BARU'})();
 </script>
 </body>
 </html>
