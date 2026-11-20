@@ -57,7 +57,7 @@ button{font-family:inherit;cursor:pointer}
 .act img{height:24px;vertical-align:middle;margin-right:3px;filter:drop-shadow(0 2px 1px #0006)}.act{flex:1;border:0;border-radius:12px;padding:10px 4px;font:16px "Lilita One";color:#fff;letter-spacing:.5px;box-shadow:0 4px 0 #0006}
 .act:disabled{opacity:.35;cursor:default}
 #bSpin{background:#e5383b}#bVowel{background:#2a9d8f}#bSolve{background:#f77f00}
-#wheelWrap.nudge{animation:nudge .5s 3}@keyframes nudge{50%{transform:scale(1.07) rotate(-6deg)}}#keys{display:grid;grid-template-columns:repeat(9,1fr);gap:4px}
+#wheelWrap.nudge{animation:nudge .5s 3}@keyframes nudge{50%{transform:scale(1.07) rotate(-6deg)}}#lifes{display:flex;gap:6px}.lf{flex:1;border:2px solid #ffd166;background:#ffffff14;color:#fff;border-radius:10px;padding:4px 2px;font:800 11px Nunito;display:flex;align-items:center;justify-content:center;gap:4px}.lf:disabled{opacity:.3;border-color:#fff4}.lf.gone{text-decoration:line-through}.bars{display:flex;gap:10px;justify-content:center;align-items:flex-end;height:150px;margin:10px 0}.bar{width:44px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;font-weight:800}.bar i{display:block;width:100%;background:linear-gradient(#ffd166,#f77f00);border-radius:6px 6px 0 0;transition:height 1.2s}.bar b{font:22px 'Lilita One'}#keys{display:grid;grid-template-columns:repeat(9,1fr);gap:4px}
 .k{border:0;border-radius:8px;padding:8px 0;font:16px "Lilita One";background:#fff;color:#240046;box-shadow:0 3px 0 #bbb}
 .k.v{background:#b8f2e6}
 .k:disabled{opacity:.25}
@@ -103,6 +103,7 @@ button{font-family:inherit;cursor:pointer}
   <button class="act" id="bVowel"><img src="sprites/icon_vowel.webp" alt="">VOKAL RM250</button>
   <button class="act" id="bSolve"><img src="sprites/icon_solve.webp" alt="">JAWAB</button>
  </div>
+ <div id="lifes"><button class="lf" id="lCall">📞<span>Telefon Kawan</span></button><button class="lf" id="lAud">👥<span>Tanya Penonton</span></button><button class="lf" id="lOpen">🔍<span>Buka 1 Huruf</span></button></div>
  <div id="keys"></div>
 </div>
 <div id="floaters"></div>
@@ -217,7 +218,7 @@ cv.addEventListener('pointerup',endDrag);cv.addEventListener('pointercancel',end
 function renderPods(){$('podiums').innerHTML=P.map((p,i)=>`<div class="pod ${i===cur&&phase!=='off'?'turn':''}"><div class="av"><img src="sprites/${KEYOF(p)}_${p.mood||'idle'}.webp" alt="${p.av}"></div><div class="nm">${p.n}</div><div class="rb">RM${p.rb}</div><div class="tt">Jumlah RM${p.tot}</div></div>`).join('')}
 function buildKeys(){$('keys').innerHTML=ALL.split('').map(c=>`<button class="k ${VOW.includes(c)?'v':''}" data-c="${c}">${c}</button>`).join('');
  $('keys').onclick=e=>{const c=e.target.dataset&&e.target.dataset.c;if(c)onKey(c)}}
-function refresh(){const me=cur===0,hc=hidden(),cons=hc.some(c=>!VOW.includes(c)),anyCons=[...ALL].some(c=>!VOW.includes(c)&&!used.has(c)),anyVow=[...VOW].some(c=>!used.has(c));
+function refresh(){const L=(P[0]&&P[0].life)||{},ok=cur===0&&phase==='turn';[['lCall','call'],['lAud','aud'],['lOpen','open']].forEach(([id,k])=>{$(id).disabled=!(ok&&L[k]);$(id).classList.toggle('gone',!L[k])});if(L.open&&hidden().length<2)$('lOpen').disabled=true;const me=cur===0,hc=hidden(),cons=hc.some(c=>!VOW.includes(c)),anyCons=[...ALL].some(c=>!VOW.includes(c)&&!used.has(c)),anyVow=[...VOW].some(c=>!used.has(c));
  $('bSpin').disabled=!(me&&phase==='turn'&&anyCons);$('bVowel').disabled=!(me&&phase==='turn'&&anyVow&&P[0].rb>=250);$('bSolve').disabled=!(me&&phase==='turn');
  document.querySelectorAll('.k').forEach(k=>{const c=k.dataset.c,v=VOW.includes(c);k.classList.toggle('used',used.has(c));
   k.disabled=used.has(c)||!me||!((phase==='cons'&&!v)||(phase==='vow'&&v))});renderPods()}
@@ -295,6 +296,27 @@ function aiPickCons(){const me=P[cur],cons=[...FREQ].filter(c=>!used.has(c));let
  if(!pick)pick=Math.random()<(me.style==='rawak'?.6:.4)?rnd(cons):cons[Math.floor(Math.random()*Math.min(7,cons.length))];
  host(`${me.n} pilih huruf ${pick}!`);setTimeout(()=>guessLetter(pick),700)}
 
+// ---------- BANTUAN ----------
+const FRIENDS=[{n:'Pak Mat Bengkel',e:'👨🏽‍🔧',acc:.9},{n:'Kak Ros Kantin',e:'👩🏽‍🍳',acc:.8},{n:'Along',e:'🧑🏽‍💼',acc:.65}];
+const useLife=k=>{P[0].life[k]=0;save();refresh()};
+$('lCall').onclick=async()=>{if(cur!==0||phase!=='turn'||!P[0].life.call)return;useLife('call');phase='life';refresh();const f=rnd(FRIENDS);
+ host(`Kita telefon ${f.n}! 📞`,'excited');chatter('spin',1);for(let i=0;i<3;i++){tone(440,.35,'sine',.12,i*.8);tone(480,.35,'sine',.12,i*.8)}await sleep(2600);
+ const words=answer.split(' '),idx=words.map((w,i)=>i).filter(i=>[...words[i]].some(c=>!used.has(c)));let tip;
+ if(Math.random()<f.acc&&idx.length){const wi=rnd(idx),w=words[wi],ord=['pertama','kedua','ketiga','keempat','kelima','keenam','ketujuh'][wi]||'terakhir';
+  tip=rnd([`Hmm... aku rasa perkataan ${ord} tu mula dengan huruf "${w[0]}".`,`Perkataan ${ord} tu ada ${w.length} huruf, dan aku yakin hujung dia huruf "${w[w.length-1]}".`,`Cuba teka huruf "${rnd([...new Set(w)].filter(c=>!used.has(c)))}"... aku rasa ada dalam perkataan ${ord}.`])}
+ else tip=rnd(['Alamak aku tengah makan ni... cuba teka huruf A? Eh dah ada ke? Hehe 😅','Kategori apa tadi? Haa... aku pun tak tahu la, maaf!','Hello? Hello? Line tak clear la... 📶'])
+ comment(`${f.e} ${f.n} on the line!`);msg(`${f.e} ${f.n}`,tip,[['👍 TERIMA KASIH',()=>{phase='turn';refresh();host('Ok, apa langkah seterusnya?')}]])};
+$('lAud').onclick=async()=>{if(cur!==0||phase!=='turn'||!P[0].life.aud)return;useLife('aud');phase='life';refresh();host('Penonton, undi sekarang! Huruf mana yang ada?','excited');
+ for(let i=0;i<5;i++)chatter('idle',1);sClap(1,.12);await sleep(2200);
+ const yes=hidden(),no=[...ALL].filter(c=>!used.has(c)&&!answer.includes(c));const opts=[];
+ const pickY=rnd(yes);opts.push(pickY);for(const c of [...yes].sort(()=>Math.random()-.5))if(opts.length<3&&!opts.includes(c))opts.push(c);while(opts.length<4&&no.length){const c=no.splice(Math.floor(Math.random()*no.length),1)[0];opts.push(c)}
+ let w=opts.map((c,i)=>yes.includes(c)?30+Math.random()*30:5+Math.random()*15);if(Math.random()<.15){const j=opts.findIndex(c=>!yes.includes(c));if(j>=0)w[j]=70}
+ const sum=w.reduce((a,b)=>a+b,0),pc=w.map(x=>Math.round(x/sum*100));const order=opts.map((c,i)=>[c,pc[i]]).sort((a,b)=>b[1]-a[1]);
+ msg('👥 UNDIAN PENONTON','<div class="bars">'+order.map(([c,v])=>`<div class="bar"><span>${v}%</span><i style="height:0" data-h="${v}"></i><b>${c}</b></div>`).join('')+'</div>Penonton tak semestinya betul 😉',[['👍 OK',()=>{phase='turn';refresh();host('Nak ikut penonton ke?')}]]);
+ setTimeout(()=>document.querySelectorAll('.bar i').forEach(x=>x.style.height=x.dataset.h*1.2+'px'),60)};
+$('lOpen').onclick=async()=>{if(cur!==0||phase!=='turn'||!P[0].life.open||hidden().length<2)return;useLife('open');phase='life';refresh();const c=rnd(hidden());used.add(c);
+ host(`Kita buka satu huruf untuk ${P[0].n}... huruf ${c}!`,'excited');comment('bijak guna bantuan 👍');await reveal(c);phase='turn';refresh();save()};
+
 // ---------- FINALE / BONUS ----------
 function msg(t,p,btns){$('msgT').textContent=t;$('msgP').innerHTML=p;$('msgBtns').innerHTML='';btns.forEach(([l,f,alt])=>{const b=document.createElement('button');b.className='big'+(alt?' alt':'');b.textContent=l;b.onclick=()=>{$('mMsg').classList.add('hide');f()};$('msgBtns').appendChild(b)});$('mMsg').classList.remove('hide')}
 async function finale(){clearSave();phase='off';cur=-1;renderPods();const best=[...P].sort((a,b)=>b.tot-a.tot)[0];
@@ -316,14 +338,14 @@ async function bonus(){pickPuzzle();used=new Set([...'RSTLNE']);buildBoard();$('
   else{sBuzz();sAww();chatter('wrong',3);host(`Ohh tak sempat! Jawapan: "${answer}". Tapi tetap juara!`);setTimeout(()=>msg('HAMPIR!',`Jawapan: <b>${answer}</b><br>Kau tetap juara dengan RM${P[0].tot} 💪`,[['🔁 MAIN LAGI',restart]]),2500)}};
  const iv=setInterval(()=>{t--;const el=$('timer');if(el)el.textContent=t;sTick();if(t<=0)finish(false)},1000);
  $('bSolveOk').onclick=()=>finish(norm(solveVal())===norm(answer))}
-function restart(){clearSave();usedPuz=new Set();round=1;P.forEach(p=>{p.rb=0;p.tot=0});buildKeys();startRound()}
+function restart(){clearSave();usedPuz=new Set();round=1;P.forEach(p=>{p.rb=0;p.tot=0});P[0].life={call:1,aud:1,open:1};buildKeys();startRound()}
 
 // ---------- SAVE ----------
 const SK='pt_save';
 function save(){try{localStorage.setItem(SK,JSON.stringify({TOTR,P,cur,round,answer,cat,used:[...used],usedPuz:[...usedPuz]}))}catch(e){}}
 function clearSave(){try{localStorage.removeItem(SK)}catch(e){}}
 function loadSave(){try{const d=JSON.parse(localStorage.getItem(SK));return d&&d.answer&&d.P?d:null}catch(e){return null}}
-function resume(d){TOTR=d.TOTR||3;P=d.P;cur=d.cur;round=d.round;answer=d.answer;cat=d.cat;used=new Set(d.used);usedPuz=new Set(d.usedPuz);
+function resume(d){TOTR=d.TOTR||3;P=d.P;if(!P[0].life)P[0].life={call:1,aud:1,open:1};cur=d.cur;round=d.round;answer=d.answer;cat=d.cat;used=new Set(d.used);usedPuz=new Set(d.usedPuz);
  buildBoard();document.querySelectorAll('.tile.l').forEach(t=>{if(used.has(t.dataset.c))t.classList.add('show')});
  $('rLbl').textContent='PUSINGAN '+round+'/'+TOTR;buildKeys();sClap(1,.15);sign('KITA KEMBALI!');
  host(`Selamat kembali ke PUSING TEKA! Kita sambung pusingan ${round}, kategori ${cat}.`);comment('yeay dah balik dari iklan 📺');setTimeout(turn,1800)}
@@ -331,7 +353,7 @@ function resume(d){TOTR=d.TOTR||3;P=d.P;cur=d.cur;round=d.round;answer=d.answer;
 // ---------- START ----------
 drawWheel();buildKeys();
 const CHARS=[{k:'player',n:'Kak Ayu',av:'🙋',style:'rawak'},...RIVALS];
-function setupPlayers(){const me=CHARS.find(c=>c.k===CHOSEN);P=[{n:'KAU',av:me.av,k:CHOSEN,rb:0,tot:0},...CHARS.filter(c=>c.k!==CHOSEN).sort(()=>Math.random()-.5).slice(0,2).map(r=>({...r,rb:0,tot:0}))];renderPods()}
+function setupPlayers(){const me=CHARS.find(c=>c.k===CHOSEN);P=[{n:'KAU',av:me.av,k:CHOSEN,rb:0,tot:0,life:{call:1,aud:1,open:1}},...CHARS.filter(c=>c.k!==CHOSEN).sort(()=>Math.random()-.5).slice(0,2).map(r=>({...r,rb:0,tot:0}))];renderPods()}
 try{CHOSEN=localStorage.getItem('pt_char')||'player';TOTR=+localStorage.getItem('pt_len')||5}catch(e){}
 const pickBtn=(on)=>`border:3px solid ${on?'#ffd166':'transparent'};background:${on?'#ffd16633':'#ffffff14'};border-radius:12px;padding:4px;cursor:pointer;color:#fff;font:14px 'Lilita One'`;
 function drawPick(){$('charPick').innerHTML=CHARS.map(c=>`<button data-k="${c.k}" style="${pickBtn(c.k===CHOSEN)}"><img src="sprites/${c.k}_happy.webp" style="width:58px;display:block" alt="${c.n}"></button>`).join('');
