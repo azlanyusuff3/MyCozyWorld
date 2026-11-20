@@ -73,7 +73,7 @@ button{font-family:inherit;cursor:pointer}
 .card input{width:100%;font:20px "Lilita One";text-transform:uppercase;padding:10px;border-radius:10px;border:0;text-align:center;margin:8px 0}
 .big{border:0;border-radius:14px;padding:12px 20px;font:20px "Lilita One";background:#e5383b;color:#fff;box-shadow:0 5px 0 #8d0801;margin:4px}
 .big.alt{background:#2a9d8f;box-shadow:0 5px 0 #14524a}
-#solveBoard{display:flex;flex-direction:column;gap:4px;align-items:center;margin:10px 0;background:#05204f;border-radius:12px;padding:8px 4px}#solveBoard .row{gap:3px}.st{width:23px;height:30px;border-radius:5px;display:flex;align-items:center;justify-content:center;font:19px 'Lilita One';color:#240046;background:#fff}.st.fx{background:#cfd8ff;color:#3c096c}.st.bl{background:#fff8d6;box-shadow:inset 0 -3px 0 #e0b84a;cursor:pointer}.st.bl.sel{background:#ffd166;outline:3px solid #ff5fa2}.st.gap{background:none;width:10px}#solveKeys{display:grid;grid-template-columns:repeat(9,1fr);gap:4px;margin-bottom:10px}#solveKeys button{border:0;border-radius:8px;padding:8px 0;font:16px 'Lilita One';background:#fff;color:#240046;box-shadow:0 3px 0 #bbb}#solveKeys .del{background:#e5383b;color:#fff;grid-column:span 2}#timer{font:40px "Lilita One";color:#ffd166}
+#solveBoard{display:flex;flex-direction:column;gap:4px;align-items:center;margin:10px 0;background:#05204f;border-radius:12px;padding:8px 4px}#solveBoard .row{gap:3px}.st{width:23px;height:30px;border-radius:5px;display:flex;align-items:center;justify-content:center;font:19px 'Lilita One';color:#240046;background:#fff}.st.fx{background:#cfd8ff;color:#3c096c}.st.bl{background:#fff8d6;box-shadow:inset 0 -3px 0 #e0b84a;cursor:pointer}.st.bl.sel{background:#ffd166;outline:3px solid #ff5fa2}.st.gap{background:none;width:10px}#solveKeys{display:grid;grid-template-columns:repeat(9,1fr);gap:4px;margin-bottom:10px}#solveKeys button{border:0;border-radius:8px;padding:8px 0;font:16px 'Lilita One';background:#fff;color:#240046;box-shadow:0 3px 0 #bbb}#solveKeys .del{background:#e5383b;color:#fff;grid-column:span 2}#mStart .card{max-height:96vh;overflow:auto}#mMsg .card{max-height:90vh;overflow:auto}.toast{position:fixed;top:12px;left:50%;transform:translateX(-50%);background:#ffd166;color:#240046;font:16px 'Lilita One';padding:10px 16px;border-radius:14px;z-index:30;box-shadow:0 6px 20px #0008;animation:tin .4s;white-space:nowrap}@keyframes tin{from{transform:translate(-50%,-60px)}}#timer{font:40px "Lilita One";color:#ffd166}
 #sign img{display:block;width:110px;margin:0 auto 4px;filter:drop-shadow(0 4px 6px #000a)}#sign{text-align:center;position:fixed;top:38%;left:50%;transform:translate(-50%,-50%) scale(0);font:44px "Lilita One";color:#ffd166;text-shadow:0 4px 0 #c9184a,0 0 20px #000;z-index:5;pointer-events:none;white-space:nowrap}
 #sign.go{animation:sign 1.6s}
 @keyframes sign{15%{transform:translate(-50%,-50%) scale(1.15)}25%,80%{transform:translate(-50%,-50%) scale(1)}100%{transform:translate(-50%,-50%) scale(0)}}
@@ -116,6 +116,8 @@ button{font-family:inherit;cursor:pointer}
  <p style="margin-bottom:2px">Pilih watak kau:</p><div id="charPick" style="display:flex;gap:6px;justify-content:center"></div>
  <input id="nameIn" maxlength="10" placeholder="NAMA KAU">
  <p style="margin:2px 0">Panjang rancangan:</p><div id="lenPick" style="display:flex;gap:6px;justify-content:center;margin-bottom:8px"></div>
+ <p id="profLine" style="font-size:12.5px;background:#ffffff14;border-radius:10px;padding:6px"></p>
+ <div><button class="big alt" id="bTro" style="font-size:15px;padding:8px 14px">🏆 TROFI</button><button class="big alt" id="bShop" style="font-size:15px;padding:8px 14px">🛍️ KEDAI</button></div>
  <button class="big" id="bStart">🎬 MASUK STUDIO</button>
 </div></div>
 
@@ -180,7 +182,7 @@ const AUDL={
 };
 function floatE(e,n=8){for(let i=0;i<n;i++)setTimeout(()=>{const d=document.createElement('div');d.className='fl';d.textContent=Array.isArray(e)?rnd(e):e;d.style.left=(5+Math.random()*90)+'%';d.style.setProperty('--dx',(Math.random()*80-40)+'px');$('floaters').appendChild(d);setTimeout(()=>d.remove(),2700)},i*90)}
 function sign(t,ic){const s=$('sign');s.innerHTML=(ic?'<img src="sprites/icon_'+ic+'.webp" alt="">':'')+t;s.classList.remove('go');void s.offsetWidth;s.classList.add('go')}
-setInterval(()=>{const v=12+Math.random()*4;$('viewers').textContent=v.toFixed(1)+'k';if(phase!=='off'&&Math.random()<.35)chatter('idle',1)},4500);
+setInterval(()=>{const [a,b]=SN().v,v=a+Math.random()*(b-a);$('viewers').textContent=v<1?Math.round(v*1000):v.toFixed(1)+'k';if(phase!=='off'&&Math.random()<.35)chatter('idle',1)},4500);
 
 // ---------- BOARD ----------
 function lines(s){const w=s.split(' '),out=[];let l='';for(const x of w){if((l+' '+x).trim().length>13){out.push(l);l=x}else l=(l+' '+x).trim()}out.push(l);return out}
@@ -195,9 +197,9 @@ const cv=$('wheel'),cx=cv.getContext('2d'),N=SEG.length,SA=Math.PI*2/N;
 function drawWheel(){const R=225,C=230;cx.clearRect(0,0,460,460);cx.save();cx.translate(C,C);
  cx.beginPath();cx.arc(0,0,R+4,0,7);cx.fillStyle='#ffd166';cx.fill();
  for(let i=0;i<N;i++){const a=rot+i*SA-Math.PI/2,v=SEG[i];cx.beginPath();cx.moveTo(0,0);cx.arc(0,0,R,a,a+SA);cx.closePath();
-  cx.fillStyle=v==='MUFLIS'?'#111':v==='HILANG'?'#fff':v==='DURIAN'?'#7cb518':SEGCOL[i%SEGCOL.length];cx.fill();cx.strokeStyle='#ffd166';cx.lineWidth=2;cx.stroke();
+  const pal=(SKIN[PROF.eq&&PROF.eq.w]||SKIN.klasik).c;cx.fillStyle=v==='MUFLIS'?'#111':v==='HILANG'?'#fff':v==='DURIAN'?'#7cb518':pal[i%pal.length];cx.fill();cx.strokeStyle='#ffd166';cx.lineWidth=2;cx.stroke();
   cx.save();cx.rotate(a+SA/2);cx.textAlign='right';cx.textBaseline='middle';cx.fillStyle=v==='HILANG'?'#e5383b':'#fff';
-  const lab=v==='DURIAN'?'🍈 DURIAN':v==='HILANG'?'HILANG':v==='MUFLIS'?'MUFLIS':String(v);cx.font=(typeof v==='number'?'bold 26px':'bold 17px')+' "Lilita One",sans-serif';cx.fillText(lab,R-12,0);
+  const lab=v==='DURIAN'?'🍈 DURIAN':v==='HILANG'?'HILANG':v==='MUFLIS'?'MUFLIS':String(Math.round(v*SN().m));cx.font=(typeof v==='number'?'bold 26px':'bold 17px')+' "Lilita One",sans-serif';cx.fillText(lab,R-12,0);
   cx.fillStyle='#ffd166';cx.beginPath();cx.arc(R-3,-Math.sin(SA/2)*R*0+0,0,0,0);cx.restore()}
  for(let i=0;i<N;i++){const a=rot+i*SA-Math.PI/2;cx.beginPath();cx.arc(Math.cos(a)*(R-3),Math.sin(a)*(R-3),4,0,7);cx.fillStyle='#fff';cx.fill()}
  cx.beginPath();cx.arc(0,0,38,0,7);cx.fillStyle='#c9184a';cx.fill();cx.strokeStyle='#ffd166';cx.lineWidth=5;cx.stroke();
@@ -240,11 +242,11 @@ async function nextTurn(msg,m){if(msg)host(msg,m);phase='wait';refresh();await s
 
 async function doSpin(vel){if(phase!=='turn')return;phase='spin';refresh();host(rnd(['Pusingggg!','Roda berpusing...','Semoga bertuah!']));chatter('spin',2);
  const v=await spinWheel(vel);
- if(v==='MUFLIS'){sBuzz();sAww();sign('MUFLIS!','muflis');mood(cur,'sad');floatE(['😭','💔','😱'],10);chatter('muflis',3);P[cur].rb=0;return nextTurn(`Alamak! MUFLIS! Duit ${P[cur].n} pusingan ni hangus...`,'sad')}
+ if(v==='MUFLIS'){sBuzz();sAww();sign('MUFLIS!','muflis');mood(cur,'sad');floatE(['😭','💔','😱'],10);chatter('muflis',3);if(cur===0)G.mf++;P[cur].rb=0;return nextTurn(`Alamak! MUFLIS! Duit ${P[cur].n} pusingan ni hangus...`,'sad')}
  if(v==='HILANG'){sBuzz();sign('HILANG GILIRAN','hilang');mood(cur,'sad');floatE(['😬','🤦'],6);chatter('lose',2);return nextTurn(`Hilang giliran! Kesian ${P[cur].n}.`,'sad')}
- spinVal=v==='DURIAN'?2000:v;
- if(v==='DURIAN'){sFan();sign('DURIAN RUNTUH!','durian');mood(cur,'happy');floatE(['🍈','🤑','💰'],12);host('DURIAN RUNTUH! RM2000 setiap huruf! Pilih konsonan!','excited')}
- else{if(v>=800){chatter('big',2);floatE(['🤑','💰'],5)}host(`RM${v}! Pilih satu huruf konsonan.`)}
+ spinVal=Math.round((v==='DURIAN'?2000:v)*SN().m);if(v==='DURIAN'&&cur===0)award('durian');
+ if(v==='DURIAN'){sFan();sign('DURIAN RUNTUH!','durian');mood(cur,'happy');floatE(['🍈','🤑','💰'],12);host(`DURIAN RUNTUH! RM${spinVal} setiap huruf! Pilih konsonan!`,'excited')}
+ else{if(v>=800&&typeof v==='number'){chatter('big',2);floatE(['🤑','💰'],5)}host(`RM${spinVal}! Pilih satu huruf konsonan.`)}
  phase='cons';refresh();if(cur!==0){await sleep(1100);aiPickCons()}}
 
 async function guessLetter(c){used.add(c);const isV=VOW.includes(c);phase='reveal';refresh();host(`Huruf ${c}... ada tak?`);await sleep(900);
@@ -257,7 +259,7 @@ async function guessLetter(c){used.add(c);const isV=VOW.includes(c);phase='revea
 
 function onKey(c){if(cur!==0)return;if(phase==='cons'&&!VOW.includes(c))guessLetter(c);else if(phase==='vow'&&VOW.includes(c))guessLetter(c)}
 $('bSpin').onclick=()=>{if(!canAct())return;host('Pusing roda tu guna jari kau! Leret laju-laju 👆','excited');const w=$('wheelWrap');w.classList.remove('nudge');void w.offsetWidth;w.classList.add('nudge')};
-$('bVowel').onclick=()=>{if(phase!=='turn'||P[0].rb<250)return;P[0].rb-=250;phase='vow';host('Ok, beli vokal RM250. Pilih vokal!');chatter('vowel',1);refresh()};
+$('bVowel').onclick=()=>{if(phase!=='turn'||P[0].rb<250)return;G.vb=1;P[0].rb-=250;phase='vow';host('Ok, beli vokal RM250. Pilih vokal!');chatter('vowel',1);refresh()};
 $('bSolve').onclick=()=>{if(phase!=='turn')return;phase='solving';refresh();$('solveCat').textContent='🏷️ '+cat;openFill();$('mSolve').classList.remove('hide');host('Wah, berani! Penonton, senyap sekejap...')};
 $('bSolveNo').onclick=()=>{$('mSolve').classList.add('hide');phase='turn';refresh()};
 $('bSolveOk').onclick=()=>{$('mSolve').classList.add('hide');attempt(solveVal())};
@@ -275,14 +277,14 @@ const norm=s=>s.toUpperCase().replace(/[^A-Z]/g,'');
 async function attempt(g){host(`"${g.toUpperCase()}"... betul ke?`);await sleep(1300);
  if(norm(g)===norm(answer))return solved();
  sBuzz();sign('SALAH!');mood(cur,'sad');chatter('wrong',3);floatE(['😱','🙈'],6);nextTurn(`Salah! Jawapan tu tak tepat.`,'sad')}
-async function solved(){phase='wait';revealAll();sFan();sClap(2.4,.3);sign('BETUL!!');floatE(['🎉','👏','🥳','⭐','🎊'],22);chatter('solve',4);
+async function solved(){if(cur===0&&phase!=='bonus'&&[...new Set(answer.replace(/ /g,''))].filter(c=>used.has(c)).length<=3&&hidden().length)award('quick');phase='wait';revealAll();sFan();sClap(2.4,.3);sign('BETUL!!');floatE(['🎉','👏','🥳','⭐','🎊'],22);chatter('solve',4);
  const w=P[cur],prize=Math.max(w.rb,500);w.tot+=prize;w.mood='happy';host(`BETULLL! "${answer}"! ${w.n} bawa pulang RM${prize}!`,'excited');refresh();await sleep(3600);
  if(round<TOTR){round++;startRound()}else finale()}
 
 // ---------- AI ----------
 function aiCandidates(){const k=known();const words=k.split(' ');return Object.values(PUZ).flat().filter(a=>{const w=a.split(' ');if(w.length!==words.length)return false;return w.every((x,i)=>x.length===words[i].length&&[...x].every((c,j)=>words[i][j]==='_'?!used.has(c):words[i][j]===c))})}
 async function aiTurn(){if(phase!=='turn')return;const me=P[cur],hc=hidden(),ratio=1-hc.length/new Set(answer.replace(/ /g,'')).size,cands=aiCandidates();
- const thr={berani:.7,vokal:.78,rawak:.82}[me.style]||.8,skill={berani:.7,vokal:.8,rawak:.55}[me.style]||.7;
+ const S=PROF.season||0,thr=({berani:.7,vokal:.78,rawak:.82}[me.style]||.8)-S*.05,skill=Math.min(.95,({berani:.7,vokal:.8,rawak:.55}[me.style]||.7)+S*.08);
  if(ratio>=thr&&Math.random()<.55||(!hc.some(c=>!VOW.includes(c))&&Math.random()<.7)){phase='solving';refresh();host(`${me.n} nak jawab!`,'excited');await sleep(1400);
   let g;if(Math.random()<skill)g=answer;else{const k=known().split(' ');g=k.map(w=>w.replace(/_/g,()=>rnd([...'AEIKNRSTU']))).join(' ')}return attempt(g)}
  const vowLeft=[...VOW].filter(c=>!used.has(c)),consLeft=[...ALL].filter(c=>!VOW.includes(c)&&!used.has(c));
@@ -292,13 +294,13 @@ async function aiTurn(){if(phase!=='turn')return;const me=P[cur],hc=hidden(),rat
   phase='solving';return attempt(cands[0]||answer)}
  host(`${me.n} pusing roda!`);await sleep(500);doSpin((me.style==='berani'?.03:.02)+Math.random()*.012)}
 function aiPickCons(){const me=P[cur],cons=[...FREQ].filter(c=>!used.has(c)&&!VOW.includes(c));let pick;
- const smartCands=aiCandidates();if(smartCands.length&&Math.random()<(me.style==='rawak'?.05:.15)){const pool=[...new Set(smartCands.join('').replace(/ /g,''))].filter(c=>!VOW.includes(c)&&!used.has(c));if(pool.length)pick=rnd(pool)}
+ const smartCands=aiCandidates();if(smartCands.length&&Math.random()<(me.style==='rawak'?.05:.15)+(PROF.season||0)*.07){const pool=[...new Set(smartCands.join('').replace(/ /g,''))].filter(c=>!VOW.includes(c)&&!used.has(c));if(pool.length)pick=rnd(pool)}
  if(!pick)pick=Math.random()<(me.style==='rawak'?.6:.4)?rnd(cons):cons[Math.floor(Math.random()*Math.min(7,cons.length))];
  host(`${me.n} pilih huruf ${pick}!`);setTimeout(()=>guessLetter(pick),700)}
 
 // ---------- BANTUAN ----------
 const FRIENDS=[{n:'Pak Mat Bengkel',e:'👨🏽‍🔧',acc:.9},{n:'Kak Ros Kantin',e:'👩🏽‍🍳',acc:.8},{n:'Along',e:'🧑🏽‍💼',acc:.65}];
-const useLife=k=>{P[0].life[k]=0;save();refresh()};
+const useLife=k=>{G.help=1;P[0].life[k]=0;save();refresh()};
 $('lCall').onclick=async()=>{if(cur!==0||phase!=='turn'||!P[0].life.call)return;useLife('call');phase='life';refresh();const f=rnd(FRIENDS);
  host(`Kita telefon ${f.n}! 📞`,'excited');chatter('spin',1);for(let i=0;i<3;i++){tone(440,.35,'sine',.12,i*.8);tone(480,.35,'sine',.12,i*.8)}await sleep(2600);
  const words=answer.split(' '),idx=words.map((w,i)=>i).filter(i=>[...words[i]].some(c=>!used.has(c)));let tip;
@@ -318,12 +320,12 @@ $('lOpen').onclick=async()=>{if(cur!==0||phase!=='turn'||!P[0].life.open||hidden
  host(`Kita buka satu huruf untuk ${P[0].n}... huruf ${c}!`,'excited');comment('bijak guna bantuan 👍');await reveal(c);phase='turn';refresh();save()};
 
 // ---------- FINALE / BONUS ----------
-function msg(t,p,btns){$('msgT').textContent=t;$('msgP').innerHTML=p;$('msgBtns').innerHTML='';btns.forEach(([l,f,alt])=>{const b=document.createElement('button');b.className='big'+(alt?' alt':'');b.textContent=l;b.onclick=()=>{$('mMsg').classList.add('hide');f()};$('msgBtns').appendChild(b)});$('mMsg').classList.remove('hide')}
-async function finale(){clearSave();phase='off';cur=-1;renderPods();const best=[...P].sort((a,b)=>b.tot-a.tot)[0];
+function msg(t,p,btns){$('msgP').onclick=null;$('msgT').textContent=t;$('msgP').innerHTML=p;$('msgBtns').innerHTML='';btns.forEach(([l,f,alt])=>{const b=document.createElement('button');b.className='big'+(alt?' alt':'');b.textContent=l;b.onclick=()=>{$('mMsg').classList.add('hide');f()};$('msgBtns').appendChild(b)});$('mMsg').classList.remove('hide')}
+let BPRIZE='';async function finale(){clearSave();phase='off';cur=-1;renderPods();const best=[...P].sort((a,b)=>b.tot-a.tot)[0];BPRIZE=SN().prize;const etxt=endGame(best===P[0]);
  if(best===P[0]){host(`${P[0].n} JUARA malam ni! Masuk ke PUSINGAN BONUS!`);sFan();sClap(2.5,.3);floatE(['🏆','🎉','👑'],20);chatter('solve',3);await sleep(2500);
-  msg('🏆 JUARA!',`<img src="sprites/icon_car.webp" style="width:120px" alt=""><br>Tahniah ${P[0].n}! Jumlah RM${P[0].tot}.<br>Sedia untuk <b>PUSINGAN BONUS</b>? Hadiah: <b>KERETA KANCIL COMEL</b>`,[['🎬 JOM!',bonus]])}
+  msg('🏆 JUARA!',`<img src="sprites/icon_car.webp" style="width:120px" alt=""><br>Tahniah ${P[0].n}! Jumlah RM${P[0].tot}.<br>${etxt}<br><br>Sedia untuk <b>PUSINGAN BONUS</b>? Hadiah: <b>${BPRIZE.toUpperCase()}</b>`,[['🎬 JOM!',bonus]])}
  else{host(`${best.n} juara malam ni! Terima kasih ${P[0].n}, jumpa lagi!`);sClap(1.5,.2);chatter('lose',2);
-  msg('TAMAT',`Juara: <b>${best.av} ${best.n}</b> (RM${best.tot})<br>Kau: RM${P[0].tot}<br><br>Penonton tetap sayang kau 💕`,[['🔁 MAIN LAGI',restart]])}}
+  msg('TAMAT',`Juara: <b>${best.av} ${best.n}</b> (RM${best.tot})<br>Kau: RM${P[0].tot}${etxt}<br><br>Penonton tetap sayang kau 💕`,[['🔁 MAIN LAGI',restart],['🏠 LOBI',lobby,1]])}}
 async function bonus(){pickPuzzle();used=new Set([...'RSTLNE']);buildBoard();$('rLbl').textContent='⭐ PUSINGAN BONUS';cur=0;renderPods();
  for(const c of 'RSTLNE')reveal(c);host('Kami beri R, S, T, L, N, E. Pilih 3 konsonan + 1 vokal!');chatter('spin',2);
  phase='bonusPick';let picks=[];const ks=$('keys');
@@ -334,24 +336,52 @@ async function bonus(){pickPuzzle();used=new Set([...'RSTLNE']);buildBoard();$('
  buildKeys();for(const c of picks)await reveal(c);host('60 saat! Jawab sekarang!');
  $('solveCat').innerHTML='🏷️ '+cat+'<br><span id="timer">60</span>';openFill();$('mSolve').classList.remove('hide');$('bSolveNo').style.display='none';
  let t=60,done=false;const finish=ok=>{if(done)return;done=true;clearInterval(iv);$('mSolve').classList.add('hide');$('bSolveNo').style.display='';$('bSolveOk').onclick=()=>{$('mSolve').classList.add('hide');attempt(solveVal())};revealAll();
-  if(ok){sFan();sClap(3,.35);sign('MENANG KERETA!','car');mood(0,'happy');floatE(['🚗','🎉','🏆','💰','🥳'],30);chatter('solve',4);host(`LUAR BIASA! ${P[0].n} MENANG KERETA KANCIL COMEL!`);setTimeout(()=>msg('🚗 MENANG!',`"${answer}"<br>Kau bawa balik kereta + RM${P[0].tot}! 🎉`,[['🔁 MAIN LAGI',restart]]),3000)}
-  else{sBuzz();sAww();chatter('wrong',3);host(`Ohh tak sempat! Jawapan: "${answer}". Tapi tetap juara!`);setTimeout(()=>msg('HAMPIR!',`Jawapan: <b>${answer}</b><br>Kau tetap juara dengan RM${P[0].tot} 💪`,[['🔁 MAIN LAGI',restart]]),2500)}};
+  if(ok){sFan();sClap(3,.35);sign('MENANG KERETA!','car');mood(0,'happy');floatE(['🚗','🎉','🏆','💰','🥳'],30);chatter('solve',4);PROF.cars++;saveProf();award('car');if(PROF.cars>=5)award('cars5');host(`LUAR BIASA! ${P[0].n} MENANG ${BPRIZE.toUpperCase()}!`);setTimeout(()=>msg('🚗 MENANG!',`"${answer}"<br>Kau bawa balik ${BPRIZE} + RM${P[0].tot}! 🎉<br>🚗 Koleksi kereta: ${PROF.cars}`,[['🔁 MAIN LAGI',restart],['🏠 LOBI',lobby,1]]),3000)}
+  else{sBuzz();sAww();chatter('wrong',3);host(`Ohh tak sempat! Jawapan: "${answer}". Tapi tetap juara!`);setTimeout(()=>msg('HAMPIR!',`Jawapan: <b>${answer}</b><br>Kau tetap juara dengan RM${P[0].tot} 💪`,[['🔁 MAIN LAGI',restart],['🏠 LOBI',lobby,1]]),2500)}};
  const iv=setInterval(()=>{t--;const el=$('timer');if(el)el.textContent=t;sTick();if(t<=0)finish(false)},1000);
  $('bSolveOk').onclick=()=>finish(norm(solveVal())===norm(answer))}
-function restart(){clearSave();usedPuz=new Set();round=1;P.forEach(p=>{p.rb=0;p.tot=0});P[0].life={call:1,aud:1,open:1};buildKeys();startRound()}
+function restart(){resetG();applyCos();clearSave();usedPuz=new Set();round=1;P.forEach(p=>{p.rb=0;p.tot=0});P[0].life={call:1,aud:1,open:1};buildKeys();startRound()}
+
+// ---------- MUSIM / TROFI / KEDAI ----------
+const SEASONS=[{n:'TV Kampung',m:1,v:[.2,.6],need:2,prize:'Kereta Kancil Comel'},{n:'TV Negeri',m:1.5,v:[2,5],need:2,prize:'Kereta Myvi Comel'},{n:'TV Nasional',m:2,v:[12,20],need:3,prize:'Kereta MPV Keluarga'},{n:'Grand Final',m:3,v:[40,60],need:1,prize:'Kereta Mewah Juara'}];
+let PROF={};function loadProf(){let d=null;try{d=JSON.parse(localStorage.getItem('pt_prof'))}catch(e){}PROF=Object.assign({bank:0,season:0,sw:0,streak:0,wins:0,cars:0,tro:{},own:{w:['klasik'],s:['asal']},eq:{w:'klasik',s:'asal'}},d||{})}
+function saveProf(){try{localStorage.setItem('pt_prof',JSON.stringify(PROF))}catch(e){}}
+loadProf();const SN=()=>SEASONS[PROF.season]||SEASONS[0];
+const TROPHIES={first:['🥇','Menang Pertama','Menang game pertama kau'],novowel:['🚫','Tanpa Vokal','Menang game tanpa beli vokal'],muflis3:['💀','Kebal Nasib','Kena Muflis 3 kali tapi masih menang'],car:['🚗','Pemandu Baru','Menang kereta di pusingan bonus'],streak3:['🔥','Panas Tangan','Menang 3 game berturut'],quick:['⚡','Kilat','Jawab betul bila 3 huruf atau kurang yang dibuka'],nohelp:['🧠','Otak Sendiri','Menang tanpa guna bantuan'],durian:['🍈','Durian Runtuh','Kena petak Durian Runtuh'],rich:['💰','Jutawan Kecil','Simpanan cecah RM50,000'],cars5:['🏎️','Kaki Kereta','Kumpul 5 kereta'],promo:['📈','Naik Pangkat','Naik ke musim seterusnya'],grand:['👑','Juara Segala Juara','Menang Grand Final']};
+let TQ=0;function toast(t){const w=Math.max(0,TQ-Date.now());TQ=Math.max(TQ,Date.now())+1700;setTimeout(()=>{const d=document.createElement('div');d.className='toast';d.textContent=t;document.body.appendChild(d);setTimeout(()=>d.remove(),1650)},w)}
+function award(k){if(PROF.tro[k])return;PROF.tro[k]=1;saveProf();const t=TROPHIES[k];setTimeout(()=>{sFan();comment(`🏆 ${P[0].n} dapat trofi "${t[1]}"!`,'TVCozy')},700);toast(t[0]+' TROFI BARU: '+t[1])}
+const SKIN={klasik:{n:'Roda Klasik',p:0,c:SEGCOL},raya:{n:'Roda Raya',p:8000,c:['#1b7f3a','#c99a2e','#0f5c2b','#b08968','#2d6a4f','#d4a017','#40916c','#8a5a3b']},pastel:{n:'Roda Pastel',p:15000,c:['#ff8fab','#ffb347','#e2c044','#7bd389','#5ec8e5','#7aa2ff','#a78bfa','#f28dd8']},durian:{n:'Roda Durian',p:12000,c:['#7cb518','#c9a227','#4f772d','#d4a017','#386641','#9bb53a','#6a994e','#b8860b']},neon:{n:'Roda Neon',p:20000,c:['#ff00c8','#00b4d8','#7b2cbf','#00c48c','#ff2e88','#3a86ff','#d000ff','#0096c7']}};
+const STUDIO={asal:{n:'Studio Asal',p:0,o:'#10002b'},biru:{n:'Malam Biru',p:10000,o:'#001a4d'},raya:{n:'Studio Raya',p:15000,o:'#0b3d20'},senja:{n:'Senja Oren',p:15000,o:'#4a1500'},emas:{n:'Studio Emas',p:30000,o:'#3d2b00'}};
+function applyCos(){const st=STUDIO[PROF.eq.s]||STUDIO.asal;document.body.style.background=`linear-gradient(${st.o}66,${st.o}b3 45%,${st.o}dd),url(sprites/bg_studio.webp) center/cover,#240046`;$('tvLbl').textContent=`📺 ${SN().n} · Siaran Langsung`;drawWheel()}
+const rm=n=>'RM'+Math.round(n).toLocaleString('en-US');
+function profLine(){$('profLine').innerHTML=`<b>📺 Musim: ${SN().n}</b> · Menang ${PROF.sw}/${SN().need} untuk naik<br>💰 Simpanan ${rm(PROF.bank)} · 🚗 ${PROF.cars} kereta · 🏆 ${Object.keys(PROF.tro).length}/${Object.keys(TROPHIES).length}`}
+function showTro(){msg('🏆 TROFI',Object.entries(TROPHIES).map(([k,t])=>`<div style="text-align:left;opacity:${PROF.tro[k]?1:.35};margin:4px 0">${PROF.tro[k]?t[0]:'🔒'} <b>${t[1]}</b><br><small>${t[2]}</small></div>`).join(''),[['OK',()=>{}]])}
+function shopHTML(){const row=(type,k,it)=>{const own=PROF.own[type].includes(k),eq=PROF.eq[type]===k;return `<div style="display:flex;align-items:center;gap:8px;margin:5px 0;text-align:left">${type==='w'?`<span style="width:28px;height:28px;border-radius:50%;background:conic-gradient(${it.c.join(',')})"></span>`:`<span style="width:28px;height:28px;border-radius:8px;background:${it.o};border:2px solid #fff6"></span>`}<span style="flex:1"><b>${it.n}</b><br><small>${it.p?rm(it.p):'Percuma'}</small></span><button data-t="${type}" data-k="${k}" style="border:0;border-radius:8px;padding:6px 10px;font:14px 'Lilita One';background:${eq?'#555':own?'#2a9d8f':'#e5383b'};color:#fff" ${eq?'disabled':''}>${eq?'DIPAKAI':own?'PAKAI':'BELI'}</button></div>`};
+ return `💰 Simpanan: <b>${rm(PROF.bank)}</b><hr style="border-color:#fff3"><b>🎡 Skin Roda</b>`+Object.entries(SKIN).map(([k,it])=>row('w',k,it)).join('')+`<hr style="border-color:#fff3"><b>🎬 Latar Studio</b>`+Object.entries(STUDIO).map(([k,it])=>row('s',k,it)).join('')}
+function showShop(){msg('🛍️ KEDAI',shopHTML(),[['TUTUP',()=>{profLine()}]]);$('msgP').onclick=e=>{const b=e.target.closest('button[data-k]');if(!b)return;const t=b.dataset.t,k=b.dataset.k,it=(t==='w'?SKIN:STUDIO)[k];
+ if(!PROF.own[t].includes(k)){if(PROF.bank<it.p){toast('Simpanan tak cukup 😅');sBuzz();return}PROF.bank-=it.p;PROF.own[t].push(k);sDing(2)}PROF.eq[t]=k;saveProf();applyCos();$('msgP').innerHTML=shopHTML()}}
+let G={};const resetG=()=>{G={vb:0,mf:0,help:0}};resetG();
+function endGame(win){const s=SN();let txt='';PROF.bank+=P[0].tot;
+ if(win){PROF.wins++;PROF.sw++;PROF.streak++;award('first');if(!G.vb)award('novowel');if(G.mf>=3)award('muflis3');if(!G.help)award('nohelp');if(PROF.streak>=3)award('streak3');
+  if(PROF.season===3){award('grand');txt='<br>👑 <b>KAU JUARA SEGALA JUARA!</b>'}
+  else if(PROF.sw>=s.need){PROF.season++;PROF.sw=0;award('promo');txt=`<br>📈 <b>NAIK PANGKAT ke ${SN().n}!</b> Hadiah & lawan lebih hebat!`}
+  else txt=`<br>📺 ${s.n}: menang ${PROF.sw}/${s.need} untuk naik pangkat`}
+ else{PROF.streak=0;txt=`<br>📺 ${s.n}: menang ${PROF.sw}/${s.need} untuk naik pangkat`}
+ if(PROF.bank>=50000)award('rich');saveProf();return `<br>💰 +${rm(P[0].tot)} masuk simpanan (${rm(PROF.bank)})`+txt}
+function lobby(){clearSave();phase='off';profLine();$('mStart').classList.remove('hide')}
 
 // ---------- SAVE ----------
 const SK='pt_save';
-function save(){try{localStorage.setItem(SK,JSON.stringify({TOTR,P,cur,round,answer,cat,used:[...used],usedPuz:[...usedPuz]}))}catch(e){}}
+function save(){try{localStorage.setItem(SK,JSON.stringify({G,TOTR,P,cur,round,answer,cat,used:[...used],usedPuz:[...usedPuz]}))}catch(e){}}
 function clearSave(){try{localStorage.removeItem(SK)}catch(e){}}
 function loadSave(){try{const d=JSON.parse(localStorage.getItem(SK));return d&&d.answer&&d.P?d:null}catch(e){return null}}
-function resume(d){TOTR=d.TOTR||3;P=d.P;if(!P[0].life)P[0].life={call:1,aud:1,open:1};cur=d.cur;round=d.round;answer=d.answer;cat=d.cat;used=new Set(d.used);usedPuz=new Set(d.usedPuz);
+function resume(d){G=d.G||{vb:1,mf:0,help:1};TOTR=d.TOTR||3;P=d.P;if(!P[0].life)P[0].life={call:1,aud:1,open:1};cur=d.cur;round=d.round;answer=d.answer;cat=d.cat;used=new Set(d.used);usedPuz=new Set(d.usedPuz);
  buildBoard();document.querySelectorAll('.tile.l').forEach(t=>{if(used.has(t.dataset.c))t.classList.add('show')});
  $('rLbl').textContent='PUSINGAN '+round+'/'+TOTR;buildKeys();sClap(1,.15);sign('KITA KEMBALI!');
  host(`Selamat kembali ke PUSING TEKA! Kita sambung pusingan ${round}, kategori ${cat}.`);comment('yeay dah balik dari iklan 📺');setTimeout(turn,1800)}
 
 // ---------- START ----------
-drawWheel();buildKeys();
+buildKeys();
 const CHARS=[{k:'player',n:'Kak Ayu',av:'🙋',style:'rawak'},...RIVALS];
 function setupPlayers(){const me=CHARS.find(c=>c.k===CHOSEN);P=[{n:'KAU',av:me.av,k:CHOSEN,rb:0,tot:0,life:{call:1,aud:1,open:1}},...CHARS.filter(c=>c.k!==CHOSEN).sort(()=>Math.random()-.5).slice(0,2).map(r=>({...r,rb:0,tot:0}))];renderPods()}
 try{CHOSEN=localStorage.getItem('pt_char')||'player';TOTR=+localStorage.getItem('pt_len')||5}catch(e){}
@@ -360,9 +390,9 @@ function drawPick(){$('charPick').innerHTML=CHARS.map(c=>`<button data-k="${c.k}
  $('lenPick').innerHTML=[[3,'Pendek'],[5,'Biasa'],[7,'Panjang']].map(([n,l])=>`<button data-n="${n}" style="${pickBtn(n===TOTR)}">${l}<br><small>${n} pusingan</small></button>`).join('')}
 $('charPick').onclick=e=>{const b=e.target.closest('button');if(b){CHOSEN=b.dataset.k;drawPick()}};
 $('lenPick').onclick=e=>{const b=e.target.closest('button');if(b){TOTR=+b.dataset.n;drawPick()}};
-drawPick();setupPlayers();
+drawPick();setupPlayers();applyCos();profLine();$('bTro').onclick=showTro;$('bShop').onclick=showShop;
 try{$('nameIn').value=localStorage.getItem('pt_name')||''}catch(e){}
-$('bStart').onclick=()=>{setupPlayers();const n=($('nameIn').value.trim()||'KAU').toUpperCase();P[0].n=n;try{localStorage.setItem('pt_name',n);localStorage.setItem('pt_char',CHOSEN);localStorage.setItem('pt_len',TOTR)}catch(e){}ac();$('mStart').classList.add('hide');
+$('bStart').onclick=()=>{resetG();applyCos();setupPlayers();const n=($('nameIn').value.trim()||'KAU').toUpperCase();P[0].n=n;try{localStorage.setItem('pt_name',n);localStorage.setItem('pt_char',CHOSEN);localStorage.setItem('pt_len',TOTR)}catch(e){}ac();$('mStart').classList.add('hide');
  clearSave();comment('dah start!! 📺');comment('salam dari Kelantan 👋');startRound()};
 (function(){const d=loadSave();if(!d)return;const b=document.createElement('button');b.className='big alt';b.textContent=`▶ SAMBUNG (Pusingan ${d.round}, RM${d.P[0].tot+d.P[0].rb})`;
  b.onclick=()=>{ac();$('mStart').classList.add('hide');resume(d)};$('bStart').before(b);$('bStart').textContent='🎬 MAIN BARU'})();
