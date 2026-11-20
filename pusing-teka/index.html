@@ -73,7 +73,7 @@ button{font-family:inherit;cursor:pointer}
 .card input{width:100%;font:20px "Lilita One";text-transform:uppercase;padding:10px;border-radius:10px;border:0;text-align:center;margin:8px 0}
 .big{border:0;border-radius:14px;padding:12px 20px;font:20px "Lilita One";background:#e5383b;color:#fff;box-shadow:0 5px 0 #8d0801;margin:4px}
 .big.alt{background:#2a9d8f;box-shadow:0 5px 0 #14524a}
-#timer{font:40px "Lilita One";color:#ffd166}
+#solveBoard{display:flex;flex-direction:column;gap:4px;align-items:center;margin:10px 0;background:#05204f;border-radius:12px;padding:8px 4px}#solveBoard .row{gap:3px}.st{width:23px;height:30px;border-radius:5px;display:flex;align-items:center;justify-content:center;font:19px 'Lilita One';color:#240046;background:#fff}.st.fx{background:#cfd8ff;color:#3c096c}.st.bl{background:#fff8d6;box-shadow:inset 0 -3px 0 #e0b84a;cursor:pointer}.st.bl.sel{background:#ffd166;outline:3px solid #ff5fa2}.st.gap{background:none;width:10px}#solveKeys{display:grid;grid-template-columns:repeat(9,1fr);gap:4px;margin-bottom:10px}#solveKeys button{border:0;border-radius:8px;padding:8px 0;font:16px 'Lilita One';background:#fff;color:#240046;box-shadow:0 3px 0 #bbb}#solveKeys .del{background:#e5383b;color:#fff;grid-column:span 2}#timer{font:40px "Lilita One";color:#ffd166}
 #sign img{display:block;width:110px;margin:0 auto 4px;filter:drop-shadow(0 4px 6px #000a)}#sign{text-align:center;position:fixed;top:38%;left:50%;transform:translate(-50%,-50%) scale(0);font:44px "Lilita One";color:#ffd166;text-shadow:0 4px 0 #c9184a,0 0 20px #000;z-index:5;pointer-events:none;white-space:nowrap}
 #sign.go{animation:sign 1.6s}
 @keyframes sign{15%{transform:translate(-50%,-50%) scale(1.15)}25%,80%{transform:translate(-50%,-50%) scale(1)}100%{transform:translate(-50%,-50%) scale(0)}}
@@ -121,7 +121,8 @@ button{font-family:inherit;cursor:pointer}
 <div class="modal hide" id="mSolve"><div class="card">
  <h2>JAWAB!</h2>
  <p id="solveCat"></p>
- <input id="solveIn" autocomplete="off" placeholder="TAIP JAWAPAN">
+ <div id="solveBoard"></div>
+ <div id="solveKeys"></div>
  <div><button class="big" id="bSolveOk">✅ JAWAB</button><button class="big alt" id="bSolveNo">BATAL</button></div>
 </div></div>
 
@@ -256,10 +257,19 @@ async function guessLetter(c){used.add(c);const isV=VOW.includes(c);phase='revea
 function onKey(c){if(cur!==0)return;if(phase==='cons'&&!VOW.includes(c))guessLetter(c);else if(phase==='vow'&&VOW.includes(c))guessLetter(c)}
 $('bSpin').onclick=()=>{if(!canAct())return;host('Pusing roda tu guna jari kau! Leret laju-laju 👆','excited');const w=$('wheelWrap');w.classList.remove('nudge');void w.offsetWidth;w.classList.add('nudge')};
 $('bVowel').onclick=()=>{if(phase!=='turn'||P[0].rb<250)return;P[0].rb-=250;phase='vow';host('Ok, beli vokal RM250. Pilih vokal!');chatter('vowel',1);refresh()};
-$('bSolve').onclick=()=>{if(phase!=='turn')return;phase='solving';refresh();$('solveCat').textContent='🏷️ '+cat;$('solveIn').value='';$('mSolve').classList.remove('hide');setTimeout(()=>$('solveIn').focus(),100);host('Wah, berani! Penonton, senyap sekejap...')};
+$('bSolve').onclick=()=>{if(phase!=='turn')return;phase='solving';refresh();$('solveCat').textContent='🏷️ '+cat;openFill();$('mSolve').classList.remove('hide');host('Wah, berani! Penonton, senyap sekejap...')};
 $('bSolveNo').onclick=()=>{$('mSolve').classList.add('hide');phase='turn';refresh()};
-$('bSolveOk').onclick=()=>{$('mSolve').classList.add('hide');attempt($('solveIn').value)};
-$('solveIn').onkeydown=e=>{if(e.key==='Enter')$('bSolveOk').click()};
+$('bSolveOk').onclick=()=>{$('mSolve').classList.add('hide');attempt(solveVal())};
+let fill=[],sel=0;
+function openFill(){fill=[...answer].map(c=>c===' '?' ':used.has(c)?c:'');sel=fill.findIndex(x=>x==='');renderFill()}
+function renderFill(){let i=0;$('solveBoard').innerHTML=lines(answer).map(ln=>{const r='<div class="row">'+[...ln].map(ch=>{while(answer[i]===' '&&ch!==' ')i++;const k=i++;if(ch===' ')return '<div class="st gap"></div>';
+  return used.has(ch)?`<div class="st fx">${ch}</div>`:`<div class="st bl ${k===sel?'sel':''}" data-i="${k}">${fill[k]}</div>`}).join('')+'</div>';i++;return r}).join('');
+ $('solveKeys').innerHTML=[...ALL].map(c=>`<button data-c="${c}">${c}</button>`).join('')+'<button class="del" data-c="DEL">⌫</button>'}
+$('solveBoard').onclick=e=>{const t=e.target.closest('.bl');if(t){sel=+t.dataset.i;renderFill()}};
+$('solveKeys').onclick=e=>{const c=e.target.dataset&&e.target.dataset.c;if(!c)return;tone(900,.05,'square',.04);const blanks=fill.map((x,i)=>[...answer][i]!==' '&&!used.has(answer[i])?i:-1).filter(i=>i>=0);
+ if(c==='DEL'){if(sel>=0&&fill[sel])fill[sel]='';else{const p=blanks.filter(i=>i<sel&&fill[i]).pop();if(p!==undefined){sel=p;fill[p]=''}}}
+ else if(sel>=0){fill[sel]=c;const nx=blanks.find(i=>i>sel&&!fill[i]);sel=nx!==undefined?nx:(blanks.find(i=>!fill[i])??sel)}renderFill()};
+const solveVal=()=>fill.map(x=>x||'?').join('');
 const norm=s=>s.toUpperCase().replace(/[^A-Z]/g,'');
 async function attempt(g){host(`"${g.toUpperCase()}"... betul ke?`);await sleep(1300);
  if(norm(g)===norm(answer))return solved();
@@ -300,12 +310,12 @@ async function bonus(){pickPuzzle();used=new Set([...'RSTLNE']);buildBoard();$('
  await new Promise(res=>{ks.onclick=e=>{const c=e.target.dataset&&e.target.dataset.c;if(!c||used.has(c))return;const v=VOW.includes(c),nc=picks.filter(x=>!VOW.includes(x)).length,nv=picks.length-nc;
   if((v&&nv>=1)||(!v&&nc>=3))return;picks.push(c);used.add(c);e.target.classList.add('used');e.target.disabled=true;host('Pilihan: '+picks.join(' '));if(picks.length===4)res()}});
  buildKeys();for(const c of picks)await reveal(c);host('60 saat! Jawab sekarang!');
- $('solveCat').innerHTML='🏷️ '+cat+'<br><span id="timer">60</span>';$('solveIn').value='';$('mSolve').classList.remove('hide');$('bSolveNo').style.display='none';$('solveIn').focus();
- let t=60,done=false;const finish=ok=>{if(done)return;done=true;clearInterval(iv);$('mSolve').classList.add('hide');$('bSolveNo').style.display='';$('bSolveOk').onclick=()=>{$('mSolve').classList.add('hide');attempt($('solveIn').value)};revealAll();
+ $('solveCat').innerHTML='🏷️ '+cat+'<br><span id="timer">60</span>';openFill();$('mSolve').classList.remove('hide');$('bSolveNo').style.display='none';
+ let t=60,done=false;const finish=ok=>{if(done)return;done=true;clearInterval(iv);$('mSolve').classList.add('hide');$('bSolveNo').style.display='';$('bSolveOk').onclick=()=>{$('mSolve').classList.add('hide');attempt(solveVal())};revealAll();
   if(ok){sFan();sClap(3,.35);sign('MENANG KERETA!','car');mood(0,'happy');floatE(['🚗','🎉','🏆','💰','🥳'],30);chatter('solve',4);host(`LUAR BIASA! ${P[0].n} MENANG KERETA KANCIL COMEL!`);setTimeout(()=>msg('🚗 MENANG!',`"${answer}"<br>Kau bawa balik kereta + RM${P[0].tot}! 🎉`,[['🔁 MAIN LAGI',restart]]),3000)}
   else{sBuzz();sAww();chatter('wrong',3);host(`Ohh tak sempat! Jawapan: "${answer}". Tapi tetap juara!`);setTimeout(()=>msg('HAMPIR!',`Jawapan: <b>${answer}</b><br>Kau tetap juara dengan RM${P[0].tot} 💪`,[['🔁 MAIN LAGI',restart]]),2500)}};
  const iv=setInterval(()=>{t--;const el=$('timer');if(el)el.textContent=t;sTick();if(t<=0)finish(false)},1000);
- $('bSolveOk').onclick=()=>finish(norm($('solveIn').value)===norm(answer))}
+ $('bSolveOk').onclick=()=>finish(norm(solveVal())===norm(answer))}
 function restart(){clearSave();usedPuz=new Set();round=1;P.forEach(p=>{p.rb=0;p.tot=0});buildKeys();startRound()}
 
 // ---------- SAVE ----------
