@@ -112,7 +112,9 @@ button{font-family:inherit;cursor:pointer}
  <img src="sprites/logo.webp" alt="PUSING TEKA" style="width:100%;max-width:300px"><img src="sprites/host_excited.webp" alt="" style="width:110px;display:block;margin:-6px auto 0">
  <p>📺 Malam ni kau jadi <b>peserta</b> dalam rancangan game show paling hangat di TV Cozy!</p>
  <p style="font-size:13px;opacity:.85">Pusing roda, teka huruf konsonan, beli vokal RM250, dan jawab teka-teki. Jaga-jaga petak <b>MUFLIS</b>!</p>
+ <p style="margin-bottom:2px">Pilih watak kau:</p><div id="charPick" style="display:flex;gap:6px;justify-content:center"></div>
  <input id="nameIn" maxlength="10" placeholder="NAMA KAU">
+ <p style="margin:2px 0">Panjang rancangan:</p><div id="lenPick" style="display:flex;gap:6px;justify-content:center;margin-bottom:8px"></div>
  <button class="big" id="bStart">🎬 MASUK STUDIO</button>
 </div></div>
 
@@ -149,7 +151,7 @@ const KEYOF=p=>p.k||({'Mak Cik Kiah':'kiah','Pak Abu':'abu','Adik Mimi':'mimi'}[
 function mood(i,m){if(P[i]){P[i].mood=m;renderPods()}}
 
 // ---------- STATE ----------
-let P=[],cur=0,round=1,answer='',cat='',used=new Set(),phase='off',spinVal=0,rot=0,usedPuz=new Set();
+let TOTR=5,CHOSEN='player',P=[],cur=0,round=1,answer='',cat='',used=new Set(),phase='off',spinVal=0,rot=0,usedPuz=new Set();
 const $=id=>document.getElementById(id);
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const rnd=a=>a[Math.floor(Math.random()*a.length)];
@@ -167,7 +169,7 @@ function sClap(dur=1.6,vol=.25){try{const c=ac(),len=c.sampleRate*dur,b=c.create
 function sAww(){tone(400,.6,'sine',.1);tone(300,.7,'sine',.1,.3)}
 
 // ---------- HOST / AUDIENCE ----------
-let hostT;function host(t,m){$('hostLine').textContent=t;$('hostImg').src='sprites/host_'+(m||'idle')+'.webp';clearTimeout(hostT);if(m)hostT=setTimeout(()=>$('hostImg').src='sprites/host_idle.webp',2500)}
+let hostT;function host(t,m){$('hostLine').textContent=t;if(!m)return;$('hostImg').src='sprites/host_'+m+'.webp';clearTimeout(hostT);if(m!=='idle')hostT=setTimeout(()=>$('hostImg').src='sprites/host_idle.webp',3200)}
 function comment(t,who){const f=$('feed'),d=document.createElement('div');d.className='cm';d.innerHTML='<b>@'+(who||rnd(AUD))+'</b> '+t;f.appendChild(d);while(f.children.length>7)f.removeChild(f.firstChild)}
 function chatter(kind,n=2){const L=AUDL[kind];if(!L)return;const pool=[...L];for(let i=0;i<n;i++){const t=pool.splice(Math.floor(Math.random()*pool.length),1)[0];if(t)setTimeout(()=>comment(t.replace('{p}',P[cur]?P[cur].n:'')),i*550+Math.random()*300)}}
 const AUDL={
@@ -225,13 +227,13 @@ const canAct=()=>cur===0&&phase==='turn'&&[...ALL].some(c=>!VOW.includes(c)&&!us
 
 // ---------- FLOW ----------
 function pickPuzzle(){let c,a,g=0;do{c=rnd(Object.keys(PUZ));a=rnd(PUZ[c]);g++}while(usedPuz.has(a)&&g<99);usedPuz.add(a);cat=c;answer=a}
-async function startRound(){pickPuzzle();used=new Set();P.forEach(p=>p.rb=0);buildBoard();$('rLbl').textContent='PUSINGAN '+round+'/3';phase='wait';refresh();
+async function startRound(){pickPuzzle();used=new Set();P.forEach(p=>{p.rb=0;p.mood='idle'});buildBoard();$('rLbl').textContent='PUSINGAN '+round+'/'+TOTR;phase='wait';refresh();
  sign('PUSINGAN '+round);sClap(1.2,.15);host(round===1?`Selamat datang ke PUSING TEKA! Malam ni kita ada ${P[0].n}, ${P[1].n} dan ${P[2].n}! Kategori: ${cat}!`:`Pusingan ${round}! Kategori kali ni... ${cat}!`);
  chatter('idle',2);await sleep(2200);cur=(round-1)%3;turn()}
-async function turn(){phase='turn';P.forEach(p=>p.mood='idle');save();refresh();renderPods();
+async function turn(){phase='turn';P[cur].mood='idle';save();refresh();renderPods();
  if(cur===0){host(rnd([`${P[0].n}, giliran awak! Pusing, beli vokal, atau jawab?`,`Ok ${P[0].n}, apa langkah awak?`,`Penonton tengah tunggu ni ${P[0].n}!`]));}
  else{host(`Giliran ${P[cur].n}!`);await sleep(900);aiTurn()}}
-async function nextTurn(msg,m){if(msg)host(msg,m);phase='wait';refresh();await sleep(1500);cur=(cur+1)%3;turn()}
+async function nextTurn(msg,m){if(msg)host(msg,m);phase='wait';refresh();await sleep(2300);cur=(cur+1)%3;turn()}
 
 async function doSpin(power=1){if(phase!=='turn')return;phase='spin';refresh();host(rnd(['Pusingggg!','Roda berpusing...','Semoga bertuah!']));chatter('spin',2);
  const v=await spinWheel(power);
@@ -263,14 +265,14 @@ async function attempt(g){host(`"${g.toUpperCase()}"... betul ke?`);await sleep(
  sBuzz();sign('SALAH!');mood(cur,'sad');chatter('wrong',3);floatE(['😱','🙈'],6);nextTurn(`Salah! Jawapan tu tak tepat.`,'sad')}
 async function solved(){phase='wait';revealAll();sFan();sClap(2.4,.3);sign('BETUL!!');floatE(['🎉','👏','🥳','⭐','🎊'],22);chatter('solve',4);
  const w=P[cur],prize=Math.max(w.rb,500);w.tot+=prize;w.mood='happy';host(`BETULLL! "${answer}"! ${w.n} bawa pulang RM${prize}!`,'excited');refresh();await sleep(3600);
- if(round<3){round++;startRound()}else finale()}
+ if(round<TOTR){round++;startRound()}else finale()}
 
 // ---------- AI ----------
 function aiCandidates(){const k=known();const words=k.split(' ');return Object.values(PUZ).flat().filter(a=>{const w=a.split(' ');if(w.length!==words.length)return false;return w.every((x,i)=>x.length===words[i].length&&[...x].every((c,j)=>words[i][j]==='_'?!used.has(c):words[i][j]===c))})}
 async function aiTurn(){if(phase!=='turn')return;const me=P[cur],hc=hidden(),ratio=1-hc.length/new Set(answer.replace(/ /g,'')).size,cands=aiCandidates();
- const skill=me.style==='rawak'?.6:.85;
- if(cands.length===1&&Math.random()<skill||(ratio>.75&&Math.random()<skill*.8)){phase='solving';refresh();host(`${me.n} nak jawab!`);await sleep(1200);
-  const g=cands.length===1?cands[0]:(Math.random()<.5?answer:rnd(Object.values(PUZ).flat()));return attempt(g)}
+ const thr={berani:.7,vokal:.78,rawak:.82}[me.style]||.8,skill={berani:.7,vokal:.8,rawak:.55}[me.style]||.7;
+ if(ratio>=thr&&Math.random()<.55||(!hc.some(c=>!VOW.includes(c))&&Math.random()<.7)){phase='solving';refresh();host(`${me.n} nak jawab!`,'excited');await sleep(1400);
+  let g;if(Math.random()<skill)g=answer;else{const k=known().split(' ');g=k.map(w=>w.replace(/_/g,()=>rnd([...'AEIKNRSTU']))).join(' ')}return attempt(g)}
  const vowLeft=[...VOW].filter(c=>!used.has(c)),consLeft=[...ALL].filter(c=>!VOW.includes(c)&&!used.has(c));
  const wantV=vowLeft.length&&me.rb>=250&&(me.style==='vokal'?Math.random()<.65:Math.random()<.3);
  if(wantV||!consLeft.length){if(me.rb>=250&&vowLeft.length){me.rb-=250;phase='vow';refresh();host(`${me.n} beli vokal!`);chatter('vowel',1);await sleep(1100);
@@ -278,8 +280,8 @@ async function aiTurn(){if(phase!=='turn')return;const me=P[cur],hc=hidden(),rat
   phase='solving';return attempt(cands[0]||answer)}
  doSpin(me.style==='berani'?1.4:.9)}
 function aiPickCons(){const me=P[cur],cons=[...FREQ].filter(c=>!used.has(c));let pick;
- const smartCands=aiCandidates();if(smartCands.length&&Math.random()<(me.style==='rawak'?.3:.6)){const pool=[...new Set(smartCands.join('').replace(/ /g,''))].filter(c=>!VOW.includes(c)&&!used.has(c));if(pool.length)pick=rnd(pool)}
- if(!pick)pick=Math.random()<(me.style==='rawak'?.5:.2)?rnd(cons):cons[Math.floor(Math.random()*Math.min(4,cons.length))];
+ const smartCands=aiCandidates();if(smartCands.length&&Math.random()<(me.style==='rawak'?.05:.15)){const pool=[...new Set(smartCands.join('').replace(/ /g,''))].filter(c=>!VOW.includes(c)&&!used.has(c));if(pool.length)pick=rnd(pool)}
+ if(!pick)pick=Math.random()<(me.style==='rawak'?.6:.4)?rnd(cons):cons[Math.floor(Math.random()*Math.min(7,cons.length))];
  host(`${me.n} pilih huruf ${pick}!`);setTimeout(()=>guessLetter(pick),700)}
 
 // ---------- FINALE / BONUS ----------
@@ -307,19 +309,27 @@ function restart(){clearSave();usedPuz=new Set();round=1;P.forEach(p=>{p.rb=0;p.
 
 // ---------- SAVE ----------
 const SK='pt_save';
-function save(){try{localStorage.setItem(SK,JSON.stringify({P,cur,round,answer,cat,used:[...used],usedPuz:[...usedPuz]}))}catch(e){}}
+function save(){try{localStorage.setItem(SK,JSON.stringify({TOTR,P,cur,round,answer,cat,used:[...used],usedPuz:[...usedPuz]}))}catch(e){}}
 function clearSave(){try{localStorage.removeItem(SK)}catch(e){}}
 function loadSave(){try{const d=JSON.parse(localStorage.getItem(SK));return d&&d.answer&&d.P?d:null}catch(e){return null}}
-function resume(d){P=d.P;cur=d.cur;round=d.round;answer=d.answer;cat=d.cat;used=new Set(d.used);usedPuz=new Set(d.usedPuz);
+function resume(d){TOTR=d.TOTR||3;P=d.P;cur=d.cur;round=d.round;answer=d.answer;cat=d.cat;used=new Set(d.used);usedPuz=new Set(d.usedPuz);
  buildBoard();document.querySelectorAll('.tile.l').forEach(t=>{if(used.has(t.dataset.c))t.classList.add('show')});
- $('rLbl').textContent='PUSINGAN '+round+'/3';buildKeys();sClap(1,.15);sign('KITA KEMBALI!');
+ $('rLbl').textContent='PUSINGAN '+round+'/'+TOTR;buildKeys();sClap(1,.15);sign('KITA KEMBALI!');
  host(`Selamat kembali ke PUSING TEKA! Kita sambung pusingan ${round}, kategori ${cat}.`);comment('yeay dah balik dari iklan 📺');setTimeout(turn,1800)}
 
 // ---------- START ----------
 drawWheel();buildKeys();
-P=[{n:'KAU',av:'🙋',k:'player',rb:0,tot:0},...[...RIVALS].sort(()=>Math.random()-.5).slice(0,2).map(r=>({...r,rb:0,tot:0}))];renderPods();
+const CHARS=[{k:'player',n:'Kak Ayu',av:'🙋',style:'rawak'},...RIVALS];
+function setupPlayers(){const me=CHARS.find(c=>c.k===CHOSEN);P=[{n:'KAU',av:me.av,k:CHOSEN,rb:0,tot:0},...CHARS.filter(c=>c.k!==CHOSEN).sort(()=>Math.random()-.5).slice(0,2).map(r=>({...r,rb:0,tot:0}))];renderPods()}
+try{CHOSEN=localStorage.getItem('pt_char')||'player';TOTR=+localStorage.getItem('pt_len')||5}catch(e){}
+const pickBtn=(on)=>`border:3px solid ${on?'#ffd166':'transparent'};background:${on?'#ffd16633':'#ffffff14'};border-radius:12px;padding:4px;cursor:pointer;color:#fff;font:14px 'Lilita One'`;
+function drawPick(){$('charPick').innerHTML=CHARS.map(c=>`<button data-k="${c.k}" style="${pickBtn(c.k===CHOSEN)}"><img src="sprites/${c.k}_happy.webp" style="width:58px;display:block" alt="${c.n}"></button>`).join('');
+ $('lenPick').innerHTML=[[3,'Pendek'],[5,'Biasa'],[7,'Panjang']].map(([n,l])=>`<button data-n="${n}" style="${pickBtn(n===TOTR)}">${l}<br><small>${n} pusingan</small></button>`).join('')}
+$('charPick').onclick=e=>{const b=e.target.closest('button');if(b){CHOSEN=b.dataset.k;drawPick()}};
+$('lenPick').onclick=e=>{const b=e.target.closest('button');if(b){TOTR=+b.dataset.n;drawPick()}};
+drawPick();setupPlayers();
 try{$('nameIn').value=localStorage.getItem('pt_name')||''}catch(e){}
-$('bStart').onclick=()=>{const n=($('nameIn').value.trim()||'KAU').toUpperCase();P[0].n=n;try{localStorage.setItem('pt_name',n)}catch(e){}ac();$('mStart').classList.add('hide');
+$('bStart').onclick=()=>{setupPlayers();const n=($('nameIn').value.trim()||'KAU').toUpperCase();P[0].n=n;try{localStorage.setItem('pt_name',n);localStorage.setItem('pt_char',CHOSEN);localStorage.setItem('pt_len',TOTR)}catch(e){}ac();$('mStart').classList.add('hide');
  clearSave();comment('dah start!! 📺');comment('salam dari Kelantan 👋');startRound()};
 (function(){const d=loadSave();if(!d)return;const b=document.createElement('button');b.className='big alt';b.textContent=`▶ SAMBUNG (Pusingan ${d.round}, RM${d.P[0].tot+d.P[0].rb})`;
  b.onclick=()=>{ac();$('mStart').classList.add('hide');resume(d)};$('bStart').before(b);$('bStart').textContent='🎬 MAIN BARU'})();
