@@ -2,7 +2,7 @@
 <html lang="ms">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Pusing Teka — Cozy Game Show</title>
 <link rel="icon" href="../assets/icons/icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@700;800&display=swap" rel="stylesheet">
@@ -14,7 +14,7 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;background:
  radial-gradient(circle at 10% 20%,#ffd16633 0 2px,transparent 3px),radial-gradient(circle at 80% 12%,#ffd16633 0 2px,transparent 3px),
  conic-gradient(from 200deg at 15% -5%,transparent 0 10deg,#ffffff10 10deg 18deg,transparent 18deg 360deg),
  conic-gradient(from 140deg at 85% -5%,transparent 0 10deg,#ffffff10 10deg 18deg,transparent 18deg 360deg)}
-#app{position:relative;height:100%;max-width:560px;margin:0 auto;display:flex;flex-direction:column;padding:6px 8px 8px;gap:6px}
+#app{position:relative;height:100%;height:100dvh;padding-bottom:calc(18px + env(safe-area-inset-bottom)) !important;max-width:560px;margin:0 auto;display:flex;flex-direction:column;padding:6px 8px 8px;gap:6px}
 header{display:flex;align-items:center;gap:6px}
 header a img{height:24px;display:block}header a{color:#fff;text-decoration:none;background:#ffffff22;border-radius:12px;padding:5px 9px;font-weight:800;font-size:13px}
 .logo img{height:44px;max-width:100%;object-fit:contain;filter:drop-shadow(0 3px 6px #0008)}.logo{flex:1;text-align:center;font:24px/1 "Lilita One";letter-spacing:1px;color:#ffd166;text-shadow:0 3px 0 #c9184a,0 0 14px #ffd16688}
@@ -57,7 +57,7 @@ button{font-family:inherit;cursor:pointer}
 .act img{height:24px;vertical-align:middle;margin-right:3px;filter:drop-shadow(0 2px 1px #0006)}.act{flex:1;border:0;border-radius:12px;padding:10px 4px;font:16px "Lilita One";color:#fff;letter-spacing:.5px;box-shadow:0 4px 0 #0006}
 .act:disabled{opacity:.35;cursor:default}
 #bSpin{background:#e5383b}#bVowel{background:#2a9d8f}#bSolve{background:#f77f00}
-#keys{display:grid;grid-template-columns:repeat(9,1fr);gap:4px}
+#wheelWrap.nudge{animation:nudge .5s 3}@keyframes nudge{50%{transform:scale(1.07) rotate(-6deg)}}#keys{display:grid;grid-template-columns:repeat(9,1fr);gap:4px}
 .k{border:0;border-radius:8px;padding:8px 0;font:16px "Lilita One";background:#fff;color:#240046;box-shadow:0 3px 0 #bbb}
 .k.v{background:#b8f2e6}
 .k:disabled{opacity:.25}
@@ -209,11 +209,16 @@ function drawWheel(){const R=225,C=230;cx.clearRect(0,0,460,460);cx.save();cx.tr
  cx.beginPath();cx.arc(0,0,38,0,7);cx.fillStyle='#c9184a';cx.fill();cx.strokeStyle='#ffd166';cx.lineWidth=5;cx.stroke();
  cx.fillStyle='#ffd166';cx.font='bold 20px "Lilita One"';cx.textAlign='center';cx.textBaseline='middle';cx.fillText('PT',0,1);cx.restore()}
 const segAt=()=>{const m=((-rot)%(Math.PI*2)+Math.PI*2)%(Math.PI*2);return Math.floor(m/SA)%N};
-function spinWheel(power=1){return new Promise(res=>{const start=rot,dist=Math.PI*2*(3+power*2+Math.random()*2)+Math.random()*Math.PI*2,dur=3200+power*900,t0=performance.now();let last=segAt();
- function f(t){const k=Math.min(1,(t-t0)/dur),e=1-Math.pow(1-k,4);rot=start+dist*e;drawWheel();const s=segAt();if(s!==last){last=s;sTick()}if(k<1)requestAnimationFrame(f);else res(SEG[segAt()])}requestAnimationFrame(f)})}
-// swipe-to-spin
-let sw=null;cv.addEventListener('pointerdown',e=>{sw={y:e.clientY,x:e.clientX,t:performance.now()}});
-cv.addEventListener('pointerup',e=>{if(!sw)return;const d=Math.hypot(e.clientX-sw.x,e.clientY-sw.y),dt=performance.now()-sw.t;sw=null;if(canAct()&&d>30)doSpin(Math.min(1.6,Math.max(.4,d/dt)))});
+function spinWheel(v){return new Promise(res=>{const A=8e-6,dir=Math.sign(v)||1;let sp=Math.min(.05,Math.max(.012,Math.abs(v))),last=segAt(),t0=performance.now();
+ function f(t){const dt=Math.min(40,t-t0);t0=t;sp=Math.max(0,sp-A*dt);rot+=dir*sp*dt;drawWheel();const s=segAt();if(s!==last){last=s;sTick()}if(sp>0)requestAnimationFrame(f);else res(SEG[segAt()])}requestAnimationFrame(f)})}
+// pusing roda guna jari
+const angOf=e=>{const r=cv.getBoundingClientRect();return Math.atan2(e.clientY-r.top-r.height/2,e.clientX-r.left-r.width/2)};
+let drag=null;cv.style.touchAction='none';
+cv.addEventListener('pointerdown',e=>{if(!canAct())return;cv.setPointerCapture(e.pointerId);drag={a:angOf(e),h:[],last:segAt()};$('wheelWrap').classList.remove('nudge')});
+cv.addEventListener('pointermove',e=>{if(!drag)return;const na=angOf(e);let d=na-drag.a;if(d>Math.PI)d-=2*Math.PI;if(d<-Math.PI)d+=2*Math.PI;drag.a=na;rot+=d;const t=performance.now();drag.h.push({d,t});drag.h=drag.h.filter(x=>t-x.t<120);drawWheel();const s=segAt();if(s!==drag.last){drag.last=s;sTick()}});
+function endDrag(){if(!drag)return;const h=drag.h;drag=null;if(h.length<2){return}const dt=Math.max(16,h[h.length-1].t-h[0].t),v=h.reduce((a,x)=>a+x.d,0)/dt;
+ if(Math.abs(v)<.008){host('Lemah sangat tu! Pusing kuat sikit 💪','excited');comment('kuat lagi weh 😂');return}doSpin(v)}
+cv.addEventListener('pointerup',endDrag);cv.addEventListener('pointercancel',endDrag);
 
 // ---------- UI ----------
 function renderPods(){$('podiums').innerHTML=P.map((p,i)=>`<div class="pod ${i===cur&&phase!=='off'?'turn':''}"><div class="av"><img src="sprites/${KEYOF(p)}_${p.mood||'idle'}.webp" alt="${p.av}"></div><div class="nm">${p.n}</div><div class="rb">RM${p.rb}</div><div class="tt">Jumlah RM${p.tot}</div></div>`).join('')}
@@ -235,8 +240,8 @@ async function turn(){phase='turn';P[cur].mood='idle';save();refresh();renderPod
  else{host(`Giliran ${P[cur].n}!`);await sleep(900);aiTurn()}}
 async function nextTurn(msg,m){if(msg)host(msg,m);phase='wait';refresh();await sleep(2300);cur=(cur+1)%3;turn()}
 
-async function doSpin(power=1){if(phase!=='turn')return;phase='spin';refresh();host(rnd(['Pusingggg!','Roda berpusing...','Semoga bertuah!']));chatter('spin',2);
- const v=await spinWheel(power);
+async function doSpin(vel){if(phase!=='turn')return;phase='spin';refresh();host(rnd(['Pusingggg!','Roda berpusing...','Semoga bertuah!']));chatter('spin',2);
+ const v=await spinWheel(vel);
  if(v==='MUFLIS'){sBuzz();sAww();sign('MUFLIS!','muflis');mood(cur,'sad');floatE(['😭','💔','😱'],10);chatter('muflis',3);P[cur].rb=0;return nextTurn(`Alamak! MUFLIS! Duit ${P[cur].n} pusingan ni hangus...`,'sad')}
  if(v==='HILANG'){sBuzz();sign('HILANG GILIRAN','hilang');mood(cur,'sad');floatE(['😬','🤦'],6);chatter('lose',2);return nextTurn(`Hilang giliran! Kesian ${P[cur].n}.`,'sad')}
  spinVal=v==='DURIAN'?2000:v;
@@ -253,7 +258,7 @@ async function guessLetter(c){used.add(c);const isV=VOW.includes(c);phase='revea
  else{sBuzz();chatter('miss',2);floatE(['😅'],3);mood(cur,'sad');return nextTurn(`Maaf, takde huruf ${c}.`,'sad')}}
 
 function onKey(c){if(cur!==0)return;if(phase==='cons'&&!VOW.includes(c))guessLetter(c);else if(phase==='vow'&&VOW.includes(c))guessLetter(c)}
-$('bSpin').onclick=()=>canAct()&&doSpin(1);
+$('bSpin').onclick=()=>{if(!canAct())return;host('Pusing roda tu guna jari kau! Leret laju-laju 👆','excited');const w=$('wheelWrap');w.classList.remove('nudge');void w.offsetWidth;w.classList.add('nudge')};
 $('bVowel').onclick=()=>{if(phase!=='turn'||P[0].rb<250)return;P[0].rb-=250;phase='vow';host('Ok, beli vokal RM250. Pilih vokal!');chatter('vowel',1);refresh()};
 $('bSolve').onclick=()=>{if(phase!=='turn')return;phase='solving';refresh();$('solveCat').textContent='🏷️ '+cat;$('solveIn').value='';$('mSolve').classList.remove('hide');setTimeout(()=>$('solveIn').focus(),100);host('Wah, berani! Penonton, senyap sekejap...')};
 $('bSolveNo').onclick=()=>{$('mSolve').classList.add('hide');phase='turn';refresh()};
@@ -278,7 +283,7 @@ async function aiTurn(){if(phase!=='turn')return;const me=P[cur],hc=hidden(),rat
  if(wantV||!consLeft.length){if(me.rb>=250&&vowLeft.length){me.rb-=250;phase='vow';refresh();host(`${me.n} beli vokal!`);chatter('vowel',1);await sleep(1100);
   const pick=[...'AIUEO'].find(c=>!used.has(c)&&(Math.random()<.7||true));return guessLetter(pick)}
   phase='solving';return attempt(cands[0]||answer)}
- doSpin(me.style==='berani'?1.4:.9)}
+ host(`${me.n} pusing roda!`);await sleep(500);doSpin((me.style==='berani'?.03:.02)+Math.random()*.012)}
 function aiPickCons(){const me=P[cur],cons=[...FREQ].filter(c=>!used.has(c));let pick;
  const smartCands=aiCandidates();if(smartCands.length&&Math.random()<(me.style==='rawak'?.05:.15)){const pool=[...new Set(smartCands.join('').replace(/ /g,''))].filter(c=>!VOW.includes(c)&&!used.has(c));if(pool.length)pick=rnd(pool)}
  if(!pick)pick=Math.random()<(me.style==='rawak'?.6:.4)?rnd(cons):cons[Math.floor(Math.random()*Math.min(7,cons.length))];
