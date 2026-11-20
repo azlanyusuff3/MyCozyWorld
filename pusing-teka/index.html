@@ -113,7 +113,7 @@ button{font-family:inherit;cursor:pointer}
  <img src="sprites/logo.webp" alt="PUSING TEKA" style="width:100%;max-width:300px"><img src="sprites/host_excited.webp" alt="" style="width:80px;display:block;margin:-6px auto 0">
  <p>📺 Malam ni kau jadi <b>peserta</b> dalam rancangan game show paling hangat di TV Cozy!</p>
  <p style="font-size:13px;opacity:.85">Pusing roda, teka huruf konsonan, beli vokal RM250, dan jawab teka-teki. Jaga-jaga petak <b>MUFLIS</b>!</p>
- <p style="margin-bottom:2px">Pilih watak kau:</p><div id="charPick" style="display:flex;gap:6px;justify-content:center"></div>
+ <p style="margin-bottom:2px">Pilih watak kau:</p><div id="charPick" style="display:grid;grid-template-columns:repeat(6,1fr);gap:4px"></div><p id="charName" style="margin:2px 0;font-size:13px;color:#ffd166"></p>
  <input id="nameIn" maxlength="10" placeholder="NAMA KAU">
  <p style="margin:2px 0">Panjang rancangan:</p><div id="lenPick" style="display:flex;gap:6px;justify-content:center;margin-bottom:8px"></div>
  <p id="profLine" style="font-size:12.5px;background:#ffffff14;border-radius:10px;padding:6px"></p>
@@ -142,7 +142,7 @@ const FREQ='NAKIERSMGLTUDBPHYJCWOFZVQX'; // kekerapan huruf BM (anggaran)
 const SEG=[500,300,700,'MUFLIS',400,600,350,800,'HILANG',450,550,300,900,'DURIAN',400,650,500,'MUFLIS',1000,300,750,'HILANG',600,350];
 const SEGCOL=['#e5383b','#f77f00','#fcbf49','#2a9d8f','#4361ee','#9d4edd','#ff5fa2','#06d6a0'];
 const AUD=['MakCikKiah_KB','abg_lori88','SitiCupcake','PakAbuJohor','adikMimi07','rempit_cool','AuntyLim','AhmadGeng','kakNor_masak','budakUTM','cikgu_Zura','RajKumarr','NenekOnline','farah.sweet','DinPenyu'];
-const RIVALS=[{n:'Mak Cik Kiah',av:'👵🏽',k:'kiah',style:'berani'},{n:'Pak Abu',av:'👨🏽‍🦳',k:'abu',style:'vokal'},{n:'Adik Mimi',av:'👧🏻',k:'mimi',style:'rawak'}];
+const RIVALS=[{n:'Mak Cik Kiah',av:'👵🏽',k:'kiah',style:'berani'},{n:'Pak Abu',av:'👨🏽‍🦳',k:'abu',style:'vokal'},{n:'Adik Mimi',av:'👧🏻',k:'mimi',style:'rawak'},{n:'Uncle Ah Chong',av:'👴',k:'ahchong',style:'vokal'},{n:'Mr Muthu',av:'👨',k:'mutu',style:'vokal'},{n:'Zara',av:'👧',k:'zara',style:'berani'},{n:'Bob Bengkel',av:'🧔',k:'bob',style:'berani'},{n:'Auntie Mei',av:'👩',k:'mei',style:'vokal'},{n:'Kavitha',av:'👩',k:'kavi',style:'berani'},{n:'Tok Wan',av:'👴',k:'tokwan',style:'vokal'},{n:'Danial',av:'👦',k:'danial',style:'rawak'}];
 const KEYOF=p=>p.k||({'Mak Cik Kiah':'kiah','Pak Abu':'abu','Adik Mimi':'mimi'}[p.n])||'player';
 function mood(i,m){if(P[i]){P[i].mood=m;renderPods()}}
 
@@ -386,8 +386,8 @@ const CHARS=[{k:'player',n:'Kak Ayu',av:'🙋',style:'rawak'},...RIVALS];
 function setupPlayers(){const me=CHARS.find(c=>c.k===CHOSEN);P=[{n:'KAU',av:me.av,k:CHOSEN,rb:0,tot:0,life:{call:1,aud:1,open:1}},...CHARS.filter(c=>c.k!==CHOSEN).sort(()=>Math.random()-.5).slice(0,2).map(r=>({...r,rb:0,tot:0}))];renderPods()}
 try{CHOSEN=localStorage.getItem('pt_char')||'player';TOTR=+localStorage.getItem('pt_len')||5}catch(e){}
 const pickBtn=(on)=>`border:3px solid ${on?'#ffd166':'transparent'};background:${on?'#ffd16633':'#ffffff14'};border-radius:12px;padding:4px;cursor:pointer;color:#fff;font:14px 'Lilita One'`;
-function drawPick(){$('charPick').innerHTML=CHARS.map(c=>`<button data-k="${c.k}" style="${pickBtn(c.k===CHOSEN)}"><img src="sprites/${c.k}_happy.webp" style="width:58px;display:block" alt="${c.n}"></button>`).join('');
- $('lenPick').innerHTML=[[3,'Pendek'],[5,'Biasa'],[7,'Panjang']].map(([n,l])=>`<button data-n="${n}" style="${pickBtn(n===TOTR)}">${l}<br><small>${n} pusingan</small></button>`).join('')}
+function drawPick(){if(!CHARS.some(c=>c.k===CHOSEN))CHOSEN='player';$('charPick').innerHTML=CHARS.map(c=>`<button data-k="${c.k}" style="${pickBtn(c.k===CHOSEN)}"><img src="sprites/${c.k}_happy.webp" style="width:100%;display:block" alt="${c.n}"></button>`).join('');
+ $('charName').textContent=CHARS.find(c=>c.k===CHOSEN).n;$('lenPick').innerHTML=[[3,'Pendek'],[5,'Biasa'],[7,'Panjang']].map(([n,l])=>`<button data-n="${n}" style="${pickBtn(n===TOTR)}">${l}<br><small>${n} pusingan</small></button>`).join('')}
 $('charPick').onclick=e=>{const b=e.target.closest('button');if(b){CHOSEN=b.dataset.k;drawPick()}};
 $('lenPick').onclick=e=>{const b=e.target.closest('button');if(b){TOTR=+b.dataset.n;drawPick()}};
 drawPick();setupPlayers();applyCos();profLine();$('bTro').onclick=showTro;$('bShop').onclick=showShop;
